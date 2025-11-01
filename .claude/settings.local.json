@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:www.simracerhub.com)",
+      "Bash(uv lock:*)",
+      "Bash(uv pip list:*)",
+      "Bash(uv run pytest:*)",
+      "Bash(uv run black:*)",
+      "Bash(uv run ruff:*)",
+      "Bash(cat:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

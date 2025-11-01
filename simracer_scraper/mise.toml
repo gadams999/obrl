@@ -1,0 +1,13 @@
+[tools]
+python = "3.14"
+
+[env]
+min_version = "2024.9.5"
+
+# Use the project name derived from the current directory
+PROJECT_NAME = "{{ config_root | basename }}"
+
+_.python.venv = { path = ".venv", create = true, uv_create_args = ['--seed'] }
+
+[settings]
+python.uv_venv_auto = true
