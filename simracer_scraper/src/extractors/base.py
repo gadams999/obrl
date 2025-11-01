@@ -7,6 +7,7 @@ This module provides the BaseExtractor class that handles:
 - Common extraction utilities
 """
 
+import random
 import time
 
 import requests
@@ -20,7 +21,8 @@ class BaseExtractor:
     methods for parsing HTML content.
 
     Attributes:
-        rate_limit_seconds: Minimum seconds between requests
+        rate_limit_seconds: Minimum seconds between requests (for fixed delay)
+        rate_limit_range: Tuple of (min, max) seconds for randomized delay
         max_retries: Maximum number of retry attempts
         timeout: Request timeout in seconds
         backoff_factor: Exponential backoff multiplier for retries
@@ -29,6 +31,7 @@ class BaseExtractor:
     def __init__(
         self,
         rate_limit_seconds: float = 2.0,
+        rate_limit_range: tuple[float, float] | None = None,
         max_retries: int = 3,
         timeout: int = 30,
         backoff_factor: int = 2,
@@ -36,12 +39,17 @@ class BaseExtractor:
         """Initialize the base extractor.
 
         Args:
-            rate_limit_seconds: Minimum seconds between requests (default: 2.0)
+            rate_limit_seconds: Fixed seconds between requests (default: 2.0)
+                Ignored if rate_limit_range is provided
+            rate_limit_range: Tuple of (min, max) seconds for randomized delay
+                If provided, overrides rate_limit_seconds
+                Example: (2.0, 4.0) for random delay between 2-4 seconds
             max_retries: Maximum retry attempts (default: 3)
             timeout: Request timeout in seconds (default: 30)
             backoff_factor: Exponential backoff multiplier (default: 2)
         """
         self.rate_limit_seconds = rate_limit_seconds
+        self.rate_limit_range = rate_limit_range
         self.max_retries = max_retries
         self.timeout = timeout
         self.backoff_factor = backoff_factor
@@ -104,13 +112,21 @@ class BaseExtractor:
         """Enforce rate limiting between requests.
 
         Sleeps if necessary to ensure minimum time between requests.
+        Uses randomized delay if rate_limit_range is set, otherwise fixed delay.
         """
-        if self.rate_limit_seconds <= 0:
+        # Determine delay: randomized or fixed
+        if self.rate_limit_range:
+            min_delay, max_delay = self.rate_limit_range
+            delay = random.uniform(min_delay, max_delay)
+        else:
+            delay = self.rate_limit_seconds
+
+        if delay <= 0:
             return
 
         elapsed = time.time() - self._last_request_time
-        if elapsed < self.rate_limit_seconds:
-            time.sleep(self.rate_limit_seconds - elapsed)
+        if elapsed < delay:
+            time.sleep(delay - elapsed)
 
     def extract_text(self, soup: BeautifulSoup, selector: str) -> str | None:
         """Extract text from first matching element.

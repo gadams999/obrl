@@ -1,0 +1,324 @@
+"""Tests for RaceExtractor."""
+
+from pathlib import Path
+from unittest.mock import patch
+
+import pytest
+from bs4 import BeautifulSoup
+
+from src.extractors.race import RaceExtractor
+
+
+@pytest.fixture
+def race_fixture_path():
+    """Path to the race detail fixture HTML file."""
+    fixtures_dir = Path(__file__).parent.parent / "fixtures"
+    return fixtures_dir / "season_race_324462.html"
+
+
+@pytest.fixture
+def race_fixture_html(race_fixture_path):
+    """Load the race detail fixture HTML."""
+    with open(race_fixture_path, encoding="utf-8") as f:
+        return f.read()
+
+
+@pytest.fixture
+def race_extractor():
+    """Create a RaceExtractor instance."""
+    return RaceExtractor(rate_limit_seconds=0)
+
+
+class TestRaceExtractorBasic:
+    """Test basic RaceExtractor functionality."""
+
+    def test_init_default_params(self):
+        """Test RaceExtractor initializes with default parameters."""
+        extractor = RaceExtractor()
+        assert extractor.rate_limit_seconds == 2.0
+
+    def test_inherits_from_base_extractor(self, race_extractor):
+        """Test RaceExtractor inherits BaseExtractor methods."""
+        assert hasattr(race_extractor, "fetch_page")
+
+
+class TestRaceExtractorExtraction:
+    """Test data extraction from race pages."""
+
+    def test_extract_from_fixture(self, race_extractor, race_fixture_html):
+        """Test extracting race data from fixture."""
+        with patch.object(race_extractor, "fetch_page") as mock_fetch:
+            mock_fetch.return_value = BeautifulSoup(race_fixture_html, "html.parser")
+
+            result = race_extractor.extract(
+                "https://www.simracerhub.com/season_race.php?schedule_id=324462"
+            )
+
+            assert isinstance(result, dict)
+            assert "metadata" in result
+            assert "results" in result
+
+    def test_extract_metadata_structure(self, race_extractor, race_fixture_html):
+        """Test extracted metadata has correct structure."""
+        with patch.object(race_extractor, "fetch_page") as mock_fetch:
+            mock_fetch.return_value = BeautifulSoup(race_fixture_html, "html.parser")
+
+            result = race_extractor.extract(
+                "https://www.simracerhub.com/season_race.php?schedule_id=324462"
+            )
+
+            metadata = result["metadata"]
+            assert "schedule_id" in metadata
+            assert "name" in metadata
+            assert isinstance(metadata["schedule_id"], int)
+
+    def test_extract_schedule_id_from_url(self, race_extractor, race_fixture_html):
+        """Test schedule_id is correctly extracted from URL."""
+        with patch.object(race_extractor, "fetch_page") as mock_fetch:
+            mock_fetch.return_value = BeautifulSoup(race_fixture_html, "html.parser")
+
+            result = race_extractor.extract(
+                "https://www.simracerhub.com/season_race.php?schedule_id=324462"
+            )
+
+            assert result["metadata"]["schedule_id"] == 324462
+
+    def test_extract_race_results(self, race_extractor, race_fixture_html):
+        """Test race results are extracted from table."""
+        with patch.object(race_extractor, "fetch_page") as mock_fetch:
+            mock_fetch.return_value = BeautifulSoup(race_fixture_html, "html.parser")
+
+            result = race_extractor.extract(
+                "https://www.simracerhub.com/season_race.php?schedule_id=324462"
+            )
+
+            results = result["results"]
+            assert len(results) == 3  # 3 drivers in fixture
+
+    def test_extract_result_structure(self, race_extractor, race_fixture_html):
+        """Test each result has correct structure."""
+        with patch.object(race_extractor, "fetch_page") as mock_fetch:
+            mock_fetch.return_value = BeautifulSoup(race_fixture_html, "html.parser")
+
+            result = race_extractor.extract(
+                "https://www.simracerhub.com/season_race.php?schedule_id=324462"
+            )
+
+            first_result = result["results"][0]
+            assert "position" in first_result
+            assert "driver_name" in first_result
+            assert "driver_id" in first_result
+
+    def test_extract_driver_ids(self, race_extractor, race_fixture_html):
+        """Test driver IDs are extracted from links."""
+        with patch.object(race_extractor, "fetch_page") as mock_fetch:
+            mock_fetch.return_value = BeautifulSoup(race_fixture_html, "html.parser")
+
+            result = race_extractor.extract(
+                "https://www.simracerhub.com/season_race.php?schedule_id=324462"
+            )
+
+            driver_ids = [r["driver_id"] for r in result["results"]]
+            assert 33132 in driver_ids
+            assert 12345 in driver_ids
+
+
+class TestRaceExtractorEdgeCases:
+    """Test edge cases and error handling."""
+
+    def test_extract_invalid_url_format(self, race_extractor):
+        """Test extraction with invalid URL format."""
+        with pytest.raises(ValueError):
+            race_extractor.extract("https://www.simracerhub.com/invalid.php")
+
+    def test_extract_missing_schedule_id(self, race_extractor):
+        """Test extraction with missing schedule_id parameter."""
+        with pytest.raises(ValueError, match="Invalid race URL format"):
+            race_extractor.extract("https://www.simracerhub.com/season_race.php")
+
+    def test_extract_no_results(self, race_extractor):
+        """Test extraction when no results found."""
+        html = """
+        <html><body>
+        <h1>Race</h1>
+        <table class="results-table"><thead><tr><th>Pos</th></tr></thead><tbody></tbody></table>
+        </body></html>
+        """
+        with patch.object(race_extractor, "fetch_page") as mock_fetch:
+            mock_fetch.return_value = BeautifulSoup(html, "html.parser")
+            result = race_extractor.extract(
+                "https://www.simracerhub.com/season_race.php?schedule_id=999"
+            )
+            assert result["results"] == []
+
+    def test_extract_race_name_from_title(self, race_extractor):
+        """Test race name extraction from title when no H1."""
+        html = """
+        <html>
+        <head><title>Test Race Title</title></head>
+        <body>
+            <table class="results-table">
+                <tbody>
+                    <tr>
+                        <td>1</td>
+                        <td><a href="driver_stats.php?driver_id=123">Driver</a></td>
+                        <td>1</td>
+                    </tr>
+                </tbody>
+            </table>
+        </body>
+        </html>
+        """
+        with patch.object(race_extractor, "fetch_page") as mock_fetch:
+            mock_fetch.return_value = BeautifulSoup(html, "html.parser")
+            result = race_extractor.extract(
+                "https://www.simracerhub.com/season_race.php?schedule_id=100"
+            )
+            assert result["metadata"]["name"] == "Test Race Title"
+
+    def test_extract_race_name_fallback_unknown(self, race_extractor):
+        """Test race name fallback to 'Unknown Race' when all else fails."""
+        html = """
+        <html>
+        <head></head>
+        <body>
+            <table class="results-table">
+                <tbody>
+                    <tr>
+                        <td>1</td>
+                        <td><a href="driver_stats.php?driver_id=123">Driver</a></td>
+                        <td>1</td>
+                    </tr>
+                </tbody>
+            </table>
+        </body>
+        </html>
+        """
+        with patch.object(race_extractor, "fetch_page") as mock_fetch:
+            mock_fetch.return_value = BeautifulSoup(html, "html.parser")
+            result = race_extractor.extract(
+                "https://www.simracerhub.com/season_race.php?schedule_id=100"
+            )
+            assert result["metadata"]["name"] == "Unknown Race"
+
+    def test_extract_no_table_found(self, race_extractor):
+        """Test extraction when no table found."""
+        html = """
+        <html>
+        <head><title>Race</title></head>
+        <body>
+            <h1>Test Race</h1>
+            <p>No results available yet.</p>
+        </body>
+        </html>
+        """
+        with patch.object(race_extractor, "fetch_page") as mock_fetch:
+            mock_fetch.return_value = BeautifulSoup(html, "html.parser")
+            result = race_extractor.extract(
+                "https://www.simracerhub.com/season_race.php?schedule_id=100"
+            )
+            assert result["results"] == []
+
+    def test_extract_no_tbody(self, race_extractor):
+        """Test extraction when table has no tbody."""
+        html = """
+        <html><body>
+        <h1>Race</h1>
+        <table class="results-table">
+            <thead><tr><th>Pos</th><th>Driver</th></tr></thead>
+        </table>
+        </body></html>
+        """
+        with patch.object(race_extractor, "fetch_page") as mock_fetch:
+            mock_fetch.return_value = BeautifulSoup(html, "html.parser")
+            result = race_extractor.extract(
+                "https://www.simracerhub.com/season_race.php?schedule_id=999"
+            )
+            assert result["results"] == []
+
+    def test_extract_insufficient_cells(self, race_extractor):
+        """Test extraction with rows that have too few cells."""
+        html = """
+        <html><body>
+        <h1>Race</h1>
+        <table class="results-table">
+            <tbody>
+                <tr>
+                    <td>1</td>
+                    <td>Driver Name</td>
+                </tr>
+                <tr>
+                    <td>2</td>
+                    <td><a href="driver_stats.php?driver_id=123">Valid Driver</a></td>
+                    <td>42</td>
+                </tr>
+            </tbody>
+        </table>
+        </body></html>
+        """
+        with patch.object(race_extractor, "fetch_page") as mock_fetch:
+            mock_fetch.return_value = BeautifulSoup(html, "html.parser")
+            result = race_extractor.extract(
+                "https://www.simracerhub.com/season_race.php?schedule_id=999"
+            )
+            # Only the valid row should be included
+            assert len(result["results"]) == 1
+            assert result["results"][0]["driver_name"] == "Valid Driver"
+
+    def test_extract_driver_without_link(self, race_extractor):
+        """Test extraction when driver cell has no link."""
+        html = """
+        <html><body>
+        <h1>Race</h1>
+        <table class="results-table">
+            <tbody>
+                <tr>
+                    <td>1</td>
+                    <td>Plain Driver Name</td>
+                    <td>42</td>
+                </tr>
+            </tbody>
+        </table>
+        </body></html>
+        """
+        with patch.object(race_extractor, "fetch_page") as mock_fetch:
+            mock_fetch.return_value = BeautifulSoup(html, "html.parser")
+            result = race_extractor.extract(
+                "https://www.simracerhub.com/season_race.php?schedule_id=999"
+            )
+            assert len(result["results"]) == 1
+            assert result["results"][0]["driver_name"] == "Plain Driver Name"
+            assert "driver_id" not in result["results"][0]
+
+    def test_extract_invalid_position(self, race_extractor):
+        """Test extraction with non-numeric position."""
+        html = """
+        <html><body>
+        <h1>Race</h1>
+        <table class="results-table">
+            <tbody>
+                <tr>
+                    <td>DNF</td>
+                    <td><a href="driver_stats.php?driver_id=123">Driver Name</a></td>
+                    <td>42</td>
+                </tr>
+            </tbody>
+        </table>
+        </body></html>
+        """
+        with patch.object(race_extractor, "fetch_page") as mock_fetch:
+            mock_fetch.return_value = BeautifulSoup(html, "html.parser")
+            result = race_extractor.extract(
+                "https://www.simracerhub.com/season_race.php?schedule_id=999"
+            )
+            # Row should be skipped due to ValueError in parsing
+            assert len(result["results"]) == 0
+
+
+class TestRaceExtractorContextManager:
+    """Test context manager functionality."""
+
+    def test_context_manager_works(self):
+        """Test RaceExtractor works as context manager."""
+        with RaceExtractor() as extractor:
+            assert extractor is not None

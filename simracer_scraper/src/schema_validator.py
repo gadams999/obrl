@@ -30,7 +30,7 @@ EXPECTED_SCHEMAS = {
             "div.series-list",  # Container (may vary)
             "a[href*='series_seasons.php']",  # Links to series
         ],
-        "required_fields": ["id", "name"],
+        "required_fields": ["league_id", "name", "url"],  # League metadata fields
     },
     # Series seasons page (series_seasons.php?series_id={id})
     "series_seasons": {

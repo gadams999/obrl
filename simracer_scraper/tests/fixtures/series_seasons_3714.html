@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>The OBRL Wednesday Night Series - Seasons</title>
+</head>
+<body>
+    <div class="container">
+        <h1>The OBRL Wednesday Night Series</h1>
+        <div class="series-info">
+            <p>Welcome to Wednesday Night racing!</p>
+        </div>
+
+        <div class="season-list">
+            <!-- Seasons will be rendered by JavaScript -->
+        </div>
+    </div>
+
+    <script>
+        var seasons = [
+            {id: 26741, n: "2025 Season 1", scrt: 1735776000, ns: 12, nr: 8, active: true},
+            {id: 26740, n: "2024 Season 4", scrt: 1733184000, ns: 12, nr: 12, active: false},
+            {id: 26739, n: "2024 Season 3", scrt: 1730505600, ns: 12, nr: 12, active: false}
+        ];
+
+        // Render seasons
+        seasons.forEach(function(season) {
+            console.log(season.n);
+        });
+    </script>
+
+    <!-- Back to league link -->
+    <div class="navigation">
+        <a href="league_series.php?league_id=1558">Back to League</a>
+    </div>
+</body>
+</html>

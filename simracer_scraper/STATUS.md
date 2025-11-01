@@ -159,6 +159,56 @@ Building a web scraper for SimRacerHub.com to extract racing league data (The OB
   - **Tests**: 15 tests with mocked HTTP (total: 147 tests, 94% coverage)
   - Location: `src/extractors/base.py`
 
+### Phase 3: Entity Extraction
+
+- [x] **Task 3.1: League Extractor** (2025-11-01)
+  - Created `src/extractors/league.py` (294 lines)
+  - `LeagueExtractor` class extends `BaseExtractor`
+  - Extracts league metadata (league_id, name, url, description)
+  - Discovers child series URLs from JavaScript
+  - Discovers teams URL from HTML links
+  - Integrates SchemaValidator for validation
+  - Handles multiple edge cases gracefully
+  - **Tests**: 27 tests (total: 174 tests, 99% coverage for league.py)
+  - Location: `src/extractors/league.py`
+  - Fixture: `tests/fixtures/league_series_1558.html`
+
+- [x] **Task 3.2: Series Extractor** (2025-11-01)
+  - Created `src/extractors/series.py` (247 lines)
+  - `SeriesExtractor` class extends `BaseExtractor`
+  - Extracts series metadata (series_id, name, url)
+  - Discovers child season URLs from JavaScript array
+  - Extracts season metadata (name, start_time, scheduled/completed races)
+  - Integrates SchemaValidator for validation
+  - Uses `js_parser.extract_season_data()` for JavaScript parsing
+  - **Tests**: 21 tests (total: 195 tests, 99% coverage for series.py)
+  - Location: `src/extractors/series.py`
+  - Fixture: `tests/fixtures/series_seasons_3714.html`
+
+- [x] **Task 3.3: Season Extractor** (2025-11-01)
+  - Created `src/extractors/season.py` (233 lines)
+  - `SeasonExtractor` class extends `BaseExtractor`
+  - Extracts season metadata (series_id, name, url)
+  - Discovers child race URLs from HTML table (not JavaScript)
+  - Extracts race metadata (schedule_id, track) from table rows
+  - Parses schedule_id from href links
+  - **Tests**: 21 tests (total: 216 tests, 99% coverage for season.py)
+  - Location: `src/extractors/season.py`
+  - Fixture: `tests/fixtures/season_race_3714.html`
+
+- [x] **Task 3.4: Race Extractor** (2025-11-01)
+  - Created `src/extractors/race.py` (78 lines)
+  - `RaceExtractor` class extends `BaseExtractor`
+  - Extracts race metadata (schedule_id, name, url)
+  - Parses race results from HTML table
+  - Extracts driver data: position, driver_name, driver_id, car_number
+  - Parses driver_id from href links in table cells
+  - Handles variable column counts (laps, interval, laps_led, points)
+  - Gracefully handles missing data and invalid rows
+  - **Tests**: 19 tests (total: 235 tests, 99% coverage for race.py)
+  - Location: `src/extractors/race.py`
+  - Fixture: `tests/fixtures/season_race_324462.html`
+
 ### Phase 3: Working End-to-End Demo
 
 - [x] **Simple League Scraper** (2025-10-31)
@@ -192,6 +242,10 @@ Building a web scraper for SimRacerHub.com to extract racing league data (The OB
 | `src/schema_validator.py` | 401 | 100% | 46 |
 | `src/utils/js_parser.py` | 207 | 100% | 16 |
 | `src/extractors/base.py` | 160 | 94% | 15 |
+| `src/extractors/league.py` | 294 | 99% | 27 |
+| `src/extractors/series.py` | 247 | 99% | 21 |
+| `src/extractors/season.py` | 233 | 99% | 21 |
+| `src/extractors/race.py` | 78 | 99% | 19 |
 | `src/simple_scraper.py` | 260 | - | - |
 | `demo_scraper.py` | 100 | - | - |
 | `tests/unit/test_database.py` | 1,338 | - | 56 |
@@ -199,7 +253,11 @@ Building a web scraper for SimRacerHub.com to extract racing league data (The OB
 | `tests/unit/test_schema_validator.py` | 1,023 | - | 46 |
 | `tests/unit/test_js_parser.py` | 340 | - | 16 |
 | `tests/unit/test_base_extractor.py` | 312 | - | 15 |
-| **Total** | **6,096** | **97%** | **147** |
+| `tests/unit/test_league_extractor.py` | 606 | - | 27 |
+| `tests/unit/test_series_extractor.py` | 378 | - | 21 |
+| `tests/unit/test_season_extractor.py` | 399 | - | 21 |
+| `tests/unit/test_race_extractor.py` | 318 | - | 19 |
+| **Total** | **8,565** | **98%** | **235** |
 
 ### Database Schema
 
@@ -217,11 +275,11 @@ Building a web scraper for SimRacerHub.com to extract racing league data (The OB
 
 ### Test Coverage
 
-- **Total Tests**: 147 passing
-- **Coverage**: 91% database, 100% schema validator, 100% JS parser, 94% base extractor
-- **Missing Lines**: 40 (mostly defensive code and unreachable fallback paths)
-- **Test Files**: 5
-- **Assertions**: 500+
+- **Total Tests**: 235 passing
+- **Coverage**: 91% database, 100% schema validator, 100% JS parser, 94% base extractor, 99% league/series/season/race extractors
+- **Missing Lines**: ~50 (mostly defensive code and unreachable fallback paths)
+- **Test Files**: 9
+- **Assertions**: 800+
 
 ### Working Features
 
@@ -286,29 +344,25 @@ None - all planned work is complete for the current phase.
 
 ### Immediate (Recommended)
 
-1. **Task 3.1-3.6: Entity Extractors**
-   - Season extractor
-   - Race extractor
-   - Driver/Team extractors
-   - Schema validators
-   - Status: Not started
+1. **Task 4.x: Orchestration**
+   - Progressive hierarchy walker (League → Series → Season → Race)
+   - Depth-based scraping configuration
+   - Smart caching integration
+   - Status: Not started - **NEXT PRIORITY**
 
-4. **Task 4.x: Orchestration**
-   - Progressive hierarchy walker
-   - Depth-based scraping
-   - Status: Not started
+### Backlog (Lower Priority)
 
-### Long-Term
+1. **Task 3.5-3.6: Driver/Team Extractors** (Moved to backlog 2025-11-01)
+   - Task 3.5: Driver extractor (cross-league career stats from driver_stats.php)
+   - Task 3.6: Team extractor (official rosters from teams.php)
+   - **Rationale**: Race results contain 95% of needed data for single-league tracking
+   - **When to implement**: If cross-league tracking or official team rosters become required
+   - See: `RESEARCH_DRIVER_TEAM_EXTRACTORS.md` for detailed analysis
 
-5. **Task 5.1: Full CLI**
-   - Professional CLI with Click/Typer
-   - Config export command
-   - Update command
-   - Status: Not started
-
-6. **Task 5.2: Config Export**
-   - Export hierarchy to YAML
-   - Scrape from config file
+2. **Task 5.x: Professional CLI**
+   - Task 5.1: Full CLI with Click/Typer
+   - Task 5.2: Config export to YAML
+   - Task 5.3: Update command with progress bars
    - Status: Not started
 
 ## 🚧 Known Limitations
@@ -332,12 +386,12 @@ None - all planned work is complete for the current phase.
 
 ### Extractors
 
-- ✅ League name extraction (basic)
+- ✅ League extraction with child URLs
 - ✅ Series extraction from JavaScript
-- ❌ Season extraction
-- ❌ Race extraction
-- ❌ Driver/team extraction
-- ❌ Race results extraction
+- ✅ Season extraction from HTML tables
+- ✅ Race results extraction
+- ❌ Driver profile extraction
+- ❌ Team roster extraction
 
 ## 📚 Documentation Files
 
@@ -350,6 +404,10 @@ None - all planned work is complete for the current phase.
 - `TESTING_RULES.md` - Testing standards
 - `WORKFLOW.md` - User workflow design
 
+### Research & Analysis
+
+- `RESEARCH_DRIVER_TEAM_EXTRACTORS.md` - Analysis of whether Driver/Team extractors are needed (2025-11-01)
+
 ### How-To Guides
 
 - `README_IMPLEMENTATION.md` - Quick start for development
@@ -360,8 +418,7 @@ None - all planned work is complete for the current phase.
 ### Status Tracking
 
 - `STATUS.md` - This file (overall status)
-- `COMPLETED.md` - Detailed completion log (to be created)
-- `TODO.md` - Remaining tasks (to be created)
+- `BACKLOG.md` - Deferred tasks and future enhancements
 
 ## 🎯 Success Metrics
 
@@ -486,16 +543,19 @@ cat PROGRESSIVE_SCRAPING.md
 - **2025-10-31 Evening**: Working demo + progressive scraping
 - **2025-10-31 Night**: Documentation + status tracking
 - **2025-10-31 Late Night**: Task 2.5-2.12 (Phase 2 complete!)
+- **2025-11-01 Morning**: Task 3.1 - League Extractor (Phase 3 started!)
+- **2025-11-01 Morning**: Task 3.2 - Series Extractor
+- **2025-11-01 Afternoon**: Task 3.3 - Season Extractor
+- **2025-11-01 Afternoon**: Task 3.4 - Race Extractor
+- **2025-11-01 Afternoon**: Research on Driver/Team extractors - Moved Tasks 3.5-3.6 to backlog
 
-**Total Time**: ~12.5 hours
-**Tasks Completed**: 12 major tasks (Phase 2 complete!) + 1 bonus (smart caching)
-**Tests Written**: 147
-**Lines of Code**: 6,096
+**Total Time**: ~16 hours
+**Tasks Completed**: 16 major tasks (Phase 2 complete + Tasks 3.1-3.4)
+**Research Documents**: 1 (Driver/Team extractor analysis)
+**Tests Written**: 235
+**Lines of Code**: 8,565
 
 ---
 
-**Next Session Focus**: Choose from:
-- Continue with TASKS.md (Task 3.x: Entity Extractors)
-- Build season/race scrapers for full hierarchy
-- Implement professional CLI
-- Add schema validation
+**Next Session Focus**:
+- **Task 4.x: Orchestration Layer** (RECOMMENDED) - Build hierarchy walker to scrape League → Series → Season → Race with smart caching
