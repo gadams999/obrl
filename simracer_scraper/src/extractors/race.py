@@ -4,11 +4,14 @@ This module extracts race metadata and results from race detail pages.
 """
 
 import re
-from typing import Any
+from typing import Any, TYPE_CHECKING
 
 from bs4 import BeautifulSoup
 
 from .base import BaseExtractor
+
+if TYPE_CHECKING:
+    from ..utils.browser_manager import BrowserManager
 
 
 class RaceExtractor(BaseExtractor):
@@ -17,6 +20,41 @@ class RaceExtractor(BaseExtractor):
     Extracts race metadata and results table from race pages.
     URL format: https://www.simracerhub.com/season_race.php?schedule_id={id}
     """
+
+    def __init__(
+        self,
+        rate_limit_seconds: float = 2.0,
+        rate_limit_range: tuple[float, float] | None = None,
+        max_retries: int = 3,
+        timeout: int = 30,
+        backoff_factor: int = 2,
+        render_js: bool = False,
+        browser_manager: "BrowserManager | None" = None,
+    ):
+        """Initialize the race extractor.
+
+        Args:
+            rate_limit_seconds: Fixed seconds between requests (default: 2.0)
+                Ignored if rate_limit_range is provided or browser_manager is used
+            rate_limit_range: Tuple of (min, max) seconds for randomized delay
+                If provided, overrides rate_limit_seconds
+                Example: (2.0, 4.0) for random delay between 2-4 seconds
+                Ignored if browser_manager is used
+            max_retries: Maximum retry attempts (default: 3)
+            timeout: Request timeout in seconds (default: 30)
+            backoff_factor: Exponential backoff multiplier (default: 2)
+            render_js: Use JavaScript rendering (default: False)
+            browser_manager: Shared browser manager for coordinated rate limiting
+        """
+        super().__init__(
+            rate_limit_seconds,
+            rate_limit_range,
+            max_retries,
+            timeout,
+            backoff_factor,
+            render_js,
+            browser_manager,
+        )
 
     def extract(self, url: str) -> dict[str, Any]:
         """Extract race data from a race detail page.
@@ -188,24 +226,25 @@ class RaceExtractor(BaseExtractor):
             result = {}
 
             # Position (column 0)
-            result["position"] = int(cells[0].get_text(strip=True))
+            result["finish_position"] = int(cells[0].get_text(strip=True))
 
-            # Driver name and ID (column 1)
-            driver_cell = cells[1]
-            driver_link = driver_cell.find("a")
-            if driver_link:
-                result["driver_name"] = driver_link.get_text(strip=True)
-                # Extract driver_id from href
-                href = driver_link.get("href", "")
-                match = re.search(r"driver_id=(\d+)", href)
-                if match:
-                    result["driver_id"] = int(match.group(1))
-            else:
-                result["driver_name"] = driver_cell.get_text(strip=True)
+            # Car number (column 1)
+            if len(cells) > 1:
+                result["car_number"] = cells[1].get_text(strip=True)
 
-            # Car number (column 2)
+            # Driver name and ID (column 2)
             if len(cells) > 2:
-                result["car_number"] = cells[2].get_text(strip=True)
+                driver_cell = cells[2]
+                driver_link = driver_cell.find("a")
+                if driver_link:
+                    result["driver_name"] = driver_link.get_text(strip=True)
+                    # Extract driver_id from href
+                    href = driver_link.get("href", "")
+                    match = re.search(r"driver_id=(\d+)", href)
+                    if match:
+                        result["driver_id"] = int(match.group(1))
+                else:
+                    result["driver_name"] = driver_cell.get_text(strip=True)
 
             # Additional columns if present
             if len(cells) > 3:

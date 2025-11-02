@@ -14,6 +14,8 @@ def extract_series_data(html: str) -> list[dict[str, Any]]:
 
     SimRacerHub league pages contain JavaScript like:
         series.push({id: 3714, name: "Wednesday Night", ...});
+    Or live site format:
+        series.push({sid:3714, sname:"Series Name", ...});
 
     Args:
         html: HTML content containing JavaScript
@@ -39,6 +41,13 @@ def extract_series_data(html: str) -> list[dict[str, Any]]:
 
         # Parse the JavaScript object into a dictionary
         series_data = _parse_js_object(series_js)
+
+        # Normalize field names (live site uses different names)
+        # sid → id, sname → name
+        if "sid" in series_data and "id" not in series_data:
+            series_data["id"] = series_data["sid"]
+        if "sname" in series_data and "name" not in series_data:
+            series_data["name"] = series_data["sname"]
 
         # Only include series with required fields (id and name)
         if "id" in series_data and "name" in series_data:

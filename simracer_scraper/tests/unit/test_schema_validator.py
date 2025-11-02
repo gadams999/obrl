@@ -142,8 +142,9 @@ def test_league_series_schema_structure():
 
     # Check for required fields
     assert "required_fields" in schema
-    assert "id" in schema["required_fields"]
+    assert "league_id" in schema["required_fields"]
     assert "name" in schema["required_fields"]
+    assert "url" in schema["required_fields"]
 
 
 def test_series_seasons_schema_structure():
@@ -461,7 +462,7 @@ def test_validate_data_valid_league():
 
     # Valid league data with all required fields
     valid_data = {
-        "id": 1558,
+        "league_id": 1558,
         "name": "The OBRL",
         "description": "Online racing league",
         "url": "https://www.simracerhub.com/league_series.php?league_id=1558",
@@ -525,7 +526,11 @@ def test_validate_data_all_entity_types():
     validator = SchemaValidator()
 
     # Test league_series
-    league_data = {"id": 1558, "name": "The OBRL"}
+    league_data = {
+        "league_id": 1558,
+        "name": "The OBRL",
+        "url": "https://www.simracerhub.com/league_series.php?league_id=1558",
+    }
     assert validator.validate_extracted_data("league_series", league_data) is True
 
     # Test series_seasons
@@ -548,8 +553,9 @@ def test_validate_data_extra_fields_allowed():
 
     # Valid data with extra fields
     data_with_extras = {
-        "id": 1558,
+        "league_id": 1558,
         "name": "The OBRL",
+        "url": "https://www.simracerhub.com/league_series.php?league_id=1558",
         "extra_field_1": "some value",
         "extra_field_2": 12345,
         "nested": {"data": "allowed"},
@@ -587,7 +593,11 @@ def test_validate_data_single_missing_field():
     validator = SchemaValidator()
 
     # Missing only 'name' field
-    invalid_data = {"id": 1558}
+    invalid_data = {
+        "league_id": 1558,
+        "url": "https://www.simracerhub.com/league_series.php?league_id=1558",
+        # missing 'name'
+    }
 
     # Should raise with single-field error message
     with pytest.raises(SchemaChangeDetected, match="Missing required field"):

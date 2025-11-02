@@ -4,11 +4,16 @@ This module coordinates the scraping of league hierarchies using the extractor
 classes and database storage with smart caching.
 """
 
+import logging
 from typing import Any
 
 from .database import Database
 from .extractors import LeagueExtractor, RaceExtractor, SeasonExtractor, SeriesExtractor
 from .schema_validator import SchemaValidator
+from .utils.browser_manager import BrowserManager
+
+# Setup logger
+logger = logging.getLogger(__name__)
 
 
 class Orchestrator:
@@ -50,22 +55,38 @@ class Orchestrator:
         self.max_retries = max_retries
         self.timeout = timeout
 
+        # CRITICAL: Create ONE shared browser manager for ALL extractors
+        # This ensures:
+        # 1. No async loop conflicts (one browser across all extractors)
+        # 2. Shared rate limiting (delays enforced across ALL requests, not per-extractor)
+        # 3. Sequential processing (one request at a time, never concurrent)
+        if rate_limit_range:
+            self._browser_manager = BrowserManager(rate_limit_range=rate_limit_range)
+        else:
+            self._browser_manager = BrowserManager(
+                rate_limit_range=(rate_limit_seconds, rate_limit_seconds)
+            )
+
         # Initialize extractors with rate limiting configuration
         extractor_kwargs = {
             "max_retries": max_retries,
             "timeout": timeout,
+            "browser_manager": self._browser_manager,  # CRITICAL: Share browser manager
         }
 
-        # Use randomized or fixed rate limiting
+        # Use randomized or fixed rate limiting (ignored when browser_manager is provided)
         if rate_limit_range:
             extractor_kwargs["rate_limit_range"] = rate_limit_range
         else:
             extractor_kwargs["rate_limit_seconds"] = rate_limit_seconds
 
-        self.league_extractor = LeagueExtractor(**extractor_kwargs)
-        self.series_extractor = SeriesExtractor(**extractor_kwargs)
-        self.season_extractor = SeasonExtractor(**extractor_kwargs)
-        self.race_extractor = RaceExtractor(**extractor_kwargs)
+        # League and Series use static HTML (fast) - no JavaScript needed
+        self.league_extractor = LeagueExtractor(**extractor_kwargs | {"render_js": False})
+        self.series_extractor = SeriesExtractor(**extractor_kwargs | {"render_js": False})
+
+        # Season and Race require JavaScript rendering (slow but necessary)
+        self.season_extractor = SeasonExtractor(**extractor_kwargs | {"render_js": True})
+        self.race_extractor = RaceExtractor(**extractor_kwargs | {"render_js": True})
 
         # Progress tracking
         self.progress = {
@@ -82,7 +103,10 @@ class Orchestrator:
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        """Exit context manager."""
+        """Exit context manager - cleanup browser resources."""
+        # Close shared browser
+        if self._browser_manager:
+            self._browser_manager.close()
         # Don't suppress exceptions
         return False
 
@@ -163,10 +187,9 @@ class Orchestrator:
         try:
             # Check cache
             if cache_max_age_days is not None:
-                is_cached = self.db.is_url_cached(
-                    league_url, "league", cache_max_age_days
-                )
+                is_cached = self.db.is_url_cached(league_url, "league", cache_max_age_days)
                 if is_cached:
+                    logger.info(f"⚡ CACHED (skipped): {league_url}")
                     self.progress["skipped_cached"] += 1
                     self.db.log_scrape(
                         "league",
@@ -178,25 +201,29 @@ class Orchestrator:
                     return self.get_progress()
 
             # Extract league data
+            logger.info(f"🌐 FETCHING: {league_url}")
             league_data = self.league_extractor.extract(league_url)
             metadata = league_data["metadata"]
 
             # Store league in database
+            import datetime
+
             self.db.upsert_league(
                 league_id=metadata["league_id"],
-                name=metadata["name"],
-                url=metadata["url"],
-                description=metadata.get("description"),
-                organizer=metadata.get("organizer"),
+                data={
+                    "name": metadata["name"],
+                    "url": metadata["url"],
+                    "description": metadata.get("description"),
+                    "organizer": metadata.get("organizer"),
+                    "scraped_at": datetime.datetime.now().isoformat(),
+                },
             )
 
             self.progress["leagues_scraped"] += 1
 
             # Log successful scrape
             duration_ms = int((time_module.time() - start_time) * 1000)
-            self.db.log_scrape(
-                "league", league_url, "success", duration_ms=duration_ms
-            )
+            self.db.log_scrape("league", league_url, "success", duration_ms=duration_ms)
 
             # If depth allows, scrape child series
             if depth in ["series", "season", "race"]:
@@ -205,9 +232,20 @@ class Orchestrator:
                 # Apply series filter if specified
                 if "series_ids" in filters:
                     allowed_ids = set(filters["series_ids"])
-                    series_urls = [
-                        s for s in series_urls if s["series_id"] in allowed_ids
-                    ]
+                    series_urls = [s for s in series_urls if s["series_id"] in allowed_ids]
+
+                # Store series names immediately from league JavaScript data
+                # This ensures we capture the correct names before fetching series pages
+                for series_info in series_urls:
+                    self.db.upsert_series(
+                        series_id=series_info["series_id"],
+                        league_id=metadata["league_id"],
+                        data={
+                            "name": series_info.get("name", "Unknown Series"),
+                            "url": series_info["url"],
+                            "scraped_at": datetime.datetime.now().isoformat(),
+                        },
+                    )
 
                 # Scrape each series
                 for series_info in series_urls:
@@ -223,9 +261,7 @@ class Orchestrator:
 
         except Exception as e:
             # Log error
-            self.progress["errors"].append(
-                {"entity": "league", "url": league_url, "error": str(e)}
-            )
+            self.progress["errors"].append({"entity": "league", "url": league_url, "error": str(e)})
             duration_ms = int((time_module.time() - start_time) * 1000)
             self.db.log_scrape(
                 "league", league_url, "failed", error_msg=str(e), duration_ms=duration_ms
@@ -257,38 +293,48 @@ class Orchestrator:
         try:
             # Check cache
             if cache_max_age_days is not None:
-                is_cached = self.db.is_url_cached(
-                    series_url, "series", cache_max_age_days
-                )
+                is_cached = self.db.is_url_cached(series_url, "series", cache_max_age_days)
                 if is_cached:
+                    logger.info(f"⚡ CACHED (skipped): {series_url}")
                     self.progress["skipped_cached"] += 1
                     return
 
             # Extract series data
+            logger.info(f"🌐 FETCHING: {series_url}")
             series_data = self.series_extractor.extract(series_url)
             metadata = series_data["metadata"]
 
             # Store series in database
+            import datetime
+
+            # Check if series already has a name (from league JavaScript)
+            existing_series = self.db.get_series(metadata["series_id"])
+            series_name = metadata["name"]
+            if existing_series and existing_series.get("name"):
+                # Preserve the name from league JavaScript (more accurate)
+                series_name = existing_series["name"]
+
             self.db.upsert_series(
                 series_id=metadata["series_id"],
                 league_id=league_id,
-                name=metadata["name"],
-                url=metadata["url"],
-                description=metadata.get("description"),
-                vehicle_type=metadata.get("vehicle_type"),
-                day_of_week=metadata.get("day_of_week"),
-                active=metadata.get("active"),
-                season_count=metadata.get("season_count"),
-                created_date=metadata.get("created_date"),
+                data={
+                    "name": series_name,
+                    "url": metadata["url"],
+                    "description": metadata.get("description"),
+                    "vehicle_type": metadata.get("vehicle_type"),
+                    "day_of_week": metadata.get("day_of_week"),
+                    "active": metadata.get("active"),
+                    "season_count": metadata.get("season_count"),
+                    "created_date": metadata.get("created_date"),
+                    "scraped_at": datetime.datetime.now().isoformat(),
+                },
             )
 
             self.progress["series_scraped"] += 1
 
             # Log successful scrape
             duration_ms = int((time_module.time() - start_time) * 1000)
-            self.db.log_scrape(
-                "series", series_url, "success", duration_ms=duration_ms
-            )
+            self.db.log_scrape("series", series_url, "success", duration_ms=duration_ms)
 
             # If depth allows, scrape child seasons
             if depth in ["season", "race"]:
@@ -304,10 +350,24 @@ class Orchestrator:
                     # Limit number of seasons
                     seasons = seasons[: filters["season_limit"]]
 
+                # Store season names immediately from series JavaScript data
+                # This ensures we capture the correct names before fetching season pages
+                for season_info in seasons:
+                    self.db.upsert_season(
+                        season_id=season_info.get("season_id", 0),
+                        series_id=metadata["series_id"],
+                        data={
+                            "name": season_info.get("name", "Unknown Season"),
+                            "url": season_info["url"],
+                            "scraped_at": datetime.datetime.now().isoformat(),
+                        },
+                    )
+
                 # Scrape each season
                 for season_info in seasons:
                     self.scrape_season(
                         season_url=season_info["url"],
+                        season_id=season_info.get("season_id", 0),
                         series_id=metadata["series_id"],
                         depth=depth,
                         filters=filters,
@@ -315,9 +375,7 @@ class Orchestrator:
                     )
 
         except Exception as e:
-            self.progress["errors"].append(
-                {"entity": "series", "url": series_url, "error": str(e)}
-            )
+            self.progress["errors"].append({"entity": "series", "url": series_url, "error": str(e)})
             duration_ms = int((time_module.time() - start_time) * 1000)
             self.db.log_scrape(
                 "series", series_url, "failed", error_msg=str(e), duration_ms=duration_ms
@@ -327,6 +385,7 @@ class Orchestrator:
     def scrape_season(
         self,
         season_url: str,
+        season_id: int,
         series_id: int,
         depth: str,
         filters: dict[str, Any] | None = None,
@@ -335,7 +394,8 @@ class Orchestrator:
         """Scrape a season with optional depth control.
 
         Args:
-            season_url: URL like "season_race.php?series_id=3714"
+            season_url: URL like "season_race.php?series_id=3714&season_id=17424"
+            season_id: Season ID (from parent series data)
             series_id: Parent series ID
             depth: Current depth setting
             filters: Filter dictionary
@@ -349,31 +409,42 @@ class Orchestrator:
         try:
             # Check cache
             if cache_max_age_days is not None:
-                is_cached = self.db.is_url_cached(
-                    season_url, "season", cache_max_age_days
-                )
+                is_cached = self.db.is_url_cached(season_url, "season", cache_max_age_days)
                 if is_cached:
+                    logger.info(f"⚡ CACHED (skipped): {season_url}")
                     self.progress["skipped_cached"] += 1
                     return
 
             # Extract season data
+            logger.info(f"🌐 FETCHING: {season_url}")
             season_data = self.season_extractor.extract(season_url)
             metadata = season_data["metadata"]
 
             # Store season in database
+            import datetime
+
+            # Check if season already has a name (from series JavaScript)
+            existing_season = self.db.get_season(season_id)
+            season_name = metadata["name"]
+            if existing_season and existing_season.get("name"):
+                # Preserve the name from series JavaScript (more accurate)
+                season_name = existing_season["name"]
+
             self.db.upsert_season(
+                season_id=season_id,
                 series_id=metadata["series_id"],
-                name=metadata["name"],
-                url=metadata["url"],
+                data={
+                    "name": season_name,
+                    "url": metadata["url"],
+                    "scraped_at": datetime.datetime.now().isoformat(),
+                },
             )
 
             self.progress["seasons_scraped"] += 1
 
             # Log successful scrape
             duration_ms = int((time_module.time() - start_time) * 1000)
-            self.db.log_scrape(
-                "season", season_url, "success", duration_ms=duration_ms
-            )
+            self.db.log_scrape("season", season_url, "success", duration_ms=duration_ms)
 
             # If depth allows, scrape races
             if depth == "race":
@@ -383,17 +454,19 @@ class Orchestrator:
                 # if "race_limit" in filters:
                 #     races = races[:filters["race_limit"]]
 
-                # Scrape each race
+                # CRITICAL: Scrape each race SEQUENTIALLY (one at a time, never concurrent)
+                # This ensures respectful rate limiting - each race waits for the previous
+                # one to complete before starting. Combined with shared BrowserManager,
+                # this guarantees proper delays between ALL requests.
                 for race_info in races:
                     self.scrape_race(
                         race_url=race_info["url"],
+                        season_id=season_id,
                         cache_max_age_days=cache_max_age_days,
                     )
 
         except Exception as e:
-            self.progress["errors"].append(
-                {"entity": "season", "url": season_url, "error": str(e)}
-            )
+            self.progress["errors"].append({"entity": "season", "url": season_url, "error": str(e)})
             duration_ms = int((time_module.time() - start_time) * 1000)
             self.db.log_scrape(
                 "season", season_url, "failed", error_msg=str(e), duration_ms=duration_ms
@@ -403,12 +476,14 @@ class Orchestrator:
     def scrape_race(
         self,
         race_url: str,
+        season_id: int,
         cache_max_age_days: int | None = 7,
     ) -> None:
         """Scrape a race and its results.
 
         Args:
             race_url: URL like "season_race.php?schedule_id=324462"
+            season_id: Season ID (foreign key for races table)
             cache_max_age_days: Days before cache expires
         """
         import time as time_module
@@ -418,44 +493,160 @@ class Orchestrator:
         try:
             # Check cache
             if cache_max_age_days is not None:
-                is_cached = self.db.is_url_cached(
-                    race_url, "race", cache_max_age_days
-                )
+                is_cached = self.db.is_url_cached(race_url, "race", cache_max_age_days)
                 if is_cached:
+                    logger.info(f"⚡ CACHED (skipped): {race_url}")
                     self.progress["skipped_cached"] += 1
                     return
 
             # Extract race data
+            logger.info(f"🌐 FETCHING: {race_url}")
             race_data = self.race_extractor.extract(race_url)
             metadata = race_data["metadata"]
 
-            # Store race in database
-            # Note: We don't have all race fields from metadata yet
-            # This is a simplified version - may need to enhance RaceExtractor
-            self.db.upsert_race(
+            # Store race in database and get internal race_id for storing results
+            import datetime
+
+            # Use season_id passed from parent scrape_season() method
+            race_id = self.db.upsert_race(
                 schedule_id=metadata["schedule_id"],
-                name=metadata["name"],
-                url=metadata["url"],
+                season_id=season_id,
+                data={
+                    "name": metadata["name"],
+                    "url": metadata["url"],
+                    "race_number": metadata.get("race_number", 0),
+                    "scraped_at": datetime.datetime.now().isoformat(),
+                },
             )
 
             self.progress["races_scraped"] += 1
 
+            # Store race results
+            results = race_data.get("results", [])
+            for result in results:
+                self._store_race_result(race_id, result, season_id)
+
             # Log successful scrape
             duration_ms = int((time_module.time() - start_time) * 1000)
-            self.db.log_scrape(
-                "race", race_url, "success", duration_ms=duration_ms
-            )
-
-            # TODO: Store race results in race_results table
-            # for result in race_data["results"]:
-            #     self.db.upsert_race_result(...)
+            self.db.log_scrape("race", race_url, "success", duration_ms=duration_ms)
 
         except Exception as e:
-            self.progress["errors"].append(
-                {"entity": "race", "url": race_url, "error": str(e)}
-            )
+            self.progress["errors"].append({"entity": "race", "url": race_url, "error": str(e)})
             duration_ms = int((time_module.time() - start_time) * 1000)
             self.db.log_scrape(
                 "race", race_url, "failed", error_msg=str(e), duration_ms=duration_ms
             )
             # Don't re-raise, continue with other races
+
+    def _store_race_result(self, race_id: int, result: dict, season_id: int) -> None:
+        """Store a single race result in the database.
+
+        Args:
+            race_id: Internal race ID (from races table)
+            result: Result dictionary from RaceExtractor
+            season_id: Season ID for resolving league context
+
+        Note:
+            If driver_id is not in the result (no link in HTML), the result
+            will be skipped. To handle this, we'd need to implement fuzzy
+            name matching against existing drivers.
+        """
+        import datetime
+
+        # Get driver_id from result
+        driver_id = result.get("driver_id")
+        if not driver_id:
+            # Driver link not found - skip for now
+            # TODO: Implement fuzzy name matching with find_driver_by_name()
+            return
+
+        driver_name = result.get("driver_name", "Unknown Driver")
+
+        # Get league_id from season
+        # Query database to get series_id from season, then league_id from series
+        season = self.db.get_season(season_id)
+        if not season:
+            # Can't find season - skip result
+            return
+
+        series_id = season["series_id"]
+        series = self.db.get_series(series_id)
+        if not series:
+            # Can't find series - skip result
+            return
+
+        league_id = series["league_id"]
+
+        # Ensure driver exists in database
+        try:
+            self.db.upsert_driver(
+                driver_id=driver_id,
+                league_id=league_id,
+                data={
+                    "name": driver_name,
+                    "url": f"https://www.simracerhub.com/driver_stats.php?driver_id={driver_id}",
+                    "scraped_at": datetime.datetime.now().isoformat(),
+                },
+            )
+        except Exception as e:
+            # Driver upsert failed - skip this result
+            # Log the error for debugging
+            print(f"Warning: Failed to upsert driver {driver_id}: {e}")
+            return
+
+        # Map result fields to database schema
+        result_data = {
+            "finish_position": result.get("finish_position"),
+            "car_number": result.get("car_number"),
+            "laps_completed": self._parse_int(result.get("laps")),
+            "interval": result.get("interval"),
+            "laps_led": self._parse_int(result.get("laps_led")),
+            "race_points": self._parse_float(result.get("points")),
+        }
+
+        # Store race result
+        try:
+            self.db.upsert_race_result(
+                race_id=race_id,
+                driver_id=driver_id,
+                data=result_data,
+            )
+        except Exception:
+            # Failed to store result - continue with others
+            pass
+
+    def _parse_int(self, value: str | int | None) -> int | None:
+        """Safely parse a value to int.
+
+        Args:
+            value: Value to parse
+
+        Returns:
+            Parsed int or None if parsing fails
+        """
+        if value is None:
+            return None
+        if isinstance(value, int):
+            return value
+        try:
+            return int(value)
+        except (ValueError, TypeError):
+            return None
+
+    def _parse_float(self, value: str | float | None) -> float | None:
+        """Safely parse a value to float.
+
+        Args:
+            value: Value to parse
+
+        Returns:
+            Parsed float or None if parsing fails
+        """
+        if value is None:
+            return None
+        if isinstance(value, float):
+            return value
+        try:
+            return float(value)
+        except (ValueError, TypeError):
+            return None

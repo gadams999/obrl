@@ -149,10 +149,13 @@ class TestLeagueExtractorExtraction:
             # Should have 4 series from fixture
             assert len(series_urls) == 4
 
-            # Each should be a valid series URL
-            for url in series_urls:
-                assert "series_id=" in url
-                assert url.startswith("https://www.simracerhub.com/")
+            # Each should be a valid series URL dict
+            for series_info in series_urls:
+                assert isinstance(series_info, dict)
+                assert "url" in series_info
+                assert "series_id" in series_info
+                assert "series_id=" in series_info["url"]
+                assert series_info["url"].startswith("https://www.simracerhub.com/")
 
     def test_extract_series_ids_correct(self, league_extractor, league_fixture_html):
         """Test series IDs are correctly extracted."""
@@ -165,8 +168,8 @@ class TestLeagueExtractorExtraction:
 
             series_urls = result["child_urls"]["series"]
 
-            # Extract IDs from URLs
-            series_ids = [int(url.split("series_id=")[1].split("&")[0]) for url in series_urls]
+            # Extract IDs from dicts
+            series_ids = [info["series_id"] for info in series_urls]
 
             # Should match fixture series IDs
             assert 3714 in series_ids
@@ -344,8 +347,8 @@ class TestLeagueExtractorEdgeCasesExtended:
                 "https://www.simracerhub.com/league_series.php?league_id=100"
             )
 
-            # Should fall back to full title text
-            assert result["metadata"]["name"] == "League:"
+            # Empty suffix after colon falls back to "Unknown League"
+            assert result["metadata"]["name"] == "Unknown League"
 
     def test_extract_league_name_no_h1_uses_title(self, league_extractor):
         """Test league name uses title when no H1 present."""
@@ -368,7 +371,8 @@ class TestLeagueExtractorEdgeCasesExtended:
                 "https://www.simracerhub.com/league_series.php?league_id=100"
             )
 
-            assert result["metadata"]["name"] == "Test League Title"
+            # Title without colon falls back to "Unknown League"
+            assert result["metadata"]["name"] == "Unknown League"
 
     def test_extract_description_p_tag_empty(self, league_extractor):
         """Test description extraction when p tag is empty."""

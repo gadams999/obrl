@@ -4,11 +4,14 @@ This module extracts season metadata and discovers race URLs from season pages.
 """
 
 import re
-from typing import Any
+from typing import Any, TYPE_CHECKING
 
 from bs4 import BeautifulSoup
 
 from .base import BaseExtractor
+
+if TYPE_CHECKING:
+    from ..utils.browser_manager import BrowserManager
 
 
 class SeasonExtractor(BaseExtractor):
@@ -19,6 +22,41 @@ class SeasonExtractor(BaseExtractor):
 
     Note: The URL uses series_id parameter but shows the current season's races.
     """
+
+    def __init__(
+        self,
+        rate_limit_seconds: float = 2.0,
+        rate_limit_range: tuple[float, float] | None = None,
+        max_retries: int = 3,
+        timeout: int = 30,
+        backoff_factor: int = 2,
+        render_js: bool = False,
+        browser_manager: "BrowserManager | None" = None,
+    ):
+        """Initialize the season extractor.
+
+        Args:
+            rate_limit_seconds: Fixed seconds between requests (default: 2.0)
+                Ignored if rate_limit_range is provided or browser_manager is used
+            rate_limit_range: Tuple of (min, max) seconds for randomized delay
+                If provided, overrides rate_limit_seconds
+                Example: (2.0, 4.0) for random delay between 2-4 seconds
+                Ignored if browser_manager is used
+            max_retries: Maximum retry attempts (default: 3)
+            timeout: Request timeout in seconds (default: 30)
+            backoff_factor: Exponential backoff multiplier (default: 2)
+            render_js: Use JavaScript rendering (default: False)
+            browser_manager: Shared browser manager for coordinated rate limiting
+        """
+        super().__init__(
+            rate_limit_seconds,
+            rate_limit_range,
+            max_retries,
+            timeout,
+            backoff_factor,
+            render_js,
+            browser_manager,
+        )
 
     def extract(self, url: str) -> dict[str, Any]:
         """Extract season data from a season race page.
@@ -178,7 +216,10 @@ class SeasonExtractor(BaseExtractor):
         return child_urls
 
     def _extract_races(self, soup: BeautifulSoup) -> list[dict[str, Any]]:
-        """Extract race data from HTML table.
+        """Extract race data from dropdown menu or HTML table.
+
+        SimRacerHub shows races in a dropdown menu when JavaScript is enabled,
+        or in a table when JavaScript is disabled.
 
         Args:
             soup: BeautifulSoup object
@@ -188,22 +229,17 @@ class SeasonExtractor(BaseExtractor):
         """
         races = []
         base_url = "https://www.simracerhub.com"
+        seen_schedule_ids = set()  # Track unique races
 
-        # Find the schedule table
-        table = soup.find("table", class_="schedule-table")
-        if not table:
-            # Try finding any table
-            table = soup.find("table")
+        # Method 1: Try dropdown menu (JavaScript-rendered content)
+        # Note: There may be multiple dropdowns, find the one with schedule links
+        dropdowns = soup.find_all("ul", class_="dropdown-menu")
+        for dropdown in dropdowns:
+            links = dropdown.find_all("a", href=re.compile(r"schedule_id=\d+"))
 
-        if not table:
-            return []
-
-        # Find all race links in the table
-        rows = table.find_all("tr")
-
-        for row in rows:
-            # Look for links with schedule_id parameter
-            links = row.find_all("a", href=re.compile(r"schedule_id=\d+"))
+            # Skip dropdowns without schedule links
+            if not links:
+                continue
 
             for link in links:
                 href = link.get("href", "")
@@ -214,11 +250,16 @@ class SeasonExtractor(BaseExtractor):
                 if match:
                     schedule_id = int(match.group(1))
 
+                    # Skip duplicates
+                    if schedule_id in seen_schedule_ids:
+                        continue
+                    seen_schedule_ids.add(schedule_id)
+
                     # Build full URL
                     if href.startswith("http"):
                         full_url = href
                     else:
-                        full_url = f"{base_url}/{href}"
+                        full_url = f"{base_url}{href}" if href.startswith("/") else f"{base_url}/{href}"
 
                     race_dict = {
                         "url": full_url,
@@ -227,5 +268,42 @@ class SeasonExtractor(BaseExtractor):
                     }
 
                     races.append(race_dict)
+
+        # Method 2: Fallback to table (static HTML content)
+        if not races:
+            table = soup.find("table", class_="schedule-table")
+            if not table:
+                table = soup.find("table")
+
+            if table:
+                rows = table.find_all("tr")
+
+                for row in rows:
+                    links = row.find_all("a", href=re.compile(r"schedule_id=\d+"))
+
+                    for link in links:
+                        href = link.get("href", "")
+                        track_name = link.get_text(strip=True)
+
+                        match = re.search(r"schedule_id=(\d+)", href)
+                        if match:
+                            schedule_id = int(match.group(1))
+
+                            if schedule_id in seen_schedule_ids:
+                                continue
+                            seen_schedule_ids.add(schedule_id)
+
+                            if href.startswith("http"):
+                                full_url = href
+                            else:
+                                full_url = f"{base_url}/{href}"
+
+                            race_dict = {
+                                "url": full_url,
+                                "schedule_id": schedule_id,
+                                "track": track_name,
+                            }
+
+                            races.append(race_dict)
 
         return races

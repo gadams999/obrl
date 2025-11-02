@@ -4,13 +4,16 @@ This module extracts league metadata and discovers series URLs from league pages
 """
 
 import re
-from typing import Any
+from typing import Any, TYPE_CHECKING
 
 from bs4 import BeautifulSoup
 
 from ..schema_validator import SchemaValidator
 from ..utils.js_parser import extract_series_data
 from .base import BaseExtractor
+
+if TYPE_CHECKING:
+    from ..utils.browser_manager import BrowserManager
 
 
 class LeagueExtractor(BaseExtractor):
@@ -26,19 +29,37 @@ class LeagueExtractor(BaseExtractor):
     def __init__(
         self,
         rate_limit_seconds: float = 2.0,
+        rate_limit_range: tuple[float, float] | None = None,
         max_retries: int = 3,
         timeout: int = 30,
         backoff_factor: int = 2,
+        render_js: bool = False,
+        browser_manager: "BrowserManager | None" = None,
     ):
         """Initialize the league extractor.
 
         Args:
-            rate_limit_seconds: Minimum seconds between requests (default: 2.0)
+            rate_limit_seconds: Fixed seconds between requests (default: 2.0)
+                Ignored if rate_limit_range is provided or browser_manager is used
+            rate_limit_range: Tuple of (min, max) seconds for randomized delay
+                If provided, overrides rate_limit_seconds
+                Example: (2.0, 4.0) for random delay between 2-4 seconds
+                Ignored if browser_manager is used
+            render_js: Use JavaScript rendering (default: False)
             max_retries: Maximum retry attempts (default: 3)
             timeout: Request timeout in seconds (default: 30)
             backoff_factor: Exponential backoff multiplier (default: 2)
+            browser_manager: Shared browser manager for coordinated rate limiting
         """
-        super().__init__(rate_limit_seconds, max_retries, timeout, backoff_factor)
+        super().__init__(
+            rate_limit_seconds,
+            rate_limit_range,
+            max_retries,
+            timeout,
+            backoff_factor,
+            render_js,
+            browser_manager,
+        )
         self.validator = SchemaValidator()
 
     def extract(self, url: str) -> dict[str, Any]:
@@ -153,9 +174,11 @@ class LeagueExtractor(BaseExtractor):
         """Extract league name from page.
 
         Tries multiple strategies:
-        1. H1 tag
-        2. Page title
-        3. Default fallback
+        1. Look for dropdown-toggle button (SimRacerHub-specific pattern)
+        2. Look for league name in prominent text content (headings)
+        3. Try page title (extracting name from title)
+        4. H1 tag (often generic "League Series")
+        5. Default fallback
 
         Args:
             soup: BeautifulSoup object
@@ -163,24 +186,53 @@ class LeagueExtractor(BaseExtractor):
         Returns:
             League name string
         """
-        # Try H1 tag first
-        h1 = soup.find("h1")
-        if h1:
-            name = h1.get_text(strip=True)
-            if name:
-                return name
+        # Strategy 1: Look for dropdown button (SimRacerHub uses this for league names)
+        # The league name is in: <button class="dropdown-toggle bold">League Name</button>
+        # Note: Must have BOTH dropdown-toggle AND bold classes (not just dropdown-toggle)
+        dropdown_buttons = soup.find_all("button", class_="dropdown-toggle")
+        for button in dropdown_buttons:
+            button_classes = button.get("class", [])
+            # Check if button has BOTH dropdown-toggle AND bold classes
+            if "dropdown-toggle" in button_classes and "bold" in button_classes:
+                name = button.get_text(strip=True)
+                if name and len(name) > 3:
+                    return name
 
-        # Try page title
+        # Strategy 2: Try h2 or h3 tags (often contain the actual league name)
+        for tag in ["h2", "h3", "h4"]:
+            heading = soup.find(tag)
+            if heading:
+                name = heading.get_text(strip=True)
+                # Ignore generic headings
+                if name and name not in ["League Series", "Series", "Seasons", "Race Results"]:
+                    return name
+
+        # Try finding a div with class containing "league" or "name"
+        for class_pattern in ["league-name", "league-title", "league-header"]:
+            div = soup.find("div", class_=re.compile(class_pattern, re.I))
+            if div:
+                name = div.get_text(strip=True)
+                if name and len(name) > 3:
+                    return name
+
+        # Strategy 3: Try page title and extract meaningful part
         title = soup.find("title")
         if title:
             title_text = title.get_text(strip=True)
             # Remove "Sim Racer Hub: " prefix if present
             if ":" in title_text:
                 name = title_text.split(":", 1)[1].strip()
-                if name:
+                # Only use if it's not generic
+                if name and name not in ["League Series", "Series Seasons", "Race Results"]:
                     return name
-            if title_text:
-                return title_text
+
+        # Strategy 4: Try H1 tag (often generic but worth trying)
+        h1 = soup.find("h1")
+        if h1:
+            name = h1.get_text(strip=True)
+            # Only use if it's not generic
+            if name and name not in ["League Series", "Series Seasons", "Race Results"]:
+                return name
 
         # Fallback
         return "Unknown League"
@@ -237,14 +289,14 @@ class LeagueExtractor(BaseExtractor):
 
         return child_urls
 
-    def _extract_series_urls(self, soup: BeautifulSoup) -> list[str]:
+    def _extract_series_urls(self, soup: BeautifulSoup) -> list[dict[str, Any]]:
         """Extract series URLs from JavaScript data.
 
         Args:
             soup: BeautifulSoup object
 
         Returns:
-            List of series URLs
+            List of dicts with "url", "series_id", and "name" keys
         """
         # Extract series data from JavaScript
         html_str = str(soup)
@@ -258,7 +310,11 @@ class LeagueExtractor(BaseExtractor):
             if "id" in series:
                 series_id = series["id"]
                 url = f"{base_url}/series_seasons.php?series_id={series_id}"
-                series_urls.append(url)
+                series_urls.append({
+                    "url": url,
+                    "series_id": series_id,
+                    "name": series.get("name", "Unknown Series"),
+                })
 
         return series_urls
 

@@ -4,13 +4,16 @@ This module extracts series metadata and discovers season URLs from series pages
 """
 
 import re
-from typing import Any
+from typing import Any, TYPE_CHECKING
 
 from bs4 import BeautifulSoup
 
 from ..schema_validator import SchemaValidator
 from ..utils.js_parser import extract_season_data
 from .base import BaseExtractor
+
+if TYPE_CHECKING:
+    from ..utils.browser_manager import BrowserManager
 
 
 class SeriesExtractor(BaseExtractor):
@@ -26,19 +29,37 @@ class SeriesExtractor(BaseExtractor):
     def __init__(
         self,
         rate_limit_seconds: float = 2.0,
+        rate_limit_range: tuple[float, float] | None = None,
         max_retries: int = 3,
         timeout: int = 30,
         backoff_factor: int = 2,
+        render_js: bool = False,
+        browser_manager: "BrowserManager | None" = None,
     ):
         """Initialize the series extractor.
 
         Args:
-            rate_limit_seconds: Minimum seconds between requests (default: 2.0)
+            rate_limit_seconds: Fixed seconds between requests (default: 2.0)
+                Ignored if rate_limit_range is provided or browser_manager is used
+            rate_limit_range: Tuple of (min, max) seconds for randomized delay
+                If provided, overrides rate_limit_seconds
+                Example: (2.0, 4.0) for random delay between 2-4 seconds
+                Ignored if browser_manager is used
             max_retries: Maximum retry attempts (default: 3)
             timeout: Request timeout in seconds (default: 30)
             backoff_factor: Exponential backoff multiplier (default: 2)
+            render_js: Use JavaScript rendering (default: False)
+            browser_manager: Shared browser manager for coordinated rate limiting
         """
-        super().__init__(rate_limit_seconds, max_retries, timeout, backoff_factor)
+        super().__init__(
+            rate_limit_seconds,
+            rate_limit_range,
+            max_retries,
+            timeout,
+            backoff_factor,
+            render_js,
+            browser_manager,
+        )
         self.validator = SchemaValidator()
 
     def extract(self, url: str) -> dict[str, Any]:
@@ -202,16 +223,17 @@ class SeriesExtractor(BaseExtractor):
         child_urls = {}
 
         # Extract seasons from JavaScript
-        seasons = self._extract_seasons(soup)
+        seasons = self._extract_seasons(soup, series_id)
         child_urls["seasons"] = seasons
 
         return child_urls
 
-    def _extract_seasons(self, soup: BeautifulSoup) -> list[dict[str, Any]]:
+    def _extract_seasons(self, soup: BeautifulSoup, series_id: int) -> list[dict[str, Any]]:
         """Extract season data from JavaScript.
 
         Args:
             soup: BeautifulSoup object
+            series_id: Series ID (used to build season URLs)
 
         Returns:
             List of season dictionaries with URLs and metadata
@@ -221,15 +243,19 @@ class SeriesExtractor(BaseExtractor):
         season_data = extract_season_data(html_str)
 
         # Build season dictionaries with URLs and metadata
+        # Note: Including season_id in URL to ensure uniqueness (required by DB schema)
         base_url = "https://www.simracerhub.com"
         seasons = []
 
         for season in season_data:
-            if "id" in season and "n" in season:
+            # Handle both fixture format (n) and live site format (sname)
+            season_name = season.get("n") or season.get("sname")
+
+            if "id" in season and season_name:
                 season_dict = {
-                    "url": f"{base_url}/season_race.php?season_id={season['id']}",
+                    "url": f"{base_url}/season_race.php?series_id={series_id}&season_id={season['id']}",
                     "season_id": season["id"],
-                    "name": season["n"],
+                    "name": season_name,
                 }
 
                 # Add optional metadata if present

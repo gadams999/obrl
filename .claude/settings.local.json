@@ -9,9 +9,16 @@
       "Bash(uv run ruff:*)",
       "Bash(cat:*)",
       "Bash(mkdir:*)",
-      "Bash(curl:*)"
+      "Bash(curl:*)",
+      "Bash(tree:*)",
+      "Bash(sqlite3:*)",
+      "Bash(uv run:*)"
     ],
     "deny": [],
     "ask": []
+  },
+  "env": {
+    "CLAUDE_CODE_ENABLE_TELEMETRY": "0",
+    "OTEL_METRICS_EXPORTER": "otlp"
   }
 }
