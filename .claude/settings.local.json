@@ -1,4 +1,8 @@
 {
+  "env": {
+    "CLAUDE_CODE_ENABLE_TELEMETRY": "0",
+    "OTEL_METRICS_EXPORTER": "otlp"
+  },
   "permissions": {
     "allow": [
       "WebFetch(domain:www.simracerhub.com)",
@@ -12,13 +16,10 @@
       "Bash(curl:*)",
       "Bash(tree:*)",
       "Bash(sqlite3:*)",
-      "Bash(uv run:*)"
+      "Bash(uv run:*)",
+      "Bash(cp:*)"
     ],
     "deny": [],
     "ask": []
-  },
-  "env": {
-    "CLAUDE_CODE_ENABLE_TELEMETRY": "0",
-    "OTEL_METRICS_EXPORTER": "otlp"
   }
 }

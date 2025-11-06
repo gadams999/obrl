@@ -101,6 +101,9 @@ logs/
 .env.local
 .env.*.local
 
+# Configuration files
+config.yaml
+
 # Testing
 coverage/
 .coverage
