@@ -5,3 +5,10 @@
 *.db-wal
 *.sqlite
 *.sqlite3
+
+# Test coverage
+.coverage
+htmlcov/
+
+# Ruff cache
+.ruff_cache/

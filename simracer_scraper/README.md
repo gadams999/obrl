@@ -28,31 +28,57 @@ This indicates the site operators prefer no automated scraping. Use of this tool
 
 ## Installation
 
+### Quick Start (For Casual Users)
+
+If you just want to use the scraper without development tools:
+
+```bash
+# 1. Clone the repository
+git clone <repository-url>
+cd obrl/simracer_scraper
+
+# 2. Create a virtual environment (Python 3.10+ required)
+python3 -m venv .venv
+
+# 3. Activate the virtual environment
+# On Linux/Mac:
+source .venv/bin/activate
+# On Windows:
+.venv\Scripts\activate
+
+# 4. Install dependencies
+pip install -r requirements.txt
+
+# 5. Install Playwright browsers (required for JavaScript rendering)
+playwright install chromium
+
+# 6. Copy configuration template
+cp config.yaml.example config.yaml
+# Edit config.yaml with your settings (optional)
+
+# 7. Run the scraper
+python scraper.py scrape league 1558
+```
+
+### For Developers
+
 This project uses [uv](https://github.com/astral-sh/uv) for package management and [mise](https://mise.jdx.dev/) for Python version management.
 
-### With uv (recommended)
+#### With uv (recommended)
 
 ```bash
 # Install dependencies and sync environment
 uv sync
+
+# Install Playwright browsers
+uv run playwright install chromium
 
 # Copy and configure environment file (optional)
 cp .env.example .env
 # Edit .env with your settings
 ```
 
-### With pip (alternative)
-
-```bash
-# Install dependencies
-pip install -r requirements.txt
-
-# Copy and configure environment file
-cp .env.example .env
-# Edit .env with your settings
-```
-
-### Python Version
+#### Python Version
 
 This project requires Python 3.10+. If using mise:
 
@@ -111,8 +137,11 @@ uv run simracer-scraper scrape --config production.yaml
 ### Without uv
 
 ```bash
-# Run directly with Python
-python -m src.cli scrape --url /league/your-league
+# Run with the wrapper script
+python scraper.py scrape league 1558
+
+# Or use the module syntax
+python -m src.cli scrape league 1558
 ```
 
 ## Output
