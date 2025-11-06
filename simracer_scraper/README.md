@@ -1,6 +1,6 @@
 # SimRacer Scraper
 
-A respectful web scraper for extracting racing league data from SimRacerHub.
+A hierarchical web scraper for extracting racing league data from SimRacerHub.
 
 ## ⚠️ Important Legal Notice
 
@@ -19,28 +19,28 @@ This indicates the site operators prefer no automated scraping. Use of this tool
 
 ## Features
 
-- **Rate-limited requests** - Configurable delays between requests (default: 2 seconds)
-- **Retry logic** - Automatic retry with exponential backoff
-- **Targeted scraping** - Only scrape specific configured pages
-- **Multiple output formats** - Save as JSON, CSV, or both
-- **Comprehensive logging** - Track all scraping activity
-- **Respectful user-agent** - Identifies the scraper with contact info
+- **Hierarchical scraping** - League → Series → Seasons → Races
+- **JavaScript rendering** - Handles dynamic content with Playwright
+- **Smart caching** - Database-driven to avoid redundant requests
+- **Rate limiting** - Respectful delays (2-4 seconds randomized)
+- **Depth control** - Stop scraping at any level
+- **100% test coverage** - Comprehensive unit tests
+- **Schema validation** - Detects site changes
+- **SQLite storage** - Single-file database
 
 ## Installation
 
-### Quick Start (For Casual Users)
-
-If you just want to use the scraper without development tools:
+### Quick Start (Casual Users)
 
 ```bash
-# 1. Clone the repository
+# 1. Clone repository
 git clone <repository-url>
 cd obrl/simracer_scraper
 
-# 2. Create a virtual environment (Python 3.10+ required)
+# 2. Create virtual environment (Python 3.10+ required)
 python3 -m venv .venv
 
-# 3. Activate the virtual environment
+# 3. Activate virtual environment
 # On Linux/Mac:
 source .venv/bin/activate
 # On Windows:
@@ -49,168 +49,181 @@ source .venv/bin/activate
 # 4. Install dependencies
 pip install -r requirements.txt
 
-# 5. Install Playwright browsers (required for JavaScript rendering)
+# 5. Install Playwright browsers
 playwright install chromium
 
 # 6. Copy configuration template
 cp config.yaml.example config.yaml
-# Edit config.yaml with your settings (optional)
+# Edit config.yaml with your league ID
 
 # 7. Run the scraper
-# Option A: Use config.yaml (edit league.id in config.yaml first)
 python scraper.py
-
-# Option B: Specify league on command line
-python scraper.py scrape league 1558
 ```
 
 ### For Developers
 
 This project uses [uv](https://github.com/astral-sh/uv) for package management and [mise](https://mise.jdx.dev/) for Python version management.
 
-#### With uv (recommended)
-
 ```bash
-# Install dependencies and sync environment
-uv sync
+# Install dependencies
+uv sync --all-extras
 
 # Install Playwright browsers
 uv run playwright install chromium
 
 # Copy and configure environment file (optional)
 cp .env.example .env
-# Edit .env with your settings
 ```
 
-#### Python Version
-
-This project requires Python 3.10+. If using mise:
-
+**Python Version**: 3.10+ required. If using mise:
 ```bash
-mise install  # Installs Python version from .python-version
+mise install  # Installs Python from .python-version
 ```
 
 ## Configuration
 
-The scraper can be configured via `config.yaml`:
+Edit `config.yaml`:
 
 ```yaml
-# Default league to scrape
 league:
   id: 1558              # Your league ID from SimRacerHub
   depth: race           # How deep to scrape: league, series, season, or race
-  database: simracer.db # Database file path
+  database: obrl.db     # Database file path
 
-# Scraping behavior
 scraping:
-  request_delay: 2.0    # Seconds between requests
+  request_delay: 2.0    # Seconds between requests (minimum)
   max_retries: 3
   timeout: 10
 
-# Logging
 logging:
   level: INFO           # DEBUG, INFO, WARNING, ERROR
 ```
 
-**Configuration Priority:** Command-line arguments override config.yaml settings.
+**Configuration Priority**: Command-line arguments override config.yaml settings.
 
 ## Usage
 
 ### Basic Usage
 
 ```bash
-# With uv (recommended)
-uv run python -m src.cli scrape
+# Simple usage with config.yaml
+python scraper.py
 
-# Or use the installed script
-uv run simracer-scraper scrape
+# Or with uv
+uv run simracer-scraper scrape league 1558
+```
 
-# Scrape a specific page
-uv run simracer-scraper scrape --url /league/the-obrl-presented-by-vctrylnsprts
+### Depth Control
 
-# Use custom config file
-uv run simracer-scraper scrape --config custom_config.yaml
+```bash
+# Scrape only league metadata
+python scraper.py scrape league 1558 --depth league
 
-# Specify output filename
-uv run simracer-scraper scrape --url /league/my-league --output my_league_data
+# Scrape league + series
+python scraper.py scrape all --league 1558 --depth series
+
+# Scrape league + series + seasons
+python scraper.py scrape all --league 1558 --depth season
+
+# Full scrape (league + series + seasons + races + results)
+python scraper.py scrape all --league 1558 --depth race  # Default
+```
+
+### Force Refresh
+
+Bypass cache and re-scrape:
+
+```bash
+python scraper.py scrape league 1558 --force
 ```
 
 ### Advanced Options
 
 ```bash
 # Enable debug logging
-uv run simracer-scraper scrape --log-level DEBUG
+python scraper.py scrape league 1558 --log-level DEBUG
 
-# Use different config file
-uv run simracer-scraper scrape --config production.yaml
-```
+# Use custom config file
+python scraper.py scrape league 1558 --config custom_config.yaml
 
-### Without uv
-
-```bash
-# Run with the wrapper script
-python scraper.py scrape league 1558
-
-# Or use the module syntax
-python -m src.cli scrape league 1558
+# Use custom database
+python scraper.py scrape league 1558 --db my_league.db
 ```
 
 ## Output
 
-Scraped data is saved to the `./data` directory (configurable) in the specified format:
+All scraped data is stored in SQLite database (default: `obrl.db`).
 
-- **JSON format**: Preserves nested structure, good for programmatic use
-- **CSV format**: Flattened data, good for spreadsheet analysis
+### Database Schema
 
-Default output includes:
-- Page URL
-- Timestamp
-- Page title
-- Extracted tables (standings, results, etc.)
-- League information
+- **leagues**: League metadata
+- **teams**: Team rosters
+- **drivers**: Driver profiles and iRacing stats
+- **series**: Series within leagues
+- **seasons**: Seasons within series
+- **races**: Race metadata and conditions
+- **race_results**: Detailed results (20+ fields per driver)
+- **scrape_log**: Audit trail of scraping activity
+- **schema_alerts**: Site structure change notifications
+
+### Querying Data
+
+```bash
+# Using sqlite3
+sqlite3 obrl.db
+
+# Example queries
+SELECT * FROM leagues;
+SELECT * FROM series WHERE league_id = 1558;
+SELECT * FROM races WHERE season_id = 26741 ORDER BY date;
+SELECT * FROM race_results WHERE race_id = 1 AND finish_position <= 5;
+```
 
 ## Project Structure
 
 ```
 simracer_scraper/
 ├── src/
-│   ├── __init__.py
-│   ├── __main__.py
-│   ├── base_scraper.py    # Base scraper with rate limiting
-│   ├── league_scraper.py  # League-specific scraper
-│   └── cli.py             # Command-line interface
-├── data/                  # Output directory (created automatically)
-├── config.yaml            # Main configuration file
-├── pyproject.toml         # Project metadata and dependencies
-├── uv.lock                # Locked dependencies (uv)
-├── requirements.txt       # Python dependencies (fallback)
-├── .python-version        # Python version for mise
-├── .env.example          # Environment variables template
-└── README.md             # This file
+│   ├── cli.py                      # Command-line interface
+│   ├── database.py                 # SQLite database manager
+│   ├── orchestrator.py             # Hierarchical scrape coordinator
+│   ├── schema_validator.py         # Schema validation & alerts
+│   ├── extractors/                 # Page-specific extractors
+│   │   ├── base.py                 # Base extractor (rate limiting, HTTP)
+│   │   ├── league.py               # League extractor
+│   │   ├── series.py               # Series extractor (JS parsing)
+│   │   ├── season.py               # Season extractor (JS parsing)
+│   │   └── race.py                 # Race extractor (results table)
+│   └── utils/
+│       ├── browser_manager.py      # Shared Playwright browser
+│       └── js_parser.py            # JavaScript data extraction
+│
+├── tests/                          # 100% test coverage
+│   ├── conftest.py                 # Shared fixtures
+│   └── unit/                       # Unit tests
+│
+├── config.yaml                     # Main configuration
+├── pyproject.toml                  # Project metadata & dependencies
+├── scraper.py                      # Convenience wrapper script
+├── requirements.txt                # Pip dependencies (fallback)
+├── ARCHITECTURE.md                 # Technical architecture docs
+├── DEVELOPMENT.md                  # Development guide
+└── README.md                       # This file
 ```
 
 ## Development
 
-### Installing Development Dependencies
+### Running Tests
 
 ```bash
-# Install with dev dependencies
-uv sync --all-extras
-```
+# Run all tests
+uv run pytest
 
-### Adding Custom Extractors
+# Run with coverage
+uv run pytest --cov=src --cov-report=term-missing
 
-The `LeagueScraper` class can be extended with custom extraction methods:
-
-```python
-from src.league_scraper import LeagueScraper
-
-class CustomLeagueScraper(LeagueScraper):
-    def _extract_league_info(self, soup):
-        # Add custom extraction logic
-        info = super()._extract_league_info(soup)
-        # ... your custom code
-        return info
+# Run specific test file
+uv run pytest tests/unit/test_database.py
 ```
 
 ### Code Quality
@@ -226,27 +239,107 @@ uv run ruff check src/
 uv run mypy src/
 ```
 
-### Testing
+### Development Workflow
 
-Before running on production URLs, test with a single page:
+1. Write failing tests first (TDD)
+2. Implement minimum code to pass tests
+3. Ensure 100% test coverage
+4. Format with black (line-length: 100)
+5. Lint with ruff
+6. Type check with mypy
 
-```bash
-uv run simracer-scraper scrape --url /single-test-page --log-level DEBUG
+See [DEVELOPMENT.md](DEVELOPMENT.md) for detailed development guide.
 
-# Or run tests (when implemented)
-uv run pytest
+## Architecture
+
+### Hierarchical Extraction
+
+```
+League (league_id: 1558)
+  ├── Teams (15 teams)
+  │   └── Drivers (~60 total)
+  │
+  └── Series (4 series)
+       └── Seasons (28+ seasons per series)
+            └── Races (10 races per season)
+                 └── Results (40 participants per race)
 ```
 
-## Ethical Scraping Guidelines
+### Key Components
+
+- **Orchestrator**: Coordinates hierarchical scraping with depth control
+- **Extractors**: Parse HTML/JavaScript for each entity type
+- **Database**: SQLite with caching and upsert operations
+- **Browser Manager**: Shared Playwright instance for JavaScript rendering
+- **Schema Validator**: Detects site structure changes
+
+See [ARCHITECTURE.md](ARCHITECTURE.md) for detailed architecture documentation.
+
+## Caching Strategy
+
+- **Database-driven**: Tracks `scraped_at` timestamp for each entity
+- **Configurable**: Set cache expiry with `cache_max_age_days` parameter
+- **Immutable data**: Race results cached forever (`cache_max_age_days=None`)
+- **Force refresh**: Use `--force` flag to bypass cache
+
+## Rate Limiting
+
+- **Randomized delays**: 2-4 seconds between requests (mimics human browsing)
+- **Sequential execution**: One request at a time
+- **Configurable**: Adjust in config.yaml or orchestrator initialization
+- **Respectful**: Prioritizes being respectful over speed
+
+## Ethical Scraping
 
 This scraper follows ethical scraping practices:
 
-1. **Respect robots.txt** - Awaiting permission despite restrictive policy
-2. **Rate limiting** - Default 2-second delay between requests
+1. **Respect robots.txt** - Awaiting permission
+2. **Rate limiting** - Randomized 2-4 second delays
 3. **Identification** - Clear user-agent with contact information
 4. **Targeted scraping** - Only scrape specific needed pages
 5. **Error handling** - Graceful handling of failures
 6. **Logging** - Full audit trail of scraping activity
+
+## Troubleshooting
+
+### Database Locked
+
+```bash
+# Close all connections
+# Check for other processes:
+lsof obrl.db
+
+# Or delete and reinitialize
+rm obrl.db
+python scraper.py scrape league 1558
+```
+
+### Playwright Issues
+
+```bash
+# Reinstall browsers
+uv run playwright install chromium
+
+# Or with pip
+playwright install chromium
+```
+
+### Schema Changes
+
+If SimRacerHub changes their site structure:
+
+```bash
+# Check schema alerts
+sqlite3 obrl.db "SELECT * FROM schema_alerts WHERE resolved=0 ORDER BY timestamp DESC"
+
+# Site changes require code updates - see DEVELOPMENT.md
+```
+
+## Documentation
+
+- [README.md](README.md) - This file (project overview)
+- [ARCHITECTURE.md](ARCHITECTURE.md) - Technical architecture and data model
+- [DEVELOPMENT.md](DEVELOPMENT.md) - Development guide and testing
 
 ## License
 
@@ -256,4 +349,4 @@ This tool is provided for educational and personal use only.
 
 Before using this scraper, contact SimRacerHub administrators for permission.
 
-Default league: **The OBRL presented by VctryLnSprts**
+**Default test league**: The OBRL presented by VctryLnSprts (league_id=1558)
