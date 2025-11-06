@@ -253,7 +253,7 @@ class SeriesExtractor(BaseExtractor):
 
             if "id" in season and season_name:
                 season_dict = {
-                    "url": f"{base_url}/season_race.php?series_id={series_id}&season_id={season['id']}",
+                    "url": f"{base_url}/season_schedule.php?season_id={season['id']}",
                     "season_id": season["id"],
                     "name": season_name,
                 }

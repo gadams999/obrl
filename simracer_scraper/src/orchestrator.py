@@ -135,6 +135,7 @@ class Orchestrator:
         depth: str = "league",
         filters: dict[str, Any] | None = None,
         cache_max_age_days: int | None = 7,
+        force: bool = False,
     ) -> dict[str, Any]:
         """Scrape a league with optional depth control and filters.
 
@@ -152,6 +153,7 @@ class Orchestrator:
                     "season_limit": 1,  # Max seasons per series
                 }
             cache_max_age_days: Days before cache expires (None = never expire)
+            force: Force re-scrape all levels, ignore completion flags
 
         Returns:
             Statistics dictionary:
@@ -185,20 +187,9 @@ class Orchestrator:
         filters = filters or {}
 
         try:
-            # Check cache
-            if cache_max_age_days is not None:
-                is_cached = self.db.is_url_cached(league_url, "league", cache_max_age_days)
-                if is_cached:
-                    logger.info(f"⚡ CACHED (skipped): {league_url}")
-                    self.progress["skipped_cached"] += 1
-                    self.db.log_scrape(
-                        "league",
-                        league_url,
-                        "skipped",
-                        error_msg="URL cached",
-                        duration_ms=int((time_module.time() - start_time) * 1000),
-                    )
-                    return self.get_progress()
+            # Always fetch league page to discover current series
+            # League pages are small, fast, and contain critical series discovery
+            # We never cache-skip at this level to ensure we always have the latest series list
 
             # Extract league data
             logger.info(f"🌐 FETCHING: {league_url}")
@@ -257,6 +248,7 @@ class Orchestrator:
                         depth=depth,
                         filters=filters,
                         cache_max_age_days=cache_max_age_days,
+                        force=force,
                     )
 
             return self.get_progress()
@@ -277,6 +269,7 @@ class Orchestrator:
         depth: str,
         filters: dict[str, Any] | None = None,
         cache_max_age_days: int | None = 7,
+        force: bool = False,
     ) -> None:
         """Scrape a series with optional depth control.
 
@@ -286,6 +279,7 @@ class Orchestrator:
             depth: Current depth setting from scrape_league
             filters: Filter dictionary from scrape_league
             cache_max_age_days: Days before cache expires
+            force: Force re-scrape even if cached
         """
         import time as time_module
 
@@ -293,13 +287,9 @@ class Orchestrator:
         filters = filters or {}
 
         try:
-            # Check cache
-            if cache_max_age_days is not None:
-                is_cached = self.db.is_url_cached(series_url, "series", cache_max_age_days)
-                if is_cached:
-                    logger.info(f"⚡ CACHED (skipped): {series_url}")
-                    self.progress["skipped_cached"] += 1
-                    return
+            # Always fetch series page to discover current seasons
+            # Series pages are lightweight and contain critical season discovery
+            # We don't cache-skip at this level to ensure we always have latest season list
 
             # Extract series data
             logger.info(f"🌐 FETCHING: {series_url}")
@@ -376,6 +366,7 @@ class Orchestrator:
                         depth=depth,
                         filters=filters,
                         cache_max_age_days=cache_max_age_days,
+                        force=force,
                     )
 
         except Exception as e:
@@ -394,6 +385,7 @@ class Orchestrator:
         depth: str,
         filters: dict[str, Any] | None = None,
         cache_max_age_days: int | None = 7,
+        force: bool = False,
     ) -> None:
         """Scrape a season with optional depth control.
 
@@ -404,6 +396,7 @@ class Orchestrator:
             depth: Current depth setting
             filters: Filter dictionary
             cache_max_age_days: Days before cache expires
+            force: Force re-scrape even if cached
         """
         import time as time_module
 
@@ -436,7 +429,7 @@ class Orchestrator:
 
             self.db.upsert_season(
                 season_id=season_id,
-                series_id=metadata["series_id"],
+                series_id=series_id,
                 data={
                     "name": season_name,
                     "url": metadata["url"],
@@ -466,7 +459,10 @@ class Orchestrator:
                     self.scrape_race(
                         race_url=race_info["url"],
                         season_id=season_id,
+                        schedule_id=race_info["schedule_id"],
+                        has_results=race_info.get("has_results", True),
                         cache_max_age_days=cache_max_age_days,
+                        force=force,
                     )
 
         except Exception as e:
@@ -481,22 +477,51 @@ class Orchestrator:
         self,
         race_url: str,
         season_id: int,
+        schedule_id: int,
+        has_results: bool = True,
         cache_max_age_days: int | None = 7,
+        force: bool = False,
     ) -> None:
         """Scrape a race and its results.
 
         Args:
             race_url: URL like "season_race.php?schedule_id=324462"
             season_id: Season ID (foreign key for races table)
+            schedule_id: Schedule ID (unique identifier from SimRacerHub)
+            has_results: Whether this race has results available (from season extractor)
             cache_max_age_days: Days before cache expires
+            force: Force re-scrape even if race is marked complete
         """
         import time as time_module
+        import datetime
 
         start_time = time_module.time()
 
         try:
-            # Check cache
-            if cache_max_age_days is not None:
+            # If race has no results URL, store metadata only and skip scraping
+            if not has_results:
+                logger.info(f"⏭️  SKIPPING (no results): {race_url}")
+                self.db.upsert_race(
+                    schedule_id=schedule_id,
+                    season_id=season_id,
+                    data={
+                        "url": race_url,
+                        "is_complete": False,
+                        "scraped_at": datetime.datetime.now().isoformat(),
+                        "race_number": 0,  # Will be updated when race has results
+                        "name": "TBD",
+                    },
+                )
+                return
+
+            # Check if race is already complete (unless --force)
+            if not force and self.db.is_race_complete(schedule_id):
+                logger.info(f"✅ COMPLETE (skipped): {race_url}")
+                self.progress["skipped_cached"] += 1
+                return
+
+            # Standard cache check (for recent scrapes)
+            if not force and cache_max_age_days is not None:
                 is_cached = self.db.is_url_cached(race_url, "race", cache_max_age_days)
                 if is_cached:
                     logger.info(f"⚡ CACHED (skipped): {race_url}")
@@ -508,10 +533,7 @@ class Orchestrator:
             race_data = self.race_extractor.extract(race_url)
             metadata = race_data["metadata"]
 
-            # Store race in database and get internal race_id for storing results
-            import datetime
-
-            # Use season_id passed from parent scrape_season() method
+            # Store race in database with completion flag
             race_id = self.db.upsert_race(
                 schedule_id=metadata["schedule_id"],
                 season_id=season_id,
@@ -519,6 +541,7 @@ class Orchestrator:
                     "name": metadata["name"],
                     "url": metadata["url"],
                     "race_number": metadata.get("race_number", 0),
+                    "is_complete": True,  # Mark as complete after successful scrape
                     "scraped_at": datetime.datetime.now().isoformat(),
                 },
             )
@@ -599,13 +622,31 @@ class Orchestrator:
             return
 
         # Map result fields to database schema
+        # Extract provides fields with proper names, just need to validate types
         result_data = {
             "finish_position": result.get("finish_position"),
+            "starting_position": result.get("starting_position"),
             "car_number": result.get("car_number"),
-            "laps_completed": self._parse_int(result.get("laps")),
+            "qualifying_time": result.get("qualifying_time"),
+            "fastest_lap": result.get("fastest_lap"),
+            "fastest_lap_number": result.get("fastest_lap_number"),
+            "average_lap": result.get("average_lap"),
             "interval": result.get("interval"),
-            "laps_led": self._parse_int(result.get("laps_led")),
-            "race_points": self._parse_float(result.get("points")),
+            "laps_completed": result.get("laps_completed"),
+            "laps_led": result.get("laps_led"),
+            "incidents": result.get("incidents"),
+            "race_points": result.get("race_points"),
+            "bonus_points": result.get("bonus_points"),
+            "total_points": result.get("total_points"),
+            "fast_laps": result.get("fast_laps"),
+            "quality_passes": result.get("quality_passes"),
+            "closing_passes": result.get("closing_passes"),
+            "total_passes": result.get("total_passes"),
+            "average_running_position": result.get("average_running_position"),
+            "irating": result.get("irating"),
+            "status": result.get("status"),
+            "car_type": result.get("car_type"),
+            "team": result.get("team"),
         }
 
         # Store race result

@@ -173,6 +173,7 @@ Examples:
                         league_url=league_url,
                         depth=depth,
                         cache_max_age_days=cache_max_age,
+                        force=args.force,
                     )
 
                     # Show progress

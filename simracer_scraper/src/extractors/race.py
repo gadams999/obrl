@@ -221,16 +221,69 @@ class RaceExtractor(BaseExtractor):
 
         Returns:
             Result dictionary or None if invalid
+
+        Table structure (38 columns):
+        0: FIN (finish position)
+        1: CAR # (car number)
+        2: DRIVER (driver name/link)
+        3: ST (starting position)
+        4: QUAL TIME (qualifying time)
+        5: INT (interval)
+        6: RACE PTS (race points)
+        7: BNS PTS (bonus points)
+        8: TOT PTS (total points)
+        9: LAPS (laps completed)
+        10: LAPS LED (laps led)
+        11: FASTEST LAP (fastest lap time)
+        12: FAST LAP # (fastest lap number)
+        13: INC (incidents)
+        14: AVG LAP (average lap time)
+        15: STATUS (running/DNF/etc)
+        16: CAR (car type)
+        17: FAST LAPS (fast laps count)
+        18: QUALITY PASSES
+        19: CLOSING PASSES
+        20: TOTAL PASSES
+        21: ARP (average running position)
+        22: DRIVER RATING (iRating)
+        23: TEAM (team name)
+        24-37: Duplicate/bonus columns (ignored)
         """
         try:
             result = {}
 
-            # Position (column 0)
-            result["finish_position"] = int(cells[0].get_text(strip=True))
+            # Helper function to safely get cell text
+            def get_cell(index: int, default: str = "") -> str:
+                if len(cells) > index:
+                    text = cells[index].get_text(strip=True)
+                    # Return None for empty strings, "-", or whitespace
+                    if text and text != "-" and text.strip():
+                        return text
+                return default
 
-            # Car number (column 1)
-            if len(cells) > 1:
-                result["car_number"] = cells[1].get_text(strip=True)
+            # Helper function to safely get integer
+            def get_int(index: int) -> int | None:
+                text = get_cell(index)
+                if text and text != "":
+                    try:
+                        return int(text)
+                    except ValueError:
+                        return None
+                return None
+
+            # Helper function to safely get float
+            def get_float(index: int) -> float | None:
+                text = get_cell(index)
+                if text and text != "":
+                    try:
+                        return float(text)
+                    except ValueError:
+                        return None
+                return None
+
+            # Required fields
+            result["finish_position"] = int(cells[0].get_text(strip=True))
+            result["car_number"] = get_cell(1, "0")
 
             # Driver name and ID (column 2)
             if len(cells) > 2:
@@ -246,17 +299,93 @@ class RaceExtractor(BaseExtractor):
                 else:
                     result["driver_name"] = driver_cell.get_text(strip=True)
 
-            # Additional columns if present
-            if len(cells) > 3:
-                result["laps"] = cells[3].get_text(strip=True)
-            if len(cells) > 4:
-                result["interval"] = cells[4].get_text(strip=True)
-            if len(cells) > 5:
-                result["laps_led"] = cells[5].get_text(strip=True)
-            if len(cells) > 6:
-                result["points"] = cells[6].get_text(strip=True)
+            # Optional fields - only include if they have values
+            starting_pos = get_int(3)
+            if starting_pos is not None:
+                result["starting_position"] = starting_pos
+
+            qual_time = get_cell(4)
+            if qual_time:
+                result["qualifying_time"] = qual_time
+
+            interval = get_cell(5)
+            if interval:
+                result["interval"] = interval
+
+            race_points = get_int(6)
+            if race_points is not None:
+                result["race_points"] = race_points
+
+            bonus_points = get_int(7)
+            if bonus_points is not None:
+                result["bonus_points"] = bonus_points
+
+            total_points = get_int(8)
+            if total_points is not None:
+                result["total_points"] = total_points
+
+            laps = get_int(9)
+            if laps is not None:
+                result["laps_completed"] = laps
+
+            laps_led = get_int(10)
+            if laps_led is not None:
+                result["laps_led"] = laps_led
+
+            fastest_lap = get_cell(11)
+            if fastest_lap:
+                result["fastest_lap"] = fastest_lap
+
+            fastest_lap_num = get_int(12)
+            if fastest_lap_num is not None:
+                result["fastest_lap_number"] = fastest_lap_num
+
+            incidents = get_int(13)
+            if incidents is not None:
+                result["incidents"] = incidents
+
+            avg_lap = get_cell(14)
+            if avg_lap:
+                result["average_lap"] = avg_lap
+
+            status = get_cell(15)
+            if status:
+                result["status"] = status
+
+            car_type = get_cell(16)
+            if car_type:
+                result["car_type"] = car_type
+
+            fast_laps = get_int(17)
+            if fast_laps is not None:
+                result["fast_laps"] = fast_laps
+
+            quality_passes = get_int(18)
+            if quality_passes is not None:
+                result["quality_passes"] = quality_passes
+
+            closing_passes = get_int(19)
+            if closing_passes is not None:
+                result["closing_passes"] = closing_passes
+
+            total_passes = get_int(20)
+            if total_passes is not None:
+                result["total_passes"] = total_passes
+
+            arp = get_float(21)
+            if arp is not None:
+                result["average_running_position"] = arp
+
+            irating = get_float(22)
+            if irating is not None:
+                result["irating"] = int(irating)
+
+            team = get_cell(23)
+            if team:
+                result["team"] = team
 
             return result
 
-        except (ValueError, IndexError):
+        except (ValueError, IndexError) as e:
+            # Log the error for debugging but don't crash
             return None

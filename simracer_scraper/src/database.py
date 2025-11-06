@@ -194,6 +194,7 @@ class Database:
                 humidity TEXT,
                 url TEXT NOT NULL UNIQUE,
                 status TEXT CHECK(status IN ('upcoming', 'ongoing', 'completed')),
+                is_complete BOOLEAN DEFAULT 0,
                 scraped_at TIMESTAMP NOT NULL,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -206,6 +207,7 @@ class Database:
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_races_url ON races(url)")
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_races_date ON races(date)")
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_races_status ON races(status)")
+        cursor.execute("CREATE INDEX IF NOT EXISTS idx_races_is_complete ON races(is_complete)")
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_races_scraped_at ON races(scraped_at)")
 
         # Table: race_results
@@ -665,15 +667,16 @@ class Database:
         temperature = data.get("temperature")
         humidity = data.get("humidity")
         status = data.get("status")
+        is_complete = data.get("is_complete", False)
 
         cursor.execute(
             """
             INSERT INTO races (
                 schedule_id, internal_race_id, season_id, race_number, name, track,
                 track_config, track_type, date, duration, laps, leaders, lead_changes,
-                weather, temperature, humidity, url, status, scraped_at, updated_at
+                weather, temperature, humidity, url, status, is_complete, scraped_at, updated_at
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
             ON CONFLICT(schedule_id) DO UPDATE SET
                 internal_race_id = excluded.internal_race_id,
                 season_id = excluded.season_id,
@@ -692,6 +695,7 @@ class Database:
                 humidity = excluded.humidity,
                 url = excluded.url,
                 status = excluded.status,
+                is_complete = excluded.is_complete,
                 scraped_at = excluded.scraped_at,
                 updated_at = CURRENT_TIMESTAMP
         """,
@@ -714,6 +718,7 @@ class Database:
                 humidity,
                 url,
                 status,
+                is_complete,
                 scraped_at,
             ),
         )
@@ -757,6 +762,47 @@ class Database:
 
         cursor = self.conn.cursor()
         cursor.execute("SELECT * FROM races WHERE season_id = ? ORDER BY race_number", (season_id,))
+        rows = cursor.fetchall()
+
+        return [dict(row) for row in rows]
+
+    def is_race_complete(self, schedule_id: int) -> bool:
+        """
+        Check if a race is marked as complete.
+
+        Args:
+            schedule_id: Schedule ID
+
+        Returns:
+            True if race exists and is_complete=1, False otherwise
+        """
+        if not self.conn:
+            raise RuntimeError("Database not connected")
+
+        cursor = self.conn.cursor()
+        cursor.execute("SELECT is_complete FROM races WHERE schedule_id = ?", (schedule_id,))
+        row = cursor.fetchone()
+
+        return bool(row and row[0]) if row else False
+
+    def get_incomplete_races(self, season_id: int) -> list[dict]:
+        """
+        Get all incomplete races for a season.
+
+        Args:
+            season_id: Season ID
+
+        Returns:
+            List of dictionaries with race data for incomplete races
+        """
+        if not self.conn:
+            raise RuntimeError("Database not connected")
+
+        cursor = self.conn.cursor()
+        cursor.execute(
+            "SELECT * FROM races WHERE season_id = ? AND is_complete = 0 ORDER BY race_number",
+            (season_id,),
+        )
         rows = cursor.fetchall()
 
         return [dict(row) for row in rows]

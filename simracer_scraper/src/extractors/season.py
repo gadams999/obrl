@@ -59,16 +59,16 @@ class SeasonExtractor(BaseExtractor):
         )
 
     def extract(self, url: str) -> dict[str, Any]:
-        """Extract season data from a season race page.
+        """Extract season data from a season schedule page.
 
         Args:
-            url: URL of the season race page
+            url: URL of the season schedule page (season_schedule.php?season_id=X)
 
         Returns:
             Dictionary with structure:
             {
                 "metadata": {
-                    "series_id": int,
+                    "season_id": int,
                     "name": str,
                     "url": str,
                 },
@@ -78,20 +78,20 @@ class SeasonExtractor(BaseExtractor):
             }
 
         Raises:
-            ValueError: If URL is invalid or missing series_id
+            ValueError: If URL is invalid or missing season_id
             requests.exceptions.RequestException: If fetch fails
         """
         # Validate URL format
         self._validate_url(url)
 
-        # Extract series_id from URL
-        series_id = self._extract_series_id(url)
+        # Extract season_id from URL
+        season_id = self._extract_season_id(url)
 
         # Fetch and parse the page
         soup = self.fetch_page(url)
 
         # Extract season metadata
-        metadata = self._extract_metadata(soup, series_id, url)
+        metadata = self._extract_metadata(soup, season_id, url)
 
         # Extract child URLs (races)
         child_urls = self._extract_child_urls(soup)
@@ -99,7 +99,7 @@ class SeasonExtractor(BaseExtractor):
         return {"metadata": metadata, "child_urls": child_urls}
 
     def _validate_url(self, url: str) -> None:
-        """Validate that URL is a valid season race URL.
+        """Validate that URL is a valid season schedule URL.
 
         Args:
             url: URL to validate
@@ -107,42 +107,42 @@ class SeasonExtractor(BaseExtractor):
         Raises:
             ValueError: If URL format is invalid
         """
-        if not re.search(r"season_race\.php\?series_id=\d+", url):
+        if not re.search(r"season_schedule\.php\?season_id=\d+", url):
             raise ValueError(
-                f"Invalid season URL format. Expected season_race.php?series_id=<id>, got: {url}"
+                f"Invalid season URL format. Expected season_schedule.php?season_id=<id>, got: {url}"
             )
 
-    def _extract_series_id(self, url: str) -> int:
-        """Extract series_id from URL.
+    def _extract_season_id(self, url: str) -> int:
+        """Extract season_id from URL.
 
         Args:
-            url: Season race URL
+            url: Season schedule URL
 
         Returns:
-            Series ID as integer
+            Season ID as integer
 
         Raises:
-            ValueError: If series_id not found in URL
+            ValueError: If season_id not found in URL
         """
-        match = re.search(r"series_id=(\d+)", url)
+        match = re.search(r"season_id=(\d+)", url)
         if not match:
-            raise ValueError(f"Could not extract series_id from URL: {url}")
+            raise ValueError(f"Could not extract season_id from URL: {url}")
 
         return int(match.group(1))
 
-    def _extract_metadata(self, soup: BeautifulSoup, series_id: int, url: str) -> dict[str, Any]:
+    def _extract_metadata(self, soup: BeautifulSoup, season_id: int, url: str) -> dict[str, Any]:
         """Extract season metadata from page.
 
         Args:
             soup: BeautifulSoup object of parsed page
-            series_id: Series ID
+            season_id: Season ID
             url: Original URL
 
         Returns:
             Dictionary with season metadata
         """
         metadata = {
-            "series_id": series_id,
+            "season_id": season_id,
             "url": url,
         }
 
@@ -202,6 +202,7 @@ class SeasonExtractor(BaseExtractor):
                         "url": str,
                         "schedule_id": int,
                         "track": str,
+                        "has_results": bool,
                     },
                     ...
                 ]
@@ -225,7 +226,7 @@ class SeasonExtractor(BaseExtractor):
             soup: BeautifulSoup object
 
         Returns:
-            List of race dictionaries with URLs and metadata
+            List of race dictionaries with URLs and metadata including has_results flag
         """
         races = []
         base_url = "https://www.simracerhub.com"
@@ -261,10 +262,16 @@ class SeasonExtractor(BaseExtractor):
                     else:
                         full_url = f"{base_url}{href}" if href.startswith("/") else f"{base_url}/{href}"
 
+                    # Check if this race has results available
+                    # Race results pages use season_race.php, so any link is assumed to have potential results
+                    # We'll mark as True if the URL exists (the actual race page will determine if results exist)
+                    has_results = bool(href and "season_race.php" in href)
+
                     race_dict = {
                         "url": full_url,
                         "schedule_id": schedule_id,
                         "track": track_name,
+                        "has_results": has_results,
                     }
 
                     races.append(race_dict)
@@ -298,10 +305,14 @@ class SeasonExtractor(BaseExtractor):
                             else:
                                 full_url = f"{base_url}/{href}"
 
+                            # Check if this race has results available
+                            has_results = bool(href and "season_race.php" in href)
+
                             race_dict = {
                                 "url": full_url,
                                 "schedule_id": schedule_id,
                                 "track": track_name,
+                                "has_results": has_results,
                             }
 
                             races.append(race_dict)
