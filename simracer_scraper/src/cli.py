@@ -7,28 +7,31 @@ from pathlib import Path
 
 import yaml
 
-from .league_scraper import LeagueScraper
+from .database import Database
+from .orchestrator import Orchestrator
+from .schema_validator import SchemaValidator
 
 
-def setup_logging(level: str = "INFO", log_file: str = None):
+def setup_logging(level: str = "INFO"):
     """Configure logging."""
     log_level = getattr(logging, level.upper(), logging.INFO)
-
-    handlers = [logging.StreamHandler(sys.stdout)]
-    if log_file:
-        handlers.append(logging.FileHandler(log_file))
 
     logging.basicConfig(
         level=log_level,
         format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-        handlers=handlers,
+        handlers=[logging.StreamHandler(sys.stdout)],
     )
 
 
 def load_config(config_path: str) -> dict:
     """Load configuration from YAML file."""
-    with open(config_path, "r") as f:
-        return yaml.safe_load(f)
+    try:
+        with open(config_path, "r") as f:
+            return yaml.safe_load(f)
+    except FileNotFoundError:
+        return {}
+    except yaml.YAMLError:
+        return {}
 
 
 def main():
@@ -38,86 +41,151 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  # Scrape specific pages from config
-  python -m src.cli scrape
+  # Use config.yaml (simplest - edit league.id in config.yaml)
+  python scraper.py
 
-  # Scrape a single page
-  python -m src.cli scrape --url /league/the-obrl
+  # Scrape a specific league
+  python scraper.py scrape league 1558
 
-  # Use custom config
-  python -m src.cli scrape --config custom_config.yaml
+  # Scrape with depth control
+  python scraper.py scrape all --league 1558 --depth league
+
+  # Force refresh (ignore cache)
+  python scraper.py scrape league 1558 --force
         """,
     )
 
-    parser.add_argument(
-        "command",
-        choices=["scrape"],
-        help="Command to execute",
-    )
+    # Use subparsers for better command structure
+    subparsers = parser.add_subparsers(dest="command", help="Command to execute")
 
-    parser.add_argument(
+    # Scrape command
+    scrape_parser = subparsers.add_parser("scrape", help="Scrape league data")
+    scrape_parser.add_argument(
+        "entity",
+        nargs="?",
+        choices=["league", "all"],
+        help="What to scrape (league, all) - optional if config has league.id",
+    )
+    scrape_parser.add_argument(
+        "league_id",
+        nargs="?",
+        help="League ID to scrape - optional if config has league.id",
+    )
+    scrape_parser.add_argument(
+        "--league",
+        help="League ID (alternative to positional arg)",
+    )
+    scrape_parser.add_argument(
+        "--depth",
+        choices=["league", "series", "season", "race"],
+        default="race",
+        help="How deep to scrape hierarchy (default: race)",
+    )
+    scrape_parser.add_argument(
+        "--force",
+        action="store_true",
+        help="Force re-scrape, ignore cache",
+    )
+    scrape_parser.add_argument(
+        "--db",
+        default="simracer.db",
+        help="Database path (default: simracer.db)",
+    )
+    scrape_parser.add_argument(
         "--config",
         default="config.yaml",
-        help="Path to configuration file (default: config.yaml)",
+        help="Path to config file (default: config.yaml)",
     )
-
-    parser.add_argument(
-        "--url",
-        help="Single URL to scrape (overrides config target_pages)",
-    )
-
-    parser.add_argument(
-        "--output",
-        help="Output filename (without extension)",
-    )
-
-    parser.add_argument(
+    scrape_parser.add_argument(
         "--log-level",
         choices=["DEBUG", "INFO", "WARNING", "ERROR"],
-        help="Override log level from config",
+        default="INFO",
+        help="Log level (default: INFO)",
     )
 
     args = parser.parse_args()
 
-    # Load configuration
-    try:
-        config = load_config(args.config)
-    except FileNotFoundError:
-        print(f"Error: Config file '{args.config}' not found")
-        return 1
-    except yaml.YAMLError as e:
-        print(f"Error parsing config file: {e}")
-        return 1
+    # If no command provided, default to scrape with config
+    if not args.command:
+        args.command = "scrape"
+        args.entity = None
+        args.league_id = None
+        args.league = None
+        args.depth = "race"
+        args.force = False
+        args.db = "simracer.db"
+        args.config = "config.yaml"
+        args.log_level = "INFO"
 
-    # Setup logging
-    log_config = config.get("logging", {})
-    log_level = args.log_level or log_config.get("level", "INFO")
-    log_file = log_config.get("file")
-    setup_logging(log_level, log_file)
+    # Load config
+    config = load_config(args.config)
 
+    # Setup logging (from config or CLI arg)
+    log_level = args.log_level
+    if not log_level and config.get("logging"):
+        log_level = config["logging"].get("level", "INFO")
+    setup_logging(log_level or "INFO")
     logger = logging.getLogger(__name__)
+
+    # Get league ID (priority: CLI positional > CLI --league > config)
+    league_id = args.league_id or args.league
+    if not league_id and config.get("league"):
+        league_id = config["league"].get("id")
+
+    if not league_id:
+        logger.error("League ID required. Provide via command line or config.yaml")
+        logger.error("Usage: python scraper.py scrape league <league_id>")
+        logger.error("   Or: python scraper.py (with league.id in config.yaml)")
+        return 1
+
+    # Get depth (priority: CLI > config > default)
+    depth = args.depth
+    if depth == "race" and config.get("league"):  # "race" is the default
+        depth = config["league"].get("depth", "race")
+
+    # Get database path (priority: CLI > config > default)
+    db_path = args.db
+    if db_path == "simracer.db" and config.get("league"):  # "simracer.db" is the default
+        db_path = config["league"].get("database", "simracer.db")
 
     # Execute command
     if args.command == "scrape":
         try:
-            with LeagueScraper(config) as scraper:
-                # Determine URLs to scrape
-                if args.url:
-                    urls = [args.url]
-                else:
-                    urls = config.get("target_pages", [])
-                    if not urls:
-                        logger.error("No URLs specified. Use --url or add target_pages to config.")
-                        return 1
+            # Initialize database and orchestrator
+            with Database(db_path) as db:
+                db.initialize_schema()
+                validator = SchemaValidator()
+                with Orchestrator(
+                    database=db,
+                    validator=validator,
+                    rate_limit_range=(2.0, 4.0),
+                ) as orchestrator:
+                    # Build league URL
+                    league_url = f"https://www.simracerhub.com/league_series.php?league_id={league_id}"
 
-                logger.info(f"Scraping {len(urls)} page(s)...")
-                results = scraper.scrape_multiple_pages(urls)
+                    # Set cache behavior
+                    cache_max_age = None if args.force else 7
 
-                # Save results
-                output_name = args.output or f"scraped_data_{Path(urls[0]).stem}"
-                scraper.save_results(results, output_name)
+                    logger.info(f"Scraping league {league_id} with depth={depth}")
 
-                logger.info(f"Scraping complete. Scraped {len(results)} page(s).")
+                    # Scrape with specified depth
+                    result = orchestrator.scrape_league(
+                        league_url=league_url,
+                        depth=depth,
+                        cache_max_age_days=cache_max_age,
+                    )
+
+                    # Show progress
+                    progress = orchestrator.get_progress()
+                    logger.info(f"Scraping complete!")
+                    logger.info(f"  Leagues: {progress['leagues_scraped']}")
+                    logger.info(f"  Series: {progress['series_scraped']}")
+                    logger.info(f"  Seasons: {progress['seasons_scraped']}")
+                    logger.info(f"  Races: {progress['races_scraped']}")
+                    logger.info(f"  Cached (skipped): {progress['skipped_cached']}")
+
+                    if progress['errors']:
+                        logger.warning(f"  Errors: {len(progress['errors'])}")
 
         except KeyboardInterrupt:
             logger.warning("Scraping interrupted by user")

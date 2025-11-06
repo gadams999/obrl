@@ -1,14 +1,15 @@
 # SimRacer Scraper Configuration
 
-# Target pages to scrape (relative URLs)
-target_pages:
-  # Example league page
-  # - /league/the-obrl-presented-by-vctrylnsprts
+# Default league to scrape (when no league specified on command line)
+league:
+  # League ID from SimRacerHub
+  id: 1558
 
-  # Add specific pages here as you identify them
-  # - /league/your-league-name
-  # - /standings/your-league-id
-  # - /schedule/your-league-id
+  # Scraping depth: league, series, season, or race
+  depth: race
+
+  # Database file path
+  database: "simracer.db"
 
 # Scraping behavior
 scraping:

@@ -57,6 +57,10 @@ cp config.yaml.example config.yaml
 # Edit config.yaml with your settings (optional)
 
 # 7. Run the scraper
+# Option A: Use config.yaml (edit league.id in config.yaml first)
+python scraper.py
+
+# Option B: Specify league on command line
 python scraper.py scrape league 1558
 ```
 
@@ -88,20 +92,27 @@ mise install  # Installs Python version from .python-version
 
 ## Configuration
 
-Edit `config.yaml` to customize scraper behavior:
+The scraper can be configured via `config.yaml`:
 
 ```yaml
-# Add specific pages to scrape
-target_pages:
-  - /league/your-league-name
-  - /standings/your-league-id
+# Default league to scrape
+league:
+  id: 1558              # Your league ID from SimRacerHub
+  depth: race           # How deep to scrape: league, series, season, or race
+  database: simracer.db # Database file path
 
-# Adjust rate limiting
+# Scraping behavior
 scraping:
-  request_delay: 2.0  # seconds between requests
+  request_delay: 2.0    # Seconds between requests
   max_retries: 3
   timeout: 10
+
+# Logging
+logging:
+  level: INFO           # DEBUG, INFO, WARNING, ERROR
 ```
+
+**Configuration Priority:** Command-line arguments override config.yaml settings.
 
 ## Usage
 

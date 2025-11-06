@@ -236,6 +236,8 @@ class Orchestrator:
 
                 # Store series names immediately from league JavaScript data
                 # This ensures we capture the correct names before fetching series pages
+                # NOTE: We set scraped_at to a very old date so cache checks know
+                # we haven't actually scraped the series page yet
                 for series_info in series_urls:
                     self.db.upsert_series(
                         series_id=series_info["series_id"],
@@ -243,7 +245,7 @@ class Orchestrator:
                         data={
                             "name": series_info.get("name", "Unknown Series"),
                             "url": series_info["url"],
-                            "scraped_at": datetime.datetime.now().isoformat(),
+                            "scraped_at": "1970-01-01T00:00:00",  # Epoch - forces re-scrape
                         },
                     )
 
@@ -352,6 +354,8 @@ class Orchestrator:
 
                 # Store season names immediately from series JavaScript data
                 # This ensures we capture the correct names before fetching season pages
+                # NOTE: We set scraped_at to a very old date so cache checks know
+                # we haven't actually scraped the season page yet
                 for season_info in seasons:
                     self.db.upsert_season(
                         season_id=season_info.get("season_id", 0),
@@ -359,7 +363,7 @@ class Orchestrator:
                         data={
                             "name": season_info.get("name", "Unknown Season"),
                             "url": season_info["url"],
-                            "scraped_at": datetime.datetime.now().isoformat(),
+                            "scraped_at": "1970-01-01T00:00:00",  # Epoch - forces re-scrape
                         },
                     )
 
