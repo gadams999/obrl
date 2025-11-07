@@ -4,7 +4,8 @@
       "Bash(uv run pytest:*)",
       "Bash(uv run:*)",
       "Bash(awk:*)",
-      "Bash(cat:*)"
+      "Bash(cat:*)",
+      "Bash(sqlite3:*)"
     ],
     "deny": [],
     "ask": []

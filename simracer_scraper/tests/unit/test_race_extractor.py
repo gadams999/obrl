@@ -320,6 +320,154 @@ class TestRaceExtractorEdgeCases:
             assert len(result["results"]) == 0
 
 
+class TestRaceExtractorMetadata:
+    """Test extraction of race-level metadata (track, weather, laps, etc.)."""
+
+    def test_extract_track_info(self, race_extractor, race_fixture_html):
+        """Test track name and configuration are extracted."""
+        with patch.object(race_extractor, "fetch_page") as mock_fetch:
+            mock_fetch.return_value = BeautifulSoup(race_fixture_html, "html.parser")
+
+            result = race_extractor.extract(
+                "https://www.simracerhub.com/season_race.php?schedule_id=324462"
+            )
+
+            metadata = result["metadata"]
+            assert "track" in metadata
+            assert metadata["track"] == "Daytona International Speedway"
+            assert "track_config" in metadata
+            assert metadata["track_config"] == "Dual Pit Roads"
+
+    def test_extract_date(self, race_extractor, race_fixture_html):
+        """Test race date is extracted."""
+        with patch.object(race_extractor, "fetch_page") as mock_fetch:
+            mock_fetch.return_value = BeautifulSoup(race_fixture_html, "html.parser")
+
+            result = race_extractor.extract(
+                "https://www.simracerhub.com/season_race.php?schedule_id=324462"
+            )
+
+            metadata = result["metadata"]
+            assert "date" in metadata
+            assert metadata["date"] == "Oct 29, 2025"
+
+    def test_extract_weather(self, race_extractor, race_fixture_html):
+        """Test weather conditions and temperature are extracted."""
+        with patch.object(race_extractor, "fetch_page") as mock_fetch:
+            mock_fetch.return_value = BeautifulSoup(race_fixture_html, "html.parser")
+
+            result = race_extractor.extract(
+                "https://www.simracerhub.com/season_race.php?schedule_id=324462"
+            )
+
+            metadata = result["metadata"]
+            assert "weather_type" in metadata
+            assert metadata["weather_type"] == "Realistic weather"
+            assert "cloud_conditions" in metadata
+            assert metadata["cloud_conditions"] == "Partly Cloudy"
+            assert "temperature" in metadata
+            assert metadata["temperature"] == "23° C"
+            assert "humidity" in metadata
+            assert metadata["humidity"] == "0%"
+            assert "fog" in metadata
+            assert metadata["fog"] == "0%"
+            assert "wind" in metadata
+            assert metadata["wind"] == "SE @1 KPH"
+
+    def test_extract_race_stats(self, race_extractor, race_fixture_html):
+        """Test race stats are extracted from race-stats paragraph."""
+        with patch.object(race_extractor, "fetch_page") as mock_fetch:
+            mock_fetch.return_value = BeautifulSoup(race_fixture_html, "html.parser")
+
+            result = race_extractor.extract(
+                "https://www.simracerhub.com/season_race.php?schedule_id=324462"
+            )
+
+            metadata = result["metadata"]
+            # From: "0h 59m · 63 laps · 9 Leaders · 22 Lead Changes · 4 cautions (9 laps)"
+            assert "race_duration" in metadata
+            assert metadata["race_duration"] == "0h 59m"
+            assert "total_laps" in metadata
+            assert metadata["total_laps"] == 63
+            assert "leaders" in metadata
+            assert metadata["leaders"] == 9
+            assert "lead_changes" in metadata
+            assert metadata["lead_changes"] == 22
+            assert "cautions" in metadata
+            assert metadata["cautions"] == 4
+            assert "caution_laps" in metadata
+            assert metadata["caution_laps"] == 9
+
+    def test_metadata_missing_race_info(self, race_extractor):
+        """Test extraction handles missing race-info div gracefully."""
+        html = """
+        <html><body>
+            <h1>Test Race</h1>
+            <table class="results-table">
+                <tbody>
+                    <tr><td>1</td><td>Driver</td><td>23</td><td>50</td><td>Leader</td><td>10</td><td>40</td></tr>
+                </tbody>
+            </table>
+        </body></html>
+        """
+        with patch.object(race_extractor, "fetch_page") as mock_fetch:
+            mock_fetch.return_value = BeautifulSoup(html, "html.parser")
+
+            result = race_extractor.extract(
+                "https://www.simracerhub.com/season_race.php?schedule_id=999"
+            )
+
+            metadata = result["metadata"]
+            # Should still have basic fields
+            assert "schedule_id" in metadata
+            assert "name" in metadata
+            # Optional fields may be missing
+            assert metadata.get("track") is None
+            assert metadata.get("date") is None
+            assert metadata.get("weather") is None
+
+    def test_stats_with_no_stats_paragraph(self, race_extractor):
+        """Test extraction when race-stats paragraph is missing."""
+        html = """
+        <html><body>
+            <h1>Test Race</h1>
+            <div class="race-info">
+                <p>Date: Oct 30, 2025</p>
+                <p>Track: Test Track</p>
+            </div>
+            <table class="results-table">
+                <tbody>
+                    <tr>
+                        <td>1</td><td>23</td><td>Driver</td><td>1</td><td>00:48</td>
+                        <td>Leader</td><td>40</td><td>0</td><td>40</td><td>50</td>
+                        <td>0</td><td>00:49</td><td>1</td><td>00:49</td><td>0</td>
+                        <td>0</td><td>0</td><td>0</td><td>0</td><td>0</td>
+                        <td>1.0</td><td>2000</td><td>4.0</td><td>A</td><td></td>
+                        <td></td><td></td><td></td><td></td><td></td>
+                        <td></td><td></td><td></td><td></td><td></td>
+                        <td></td><td></td><td></td>
+                    </tr>
+                </tbody>
+            </table>
+        </body></html>
+        """
+        with patch.object(race_extractor, "fetch_page") as mock_fetch:
+            mock_fetch.return_value = BeautifulSoup(html, "html.parser")
+
+            result = race_extractor.extract(
+                "https://www.simracerhub.com/season_race.php?schedule_id=999"
+            )
+
+            metadata = result["metadata"]
+            # Should have date and track from paragraphs
+            assert metadata["date"] == "Oct 30, 2025"
+            assert metadata["track"] == "Test Track"
+            # No race-stats paragraph = no stats fields
+            assert "total_laps" not in metadata
+            assert "leaders" not in metadata
+            assert "lead_changes" not in metadata
+
+
 class TestRaceExtractorContextManager:
     """Test context manager functionality."""
 

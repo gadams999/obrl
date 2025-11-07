@@ -185,13 +185,18 @@ class Database:
                 track_config TEXT,
                 track_type TEXT,
                 date TIMESTAMP,
-                duration TEXT,
-                laps INTEGER,
+                race_duration TEXT,
+                total_laps INTEGER,
                 leaders INTEGER,
                 lead_changes INTEGER,
-                weather TEXT,
+                cautions INTEGER,
+                caution_laps INTEGER,
+                weather_type TEXT,
+                cloud_conditions TEXT,
                 temperature TEXT,
                 humidity TEXT,
+                fog TEXT,
+                wind TEXT,
                 url TEXT NOT NULL UNIQUE,
                 status TEXT CHECK(status IN ('upcoming', 'ongoing', 'completed')),
                 is_complete BOOLEAN DEFAULT 0,
@@ -659,13 +664,18 @@ class Database:
         track_config = data.get("track_config")
         track_type = data.get("track_type")
         date = data.get("date")
-        duration = data.get("duration")
-        laps = data.get("laps")
+        race_duration = data.get("race_duration")
+        total_laps = data.get("total_laps")
         leaders = data.get("leaders")
         lead_changes = data.get("lead_changes")
-        weather = data.get("weather")
+        cautions = data.get("cautions")
+        caution_laps = data.get("caution_laps")
+        weather_type = data.get("weather_type")
+        cloud_conditions = data.get("cloud_conditions")
         temperature = data.get("temperature")
         humidity = data.get("humidity")
+        fog = data.get("fog")
+        wind = data.get("wind")
         status = data.get("status")
         is_complete = data.get("is_complete", False)
 
@@ -673,10 +683,11 @@ class Database:
             """
             INSERT INTO races (
                 schedule_id, internal_race_id, season_id, race_number, name, track,
-                track_config, track_type, date, duration, laps, leaders, lead_changes,
-                weather, temperature, humidity, url, status, is_complete, scraped_at, updated_at
+                track_config, track_type, date, race_duration, total_laps, leaders, lead_changes,
+                cautions, caution_laps, weather_type, cloud_conditions, temperature, humidity, fog, wind,
+                url, status, is_complete, scraped_at, updated_at
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
             ON CONFLICT(schedule_id) DO UPDATE SET
                 internal_race_id = excluded.internal_race_id,
                 season_id = excluded.season_id,
@@ -686,13 +697,18 @@ class Database:
                 track_config = excluded.track_config,
                 track_type = excluded.track_type,
                 date = excluded.date,
-                duration = excluded.duration,
-                laps = excluded.laps,
+                race_duration = excluded.race_duration,
+                total_laps = excluded.total_laps,
                 leaders = excluded.leaders,
                 lead_changes = excluded.lead_changes,
-                weather = excluded.weather,
+                cautions = excluded.cautions,
+                caution_laps = excluded.caution_laps,
+                weather_type = excluded.weather_type,
+                cloud_conditions = excluded.cloud_conditions,
                 temperature = excluded.temperature,
                 humidity = excluded.humidity,
+                fog = excluded.fog,
+                wind = excluded.wind,
                 url = excluded.url,
                 status = excluded.status,
                 is_complete = excluded.is_complete,
@@ -709,13 +725,18 @@ class Database:
                 track_config,
                 track_type,
                 date,
-                duration,
-                laps,
+                race_duration,
+                total_laps,
                 leaders,
                 lead_changes,
-                weather,
+                cautions,
+                caution_laps,
+                weather_type,
+                cloud_conditions,
                 temperature,
                 humidity,
+                fog,
+                wind,
                 url,
                 status,
                 is_complete,

@@ -144,7 +144,9 @@ class RaceExtractor(BaseExtractor):
             url: Original URL
 
         Returns:
-            Dictionary with race metadata
+            Dictionary with race metadata including:
+            - schedule_id, url, name (required)
+            - track, track_config, track_type, date, weather, temperature, humidity (optional)
         """
         metadata = {
             "schedule_id": schedule_id,
@@ -155,7 +157,161 @@ class RaceExtractor(BaseExtractor):
         name = self._extract_race_name(soup)
         metadata["name"] = name
 
+        # Extract race info from page (track, date, weather, etc.)
+        race_info = self._extract_race_info(soup)
+        metadata.update(race_info)
+
         return metadata
+
+    def _extract_race_info(self, soup: BeautifulSoup) -> dict[str, Any]:
+        """Extract race information from page.
+
+        Parses race statistics and weather info from the session-details div.
+        Real HTML structure:
+        <div class="session-details">
+            1h 11m · <span>140 laps</span> · <span>5 Leaders</span> · ... · <span>4 cautions (17 laps)</span>
+            <br/>Realistic weather · <span>Clear</span> · <span>88° F</span> · ...
+        </div>
+
+        Args:
+            soup: BeautifulSoup object
+
+        Returns:
+            Dictionary with race info fields (may be empty if not found)
+        """
+        info = {}
+
+        # Look for session-details div (actual SimRacerHub structure)
+        session_details = soup.find("div", class_="session-details")
+        if not session_details:
+            # Fallback to old race-info structure for test fixtures
+            race_info_div = soup.find("div", class_="race-info")
+            if not race_info_div:
+                return info
+
+            # Old structure: extract from p tags with classes
+            race_stats = race_info_div.find("p", class_="race-stats")
+            weather_info = race_info_div.find("p", class_="weather-info")
+
+            if race_stats:
+                stats_line = race_stats.get_text(strip=True)
+            else:
+                stats_line = None
+
+            if weather_info:
+                weather_line = weather_info.get_text(strip=True)
+            else:
+                weather_line = None
+        else:
+            # New structure: extract from session-details div with br separation
+            # Split HTML on <br/> tag to separate race stats from weather
+            html_str = str(session_details)
+            parts = html_str.split("<br/>")
+
+            # Extract text from each part
+            if parts:
+                stats_soup = BeautifulSoup(parts[0], "html.parser")
+                stats_line = stats_soup.get_text(separator=" ", strip=True)
+            else:
+                stats_line = None
+
+            if len(parts) > 1:
+                weather_soup = BeautifulSoup(parts[1], "html.parser")
+                weather_line = weather_soup.get_text(separator=" ", strip=True)
+            else:
+                weather_line = None
+
+        # Process race statistics line
+        if stats_line:
+            # Parse format: "1h 11m · 140 laps · 5 Leaders · 9 Lead Changes · 4 cautions (17 laps)"
+            parts = [p.strip() for p in stats_line.split("·")]
+
+            for part in parts:
+                # Duration: "1h 11m"
+                if "h " in part and "m" in part:
+                    info["race_duration"] = part
+
+                # Total laps: "140 laps"
+                elif part.endswith(" laps") and "cautions" not in part:
+                    try:
+                        info["total_laps"] = int(part.replace(" laps", "").strip())
+                    except ValueError:
+                        pass
+
+                # Leaders: "5 Leaders"
+                elif "Leaders" in part:
+                    try:
+                        info["leaders"] = int(part.replace("Leaders", "").strip())
+                    except ValueError:
+                        pass
+
+                # Lead Changes: "9 Lead Changes"
+                elif "Lead Changes" in part:
+                    try:
+                        info["lead_changes"] = int(part.replace("Lead Changes", "").strip())
+                    except ValueError:
+                        pass
+
+                # Cautions: "4 cautions (17 laps)"
+                elif "cautions" in part:
+                    try:
+                        # Extract cautions count and caution laps
+                        if "(" in part:
+                            caution_part, laps_part = part.split("(")
+                            info["cautions"] = int(caution_part.replace("cautions", "").strip())
+                            info["caution_laps"] = int(laps_part.replace("laps)", "").strip())
+                        else:
+                            info["cautions"] = int(part.replace("cautions", "").strip())
+                    except ValueError:
+                        pass
+
+        # Process weather line
+        if weather_line:
+            # Parse format: "Realistic weather · Clear · 88° F · Humidity 55% · Fog 0% · Wind N @2 MPH"
+            parts = [p.strip() for p in weather_line.split("·")]
+
+            for part in parts:
+                # Weather type: "Realistic weather"
+                if "weather" in part.lower():
+                    info["weather_type"] = part
+
+                # Cloud conditions: "Clear", "Partly Cloudy", etc.
+                elif any(word in part for word in ["Cloudy", "Clear", "Overcast", "Rain", "Storm"]):
+                    info["cloud_conditions"] = part
+
+                # Temperature: "88° F" or "23° C"
+                elif "°" in part and ("C" in part or "F" in part):
+                    info["temperature"] = part
+
+                # Humidity: "Humidity 55%"
+                elif "Humidity" in part:
+                    info["humidity"] = part.replace("Humidity", "").strip()
+
+                # Fog: "Fog 0%"
+                elif "Fog" in part:
+                    info["fog"] = part.replace("Fog", "").strip()
+
+                # Wind: "Wind N @2 MPH"
+                elif "Wind" in part:
+                    info["wind"] = part.replace("Wind", "").strip()
+
+        # Extract date and track from other elements (these may vary)
+        # Look for common patterns in the page
+        all_text = soup.get_text()
+
+        # Try to find date pattern
+        date_match = re.search(r"Date:\s*([A-Za-z]{3}\s+\d{1,2},\s+\d{4})", all_text)
+        if date_match:
+            info["date"] = date_match.group(1)
+
+        # Try to find track pattern
+        track_match = re.search(r"Track:\s*([^\n]+?)(?:\s*-\s*([^\n]+))?(?:\n|$)", all_text)
+        if track_match:
+            info["track"] = track_match.group(1).strip()
+            if track_match.group(2):
+                info["track_config"] = track_match.group(2).strip()
+
+        return info
 
     def _extract_race_name(self, soup: BeautifulSoup) -> str:
         """Extract race name from page.
