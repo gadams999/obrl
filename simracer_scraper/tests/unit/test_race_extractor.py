@@ -333,13 +333,13 @@ class TestRaceExtractorMetadata:
             )
 
             metadata = result["metadata"]
-            assert "track" in metadata
-            assert metadata["track"] == "Daytona International Speedway"
+            assert "track_name" in metadata
+            assert metadata["track_name"] == "Daytona International Speedway"
             assert "track_config" in metadata
             assert metadata["track_config"] == "Dual Pit Roads"
 
     def test_extract_date(self, race_extractor, race_fixture_html):
-        """Test race date is extracted."""
+        """Test race date is extracted and converted to ISO format."""
         with patch.object(race_extractor, "fetch_page") as mock_fetch:
             mock_fetch.return_value = BeautifulSoup(race_fixture_html, "html.parser")
 
@@ -349,7 +349,7 @@ class TestRaceExtractorMetadata:
 
             metadata = result["metadata"]
             assert "date" in metadata
-            assert metadata["date"] == "Oct 29, 2025"
+            assert metadata["date"] == "2025-10-29T00:00:00"
 
     def test_extract_weather(self, race_extractor, race_fixture_html):
         """Test weather conditions and temperature are extracted."""
@@ -459,9 +459,9 @@ class TestRaceExtractorMetadata:
             )
 
             metadata = result["metadata"]
-            # Should have date and track from paragraphs
-            assert metadata["date"] == "Oct 30, 2025"
-            assert metadata["track"] == "Test Track"
+            # Should have date and track_name from paragraphs (date is now ISO format)
+            assert metadata["date"] == "2025-10-30T00:00:00"
+            assert metadata["track_name"] == "Test Track"
             # No race-stats paragraph = no stats fields
             assert "total_laps" not in metadata
             assert "leaders" not in metadata

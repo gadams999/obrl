@@ -106,7 +106,9 @@ class Orchestrator:
         """Exit context manager - cleanup browser resources."""
         # Close shared browser
         if self._browser_manager:
-            self._browser_manager.close()
+            # Pass interrupted=True if exiting due to KeyboardInterrupt
+            interrupted = exc_type is KeyboardInterrupt
+            self._browser_manager.close(interrupted=interrupted)
         # Don't suppress exceptions
         return False
 
@@ -460,6 +462,7 @@ class Orchestrator:
                         race_url=race_info["url"],
                         season_id=season_id,
                         schedule_id=race_info["schedule_id"],
+                        race_number=race_info.get("race_number", 0),
                         has_results=race_info.get("has_results", True),
                         cache_max_age_days=cache_max_age_days,
                         force=force,
@@ -478,6 +481,7 @@ class Orchestrator:
         race_url: str,
         season_id: int,
         schedule_id: int,
+        race_number: int = 0,
         has_results: bool = True,
         cache_max_age_days: int | None = 7,
         force: bool = False,
@@ -488,6 +492,7 @@ class Orchestrator:
             race_url: URL like "season_race.php?schedule_id=324462"
             season_id: Season ID (foreign key for races table)
             schedule_id: Schedule ID (unique identifier from SimRacerHub)
+            race_number: Race number from season schedule (e.g., 1, 2, 3...)
             has_results: Whether this race has results available (from season extractor)
             cache_max_age_days: Days before cache expires
             force: Force re-scrape even if race is marked complete
@@ -508,7 +513,7 @@ class Orchestrator:
                         "url": race_url,
                         "is_complete": False,
                         "scraped_at": datetime.datetime.now().isoformat(),
-                        "race_number": 0,  # Will be updated when race has results
+                        "race_number": race_number,
                         "name": "TBD",
                     },
                 )
@@ -540,9 +545,10 @@ class Orchestrator:
                 data={
                     "name": metadata["name"],
                     "url": metadata["url"],
-                    "race_number": metadata.get("race_number", 0),
-                    "track": metadata.get("track"),
+                    "race_number": race_number,  # Use race_number from season schedule
+                    "track_name": metadata.get("track_name"),
                     "track_config": metadata.get("track_config"),
+                    "track_type": metadata.get("track_type"),
                     "date": metadata.get("date"),
                     "race_duration": metadata.get("race_duration"),
                     "total_laps": metadata.get("total_laps"),

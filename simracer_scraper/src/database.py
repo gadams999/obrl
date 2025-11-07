@@ -181,7 +181,7 @@ class Database:
                 season_id INTEGER NOT NULL,
                 race_number INTEGER NOT NULL,
                 name TEXT,
-                track TEXT,
+                track_name TEXT,
                 track_config TEXT,
                 track_type TEXT,
                 date TIMESTAMP,
@@ -660,7 +660,7 @@ class Database:
         # Optional fields
         internal_race_id = data.get("internal_race_id")
         name = data.get("name")
-        track = data.get("track")
+        track_name = data.get("track_name")
         track_config = data.get("track_config")
         track_type = data.get("track_type")
         date = data.get("date")
@@ -682,7 +682,7 @@ class Database:
         cursor.execute(
             """
             INSERT INTO races (
-                schedule_id, internal_race_id, season_id, race_number, name, track,
+                schedule_id, internal_race_id, season_id, race_number, name, track_name,
                 track_config, track_type, date, race_duration, total_laps, leaders, lead_changes,
                 cautions, caution_laps, weather_type, cloud_conditions, temperature, humidity, fog, wind,
                 url, status, is_complete, scraped_at, updated_at
@@ -693,7 +693,7 @@ class Database:
                 season_id = excluded.season_id,
                 race_number = excluded.race_number,
                 name = excluded.name,
-                track = excluded.track,
+                track_name = excluded.track_name,
                 track_config = excluded.track_config,
                 track_type = excluded.track_type,
                 date = excluded.date,
@@ -721,7 +721,7 @@ class Database:
                 season_id,
                 race_number,
                 name,
-                track,
+                track_name,
                 track_config,
                 track_type,
                 date,

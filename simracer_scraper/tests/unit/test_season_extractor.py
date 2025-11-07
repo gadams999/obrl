@@ -65,7 +65,7 @@ class TestSeasonExtractorExtraction:
             mock_fetch.return_value = BeautifulSoup(season_fixture_html, "html.parser")
 
             result = season_extractor.extract(
-                "https://www.simracerhub.com/season_race.php?series_id=3714"
+                "https://www.simracerhub.com/season_schedule.php?season_id=3714"
             )
 
             # Should return a dictionary
@@ -79,31 +79,31 @@ class TestSeasonExtractorExtraction:
             mock_fetch.return_value = BeautifulSoup(season_fixture_html, "html.parser")
 
             result = season_extractor.extract(
-                "https://www.simracerhub.com/season_race.php?series_id=3714"
+                "https://www.simracerhub.com/season_schedule.php?season_id=3714"
             )
 
             metadata = result["metadata"]
 
             # Should have required fields
-            assert "series_id" in metadata
+            assert "season_id" in metadata
             assert "name" in metadata
             assert "url" in metadata
 
             # Check data types
-            assert isinstance(metadata["series_id"], int)
+            assert isinstance(metadata["season_id"], int)
             assert isinstance(metadata["name"], str)
             assert isinstance(metadata["url"], str)
 
-    def test_extract_series_id_from_url(self, season_extractor, season_fixture_html):
-        """Test series_id is correctly extracted from URL."""
+    def test_extract_season_id_from_url(self, season_extractor, season_fixture_html):
+        """Test season_id is correctly extracted from URL."""
         with patch.object(season_extractor, "fetch_page") as mock_fetch:
             mock_fetch.return_value = BeautifulSoup(season_fixture_html, "html.parser")
 
             result = season_extractor.extract(
-                "https://www.simracerhub.com/season_race.php?series_id=3714"
+                "https://www.simracerhub.com/season_schedule.php?season_id=3714"
             )
 
-            assert result["metadata"]["series_id"] == 3714
+            assert result["metadata"]["season_id"] == 3714
 
     def test_extract_season_name(self, season_extractor, season_fixture_html):
         """Test season name is correctly extracted from H1."""
@@ -111,7 +111,7 @@ class TestSeasonExtractorExtraction:
             mock_fetch.return_value = BeautifulSoup(season_fixture_html, "html.parser")
 
             result = season_extractor.extract(
-                "https://www.simracerhub.com/season_race.php?series_id=3714"
+                "https://www.simracerhub.com/season_schedule.php?season_id=3714"
             )
 
             name = result["metadata"]["name"]
@@ -125,7 +125,7 @@ class TestSeasonExtractorExtraction:
             mock_fetch.return_value = BeautifulSoup(season_fixture_html, "html.parser")
 
             result = season_extractor.extract(
-                "https://www.simracerhub.com/season_race.php?series_id=3714"
+                "https://www.simracerhub.com/season_schedule.php?season_id=3714"
             )
 
             races = result["child_urls"]["races"]
@@ -145,7 +145,7 @@ class TestSeasonExtractorExtraction:
             mock_fetch.return_value = BeautifulSoup(season_fixture_html, "html.parser")
 
             result = season_extractor.extract(
-                "https://www.simracerhub.com/season_race.php?series_id=3714"
+                "https://www.simracerhub.com/season_schedule.php?season_id=3714"
             )
 
             races = result["child_urls"]["races"]
@@ -163,7 +163,7 @@ class TestSeasonExtractorExtraction:
             mock_fetch.return_value = BeautifulSoup(season_fixture_html, "html.parser")
 
             result = season_extractor.extract(
-                "https://www.simracerhub.com/season_race.php?series_id=3714"
+                "https://www.simracerhub.com/season_schedule.php?season_id=3714"
             )
 
             races = result["child_urls"]["races"]
@@ -182,8 +182,8 @@ class TestSeasonExtractorEdgeCases:
         with pytest.raises(ValueError):
             season_extractor.extract("https://www.simracerhub.com/invalid.php")
 
-    def test_extract_missing_series_id(self, season_extractor):
-        """Test extraction with missing series_id parameter."""
+    def test_extract_missing_season_id(self, season_extractor):
+        """Test extraction with missing season_id parameter."""
         with pytest.raises(ValueError):
             season_extractor.extract("https://www.simracerhub.com/season_race.php")
 
@@ -206,7 +206,7 @@ class TestSeasonExtractorEdgeCases:
             mock_fetch.return_value = BeautifulSoup(html_no_races, "html.parser")
 
             result = season_extractor.extract(
-                "https://www.simracerhub.com/season_race.php?series_id=9999"
+                "https://www.simracerhub.com/season_schedule.php?season_id=9999"
             )
 
             # Should return empty races list
@@ -235,7 +235,7 @@ class TestSeasonExtractorEdgeCases:
             mock_fetch.return_value = BeautifulSoup(html_no_name, "html.parser")
 
             result = season_extractor.extract(
-                "https://www.simracerhub.com/season_race.php?series_id=9999"
+                "https://www.simracerhub.com/season_schedule.php?season_id=9999"
             )
 
             # Should have a fallback name
@@ -265,7 +265,7 @@ class TestSeasonExtractorEdgeCases:
             mock_fetch.return_value = BeautifulSoup(html, "html.parser")
 
             result = season_extractor.extract(
-                "https://www.simracerhub.com/season_race.php?series_id=100"
+                "https://www.simracerhub.com/season_schedule.php?season_id=100"
             )
 
             assert result["metadata"]["name"] == "Test Season Title"
@@ -293,7 +293,7 @@ class TestSeasonExtractorEdgeCases:
             mock_fetch.return_value = BeautifulSoup(html, "html.parser")
 
             result = season_extractor.extract(
-                "https://www.simracerhub.com/season_race.php?series_id=100"
+                "https://www.simracerhub.com/season_schedule.php?season_id=100"
             )
 
             assert result["metadata"]["name"] == "Unknown Season"
@@ -321,7 +321,7 @@ class TestSeasonExtractorEdgeCases:
             mock_fetch.return_value = BeautifulSoup(html, "html.parser")
 
             result = season_extractor.extract(
-                "https://www.simracerhub.com/season_race.php?series_id=100"
+                "https://www.simracerhub.com/season_schedule.php?season_id=100"
             )
 
             assert result["metadata"]["name"] == "My Season"
@@ -348,7 +348,7 @@ class TestSeasonExtractorEdgeCases:
             mock_fetch.return_value = BeautifulSoup(html, "html.parser")
 
             result = season_extractor.extract(
-                "https://www.simracerhub.com/season_race.php?series_id=100"
+                "https://www.simracerhub.com/season_schedule.php?season_id=100"
             )
 
             races = result["child_urls"]["races"]
@@ -371,7 +371,7 @@ class TestSeasonExtractorEdgeCases:
             mock_fetch.return_value = BeautifulSoup(html, "html.parser")
 
             result = season_extractor.extract(
-                "https://www.simracerhub.com/season_race.php?series_id=100"
+                "https://www.simracerhub.com/season_schedule.php?season_id=100"
             )
 
             # Should return empty races list

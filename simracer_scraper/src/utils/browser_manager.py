@@ -6,14 +6,25 @@ multiple extractors could fire requests simultaneously, violating respectful
 crawling behavior.
 """
 
+import atexit
 import logging
 import random
+import signal
+import sys
 import threading
 import time
+import warnings
 
 from playwright.sync_api import sync_playwright, Browser, Playwright
 
 logger = logging.getLogger(__name__)
+
+# Suppress Playwright cleanup warnings globally
+# This prevents "Task was destroyed but it is pending!" messages when interrupted
+warnings.filterwarnings("ignore", message="coroutine.*was never awaited", category=RuntimeWarning)
+warnings.filterwarnings(
+    "ignore", message="Enable tracemalloc to get the object allocation traceback", category=RuntimeWarning
+)
 
 
 class BrowserManager:
@@ -53,6 +64,7 @@ class BrowserManager:
         self._last_request_time: float = 0
         self._rate_limit_range: tuple[float, float] = rate_limit_range
         self._lock: threading.Lock = threading.Lock()
+        self._interrupted: bool = False  # Track if cleanup is due to interrupt
 
         logger.info(
             f"BrowserManager initialized with rate limit range: "
@@ -115,10 +127,14 @@ class BrowserManager:
 
             return self._browser
 
-    def close(self) -> None:
+    def close(self, interrupted: bool = False) -> None:
         """Close browser and cleanup Playwright resources.
 
         Should be called when orchestrator exits to free resources.
+        Handles cleanup gracefully even when operations are interrupted.
+
+        Args:
+            interrupted: If True, skip slow cleanup operations (set during Ctrl+C)
 
         Thread-safe: Uses lock to ensure clean shutdown.
 
@@ -126,15 +142,37 @@ class BrowserManager:
             >>> manager.close()
         """
         with self._lock:
+            # Suppress asyncio error logging permanently
+            # This prevents error messages during cleanup after Ctrl+C
+            asyncio_logger = logging.getLogger("asyncio")
+            asyncio_logger.setLevel(logging.CRITICAL)
+
             if self._browser:
                 logger.info("Closing shared Playwright browser")
-                self._browser.close()
-                self._browser = None
+
+                if interrupted:
+                    # During interrupt: Don't call close(), it hangs waiting for pending operations
+                    # Just clear references and let process exit
+                    logger.debug("Skipping browser.close() due to interrupt")
+                    self._browser = None
+                    self._playwright = None
+                    return
+
+                try:
+                    self._browser.close()
+                except (Exception, KeyboardInterrupt):
+                    pass  # Ignore all errors during cleanup
+                finally:
+                    self._browser = None
 
             if self._playwright:
                 logger.debug("Stopping Playwright")
-                self._playwright.stop()
-                self._playwright = None
+                try:
+                    self._playwright.stop()
+                except (Exception, KeyboardInterrupt):
+                    pass  # Ignore all errors during cleanup
+                finally:
+                    self._playwright = None
 
     def __enter__(self):
         """Context manager entry."""

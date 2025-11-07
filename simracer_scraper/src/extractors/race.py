@@ -181,6 +181,103 @@ class RaceExtractor(BaseExtractor):
         """
         info = {}
 
+        # Extract track_name from span.track-name
+        track_name_span = soup.find("span", class_="track-name")
+        if track_name_span:
+            info["track_name"] = track_name_span.get_text(strip=True)
+
+        # Extract track_type and date from div.track-meta
+        # Format: "Mar 16, 2022<span>·</span><i>Oval - 2008</i>"
+        # or: "Mar 16, 2022<span>·</span><i>Road Course - 2008</i>"
+        track_meta = soup.find("div", class_="track-meta")
+        if track_meta:
+            # Get full text to extract date
+            meta_text = track_meta.get_text(separator=" ", strip=True)
+
+            # Extract date from beginning
+            date_match = re.search(r"([A-Za-z]{3}\s+\d{1,2},\s+\d{4})", meta_text)
+            if date_match:
+                from datetime import datetime
+
+                date_str = date_match.group(1)
+                try:
+                    # Parse the date string and convert to ISO format
+                    parsed_date = datetime.strptime(date_str, "%b %d, %Y")
+                    info["date"] = parsed_date.isoformat()
+                except ValueError:
+                    # If parsing fails, store the raw string
+                    info["date"] = date_str
+
+            # Find the <i> tag which contains track type
+            track_type_tag = track_meta.find("i")
+            if track_type_tag:
+                track_type_text = track_type_tag.get_text(strip=True)
+                # Extract track type (before the dash and year if present)
+                # E.g., "Oval - 2008" -> "Oval", "Road Course - 2008" -> "Road Course"
+                if " - " in track_type_text:
+                    track_type = track_type_text.split(" - ")[0].strip()
+                else:
+                    track_type = track_type_text.strip()
+                if track_type:
+                    info["track_type"] = track_type
+
+        # Look for race-details div to extract date (keeping for fallback)
+        race_details = soup.find("div", class_="race-details")
+        if race_details:
+            # Parse the race-details text
+            # Expected format: "Oct 29, 2025 - Road Course" or "Date: Oct 29, 2025 - Road Course"
+            details_text = race_details.get_text(separator=" ", strip=True)
+
+            # Extract date (format: "Oct 29, 2025" or similar)
+            date_match = re.search(r"([A-Za-z]{3}\s+\d{1,2},\s+\d{4})", details_text)
+            if date_match:
+                from datetime import datetime
+                date_str = date_match.group(1)
+                try:
+                    # Parse the date string and convert to ISO format
+                    parsed_date = datetime.strptime(date_str, "%b %d, %Y")
+                    info["date"] = parsed_date.isoformat()
+                except ValueError:
+                    # If parsing fails, store the raw string
+                    info["date"] = date_str
+
+                # Extract track_type (after the date, usually after a dash or separator)
+                # Look for patterns like "Road Course", "Oval", "Street Circuit", etc.
+                after_date = details_text.split(date_str, 1)
+                if len(after_date) > 1:
+                    remaining = after_date[1].strip()
+                    # Remove common separators
+                    for sep in ["-", "·", "|", ":"]:
+                        if remaining.startswith(sep):
+                            remaining = remaining[1:].strip()
+                            break
+
+                    # Track type is typically the first word(s) after the separator
+                    # Common patterns: "Road Course", "Oval", "Road", "Street Circuit"
+                    if remaining:
+                        # Try to extract just the track type (stop at next separator or newline)
+                        track_type_match = re.match(r"^([^·\-\n\r]+)", remaining)
+                        if track_type_match:
+                            track_type = track_type_match.group(1).strip()
+                            if track_type:
+                                info["track_type"] = track_type
+            else:
+                # No date found, check if entire text might be track type
+                # Look for common track type keywords
+                if any(
+                    keyword in details_text.lower()
+                    for keyword in [
+                        "road",
+                        "oval",
+                        "street",
+                        "circuit",
+                        "speedway",
+                        "road course",
+                        "street circuit",
+                    ]
+                ):
+                    info["track_type"] = details_text.strip()
+
         # Look for session-details div (actual SimRacerHub structure)
         session_details = soup.find("div", class_="session-details")
         if not session_details:
@@ -252,7 +349,7 @@ class RaceExtractor(BaseExtractor):
                     except ValueError:
                         pass
 
-                # Cautions: "4 cautions (17 laps)"
+                # Cautions: "4 cautions (17 laps)" or "0 cautions"
                 elif "cautions" in part:
                     try:
                         # Extract cautions count and caution laps
@@ -261,7 +358,10 @@ class RaceExtractor(BaseExtractor):
                             info["cautions"] = int(caution_part.replace("cautions", "").strip())
                             info["caution_laps"] = int(laps_part.replace("laps)", "").strip())
                         else:
-                            info["cautions"] = int(part.replace("cautions", "").strip())
+                            caution_count = int(part.replace("cautions", "").strip())
+                            info["cautions"] = caution_count
+                            # If no caution laps specified, default to 0
+                            info["caution_laps"] = 0
                     except ValueError:
                         pass
 
@@ -295,21 +395,31 @@ class RaceExtractor(BaseExtractor):
                 elif "Wind" in part:
                     info["wind"] = part.replace("Wind", "").strip()
 
-        # Extract date and track from other elements (these may vary)
+        # Extract date and track from other elements (fallback for old structure)
         # Look for common patterns in the page
         all_text = soup.get_text()
 
-        # Try to find date pattern
-        date_match = re.search(r"Date:\s*([A-Za-z]{3}\s+\d{1,2},\s+\d{4})", all_text)
-        if date_match:
-            info["date"] = date_match.group(1)
+        # Try to find date pattern (only if not already extracted from race-details)
+        if "date" not in info:
+            date_match = re.search(r"Date:\s*([A-Za-z]{3}\s+\d{1,2},\s+\d{4})", all_text)
+            if date_match:
+                from datetime import datetime
+                date_str = date_match.group(1)
+                try:
+                    # Parse the date string and convert to ISO format
+                    parsed_date = datetime.strptime(date_str, "%b %d, %Y")
+                    info["date"] = parsed_date.isoformat()
+                except ValueError:
+                    # If parsing fails, store the raw string
+                    info["date"] = date_str
 
-        # Try to find track pattern
-        track_match = re.search(r"Track:\s*([^\n]+?)(?:\s*-\s*([^\n]+))?(?:\n|$)", all_text)
-        if track_match:
-            info["track"] = track_match.group(1).strip()
-            if track_match.group(2):
-                info["track_config"] = track_match.group(2).strip()
+        # Try to find track pattern (only if not already extracted from span.track-name)
+        if "track_name" not in info:
+            track_match = re.search(r"Track:\s*([^\n]+?)(?:\s*-\s*([^\n]+))?(?:\n|$)", all_text)
+            if track_match:
+                info["track_name"] = track_match.group(1).strip()
+                if track_match.group(2):
+                    info["track_config"] = track_match.group(2).strip()
 
         return info
 
