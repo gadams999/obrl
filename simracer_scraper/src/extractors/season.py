@@ -4,7 +4,7 @@ This module extracts season metadata and discovers race URLs from season pages.
 """
 
 import re
-from typing import Any, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from bs4 import BeautifulSoup
 
@@ -242,151 +242,154 @@ class SeasonExtractor(BaseExtractor):
             table = soup.find("table")
 
         if table:
-                rows = table.find_all("tr")
+            rows = table.find_all("tr")
 
-                for row in rows:
-                    cells = row.find_all("td")
+            for row in rows:
+                cells = row.find_all("td")
 
-                    # Skip header rows or empty rows
-                    if not cells:
+                # Skip header rows or empty rows
+                if not cells:
+                    continue
+
+                # Find schedule_id link in this row
+                links = row.find_all("a", href=re.compile(r"schedule_id=\d+"))
+                if not links:
+                    continue
+
+                for link in links:
+                    href = link.get("href", "")
+                    track_name = link.get_text(strip=True)  # Track name from link text
+
+                    match = re.search(r"schedule_id=(\d+)", href)
+                    if not match:
                         continue
 
-                    # Find schedule_id link in this row
-                    links = row.find_all("a", href=re.compile(r"schedule_id=\d+"))
-                    if not links:
+                    schedule_id = int(match.group(1))
+
+                    if schedule_id in seen_schedule_ids:
                         continue
+                    seen_schedule_ids.add(schedule_id)
 
-                    for link in links:
-                        href = link.get("href", "")
-                        track_name = link.get_text(strip=True)  # Track name from link text
+                    if href.startswith("http"):
+                        full_url = href
+                    else:
+                        full_url = f"{base_url}/{href}"
 
-                        match = re.search(r"schedule_id=(\d+)", href)
-                        if not match:
-                            continue
+                    # Check if this race has results available
+                    has_results = bool(href and "season_race.php" in href)
 
-                        schedule_id = int(match.group(1))
-
-                        if schedule_id in seen_schedule_ids:
-                            continue
-                        seen_schedule_ids.add(schedule_id)
-
-                        if href.startswith("http"):
-                            full_url = href
+                    # Extract race number from first cell
+                    # Can be just a number like "1", "2", "3" or "Race 1", "Race 2", etc.
+                    # Skip rows without a valid race number (informational rows)
+                    race_number = 0
+                    try:
+                        first_cell_text = cells[0].get_text(strip=True)
+                        # Try direct number first
+                        if first_cell_text.isdigit():
+                            race_number = int(first_cell_text)
                         else:
-                            full_url = f"{base_url}/{href}"
-
-                        # Check if this race has results available
-                        has_results = bool(href and "season_race.php" in href)
-
-                        # Extract race number from first cell
-                        # Can be just a number like "1", "2", "3" or "Race 1", "Race 2", etc.
-                        # Skip rows without a valid race number (informational rows)
-                        race_number = 0
-                        try:
-                            first_cell_text = cells[0].get_text(strip=True)
-                            # Try direct number first
-                            if first_cell_text.isdigit():
-                                race_number = int(first_cell_text)
-                            else:
-                                # Try to extract number from "Race N" pattern
-                                race_num_match = re.search(r"Race\s+(\d+)", first_cell_text, re.IGNORECASE)
-                                if race_num_match:
-                                    race_number = int(race_num_match.group(1))
-                        except (ValueError, IndexError):
-                            pass
-
-                        # Skip this row if no valid race number found (informational row)
-                        if race_number == 0:
-                            continue
-
-                        race_dict = {
-                            "url": full_url,
-                            "schedule_id": schedule_id,
-                            "track": track_name,
-                            "has_results": has_results,
-                            "race_number": race_number,
-                        }
-                        for cell in cells:
-                            cell_text = cell.get_text(strip=True)
-                            # Look for date+time patterns like "Oct 29, 2025 7:00 PM" or just date
-                            datetime_match = re.search(
-                                r"([A-Za-z]{3}\s+\d{1,2},\s+\d{4})\s+(\d{1,2}):(\d{2})\s*(AM|PM)?",
-                                cell_text,
+                            # Try to extract number from "Race N" pattern
+                            race_num_match = re.search(
+                                r"Race\s+(\d+)", first_cell_text, re.IGNORECASE
                             )
-                            if datetime_match:
-                                from datetime import datetime, timezone
-                                from zoneinfo import ZoneInfo
+                            if race_num_match:
+                                race_number = int(race_num_match.group(1))
+                    except (ValueError, IndexError):
+                        pass
 
-                                date_str = datetime_match.group(1)
-                                hour = int(datetime_match.group(2))
-                                minute = int(datetime_match.group(3))
-                                am_pm = datetime_match.group(4)
+                    # Skip this row if no valid race number found (informational row)
+                    if race_number == 0:
+                        continue
 
+                    race_dict = {
+                        "url": full_url,
+                        "schedule_id": schedule_id,
+                        "track": track_name,
+                        "has_results": has_results,
+                        "race_number": race_number,
+                    }
+                    for cell in cells:
+                        cell_text = cell.get_text(strip=True)
+                        # Look for date+time patterns like "Oct 29, 2025 7:00 PM" or just date
+                        datetime_match = re.search(
+                            r"([A-Za-z]{3}\s+\d{1,2},\s+\d{4})\s+(\d{1,2}):(\d{2})\s*(AM|PM)?",
+                            cell_text,
+                        )
+                        if datetime_match:
+                            from datetime import datetime, timezone
+                            from zoneinfo import ZoneInfo
+
+                            date_str = datetime_match.group(1)
+                            hour = int(datetime_match.group(2))
+                            minute = int(datetime_match.group(3))
+                            am_pm = datetime_match.group(4)
+
+                            try:
+                                # Parse date
+                                parsed_date = datetime.strptime(date_str, "%b %d, %Y")
+
+                                # Add time
+                                if am_pm:
+                                    # 12-hour format
+                                    if am_pm == "PM" and hour != 12:
+                                        hour += 12
+                                    elif am_pm == "AM" and hour == 12:
+                                        hour = 0
+
+                                # Create datetime with time in local timezone
+                                # Try to get system timezone, fall back to UTC
                                 try:
-                                    # Parse date
-                                    parsed_date = datetime.strptime(date_str, "%b %d, %Y")
+                                    import time as time_module
 
-                                    # Add time
-                                    if am_pm:
-                                        # 12-hour format
-                                        if am_pm == "PM" and hour != 12:
-                                            hour += 12
-                                        elif am_pm == "AM" and hour == 12:
-                                            hour = 0
+                                    # Get system timezone name
+                                    if time_module.daylight:
+                                        tz_name = time_module.tzname[1]
+                                    else:
+                                        tz_name = time_module.tzname[0]
 
-                                    # Create datetime with time in local timezone
-                                    # Try to get system timezone, fall back to UTC
-                                    try:
-                                        import time as time_module
+                                    # Try common timezone abbreviations mapping
+                                    tz_map = {
+                                        "EST": "America/New_York",
+                                        "EDT": "America/New_York",
+                                        "CST": "America/Chicago",
+                                        "CDT": "America/Chicago",
+                                        "MST": "America/Denver",
+                                        "MDT": "America/Denver",
+                                        "PST": "America/Los_Angeles",
+                                        "PDT": "America/Los_Angeles",
+                                    }
+                                    tz_full = tz_map.get(tz_name, "UTC")
+                                    local_tz = ZoneInfo(tz_full)
+                                except Exception:
+                                    local_tz = timezone.utc
 
-                                        # Get system timezone name
-                                        if time_module.daylight:
-                                            tz_name = time_module.tzname[1]
-                                        else:
-                                            tz_name = time_module.tzname[0]
+                                local_dt = parsed_date.replace(
+                                    hour=hour, minute=minute, tzinfo=local_tz
+                                )
 
-                                        # Try common timezone abbreviations mapping
-                                        tz_map = {
-                                            "EST": "America/New_York",
-                                            "EDT": "America/New_York",
-                                            "CST": "America/Chicago",
-                                            "CDT": "America/Chicago",
-                                            "MST": "America/Denver",
-                                            "MDT": "America/Denver",
-                                            "PST": "America/Los_Angeles",
-                                            "PDT": "America/Los_Angeles",
-                                        }
-                                        tz_full = tz_map.get(tz_name, "UTC")
-                                        local_tz = ZoneInfo(tz_full)
-                                    except Exception:
-                                        local_tz = timezone.utc
+                                # Convert to UTC
+                                utc_dt = local_dt.astimezone(timezone.utc)
+                                race_dict["date"] = utc_dt.isoformat()
+                            except (ValueError, Exception):
+                                # If parsing fails, try date-only
+                                pass
+                            break
 
-                                    local_dt = parsed_date.replace(
-                                        hour=hour, minute=minute, tzinfo=local_tz
-                                    )
+                        # Fallback: just date without time
+                        date_match = re.search(r"([A-Za-z]{3}\s+\d{1,2},\s+\d{4})", cell_text)
+                        if date_match and "date" not in race_dict:
+                            from datetime import datetime
 
-                                    # Convert to UTC
-                                    utc_dt = local_dt.astimezone(timezone.utc)
-                                    race_dict["date"] = utc_dt.isoformat()
-                                except (ValueError, Exception):
-                                    # If parsing fails, try date-only
-                                    pass
-                                break
+                            date_str = date_match.group(1)
+                            try:
+                                # Parse the date string and convert to ISO format
+                                parsed_date = datetime.strptime(date_str, "%b %d, %Y")
+                                race_dict["date"] = parsed_date.isoformat()
+                            except ValueError:
+                                # If parsing fails, store the raw string
+                                race_dict["date"] = date_str
+                            break
 
-                            # Fallback: just date without time
-                            date_match = re.search(r"([A-Za-z]{3}\s+\d{1,2},\s+\d{4})", cell_text)
-                            if date_match and "date" not in race_dict:
-                                from datetime import datetime
-                                date_str = date_match.group(1)
-                                try:
-                                    # Parse the date string and convert to ISO format
-                                    parsed_date = datetime.strptime(date_str, "%b %d, %Y")
-                                    race_dict["date"] = parsed_date.isoformat()
-                                except ValueError:
-                                    # If parsing fails, store the raw string
-                                    race_dict["date"] = date_str
-                                break
-
-                        races.append(race_dict)
+                    races.append(race_dict)
 
         return races

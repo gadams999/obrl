@@ -1,7 +1,12 @@
 """JavaScript parser utilities for extracting data from SimRacerHub pages.
 
-SimRacerHub embeds data in JavaScript arrays and objects. This module provides
-utilities to extract and parse that data into Python dictionaries.
+SimRacerHub embeds data in JavaScript arrays, objects, and React components.
+This module provides utilities to extract and parse that data into Python dictionaries.
+
+Supported Patterns:
+1. series.push({...}) - League series data
+2. seasons = [{...}] - Series seasons data
+3. ReactDOM.render(..., {rps: [...]}) - Race results data
 """
 
 import json
@@ -214,3 +219,113 @@ def _js_to_json(js_content: str) -> str:
         result = "{" + result + "}"
 
     return result
+
+
+def extract_react_props(html: str, prop_name: str) -> list[dict] | dict | None:
+    """Extract data from ReactDOM.render() or ReactDOM.createRoot().render() calls.
+
+    SimRacerHub uses React to render race results tables with embedded JSON data:
+        ReactDOM.createRoot(...).render(
+            React.createElement(ResultsTable, {
+                rps: [{...}, {...}, ...],
+                drivers: {...},
+                teams: {...},
+                schedule: {...}
+            })
+        )
+
+    Args:
+        html: HTML content containing ReactDOM script
+        prop_name: React prop name to extract (e.g., "rps", "drivers", "teams", "schedule")
+
+    Returns:
+        - List of dictionaries if prop is an array (e.g., rps: [...])
+        - Dictionary if prop is an object (e.g., drivers: {...})
+        - None if prop not found
+
+    Examples:
+        >>> html = 'ReactDOM.render(..., {rps: [{id: 1}, {id: 2}]})'
+        >>> extract_react_props(html, 'rps')
+        [{'id': 1}, {'id': 2}]
+
+        >>> html = 'ReactDOM.render(..., {drivers: {"123": {...}}})'
+        >>> extract_react_props(html, 'drivers')
+        {'123': {...}}
+    """
+    # Find prop_name followed by colon
+    pattern = rf"{prop_name}:\s*"
+    match = re.search(pattern, html)
+
+    if not match:
+        return None
+
+    # Starting position after "prop_name: "
+    start_pos = match.end()
+
+    # Check if it's an array or object
+    if start_pos >= len(html):
+        return None
+
+    first_char = html[start_pos]
+    if first_char not in ("[", "{"):
+        return None
+
+    # Count brackets/braces to find matching closing character
+    open_char = first_char
+    close_char = "]" if open_char == "[" else "}"
+    depth = 0
+    end_pos = start_pos
+
+    for i in range(start_pos, len(html)):
+        char = html[i]
+        if char == open_char:
+            depth += 1
+        elif char == close_char:
+            depth -= 1
+            if depth == 0:
+                end_pos = i + 1
+                break
+
+    if depth != 0:
+        # Unmatched brackets/braces
+        return None
+
+    json_str = html[start_pos:end_pos]
+
+    try:
+        return json.loads(json_str)
+    except json.JSONDecodeError:
+        # Log parsing error for debugging
+        # Return None to allow fallback to HTML parsing
+        return None
+
+
+def extract_race_results_json(html: str) -> dict[str, Any]:
+    """Extract race results data from ReactDOM JSON.
+
+    Extracts all React props related to race results:
+    - rps: Array of race participant objects
+    - drivers: Dictionary of driver metadata
+    - teams: Dictionary of team metadata
+    - schedule: Race schedule metadata
+
+    Args:
+        html: HTML content containing ReactDOM script
+
+    Returns:
+        Dictionary with keys: rps, drivers, teams, schedule
+        Each value is the extracted data or None if not found
+
+    Examples:
+        >>> html = '<script>ReactDOM.render(..., {rps: [...], drivers: {...}})</script>'
+        >>> data = extract_race_results_json(html)
+        >>> data['rps']  # List of participant dicts
+        >>> data['drivers']  # Dict of driver metadata
+    """
+    return {
+        "rps": extract_react_props(html, "rps"),
+        "drivers": extract_react_props(html, "drivers"),
+        "teams": extract_react_props(html, "teams"),
+        "team_drivers": extract_react_props(html, "team_drivers"),
+        "schedule": extract_react_props(html, "schedule"),
+    }

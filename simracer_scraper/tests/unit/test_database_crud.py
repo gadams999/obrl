@@ -349,7 +349,7 @@ def test_upsert_race_result(test_db):
             "starting_position": 3,
             "car_number": "42",
             "laps_completed": 200,
-            "incidents": 0,
+            "incident_points": 0,
             "total_points": 50,
         },
     )

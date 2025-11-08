@@ -3,7 +3,6 @@
 import argparse
 import logging
 import sys
-from pathlib import Path
 
 import yaml
 
@@ -26,7 +25,7 @@ def setup_logging(level: str = "INFO"):
 def load_config(config_path: str) -> dict:
     """Load configuration from YAML file."""
     try:
-        with open(config_path, "r") as f:
+        with open(config_path) as f:
             return yaml.safe_load(f)
     except FileNotFoundError:
         return {}
@@ -161,7 +160,9 @@ Examples:
                     rate_limit_range=(2.0, 4.0),
                 ) as orchestrator:
                     # Build league URL
-                    league_url = f"https://www.simracerhub.com/league_series.php?league_id={league_id}"
+                    league_url = (
+                        f"https://www.simracerhub.com/league_series.php?league_id={league_id}"
+                    )
 
                     # Set cache behavior
                     cache_max_age = None if args.force else 7
@@ -169,7 +170,7 @@ Examples:
                     logger.info(f"Scraping league {league_id} with depth={depth}")
 
                     # Scrape with specified depth
-                    result = orchestrator.scrape_league(
+                    orchestrator.scrape_league(
                         league_url=league_url,
                         depth=depth,
                         cache_max_age_days=cache_max_age,
@@ -178,14 +179,14 @@ Examples:
 
                     # Show progress
                     progress = orchestrator.get_progress()
-                    logger.info(f"Scraping complete!")
+                    logger.info("Scraping complete!")
                     logger.info(f"  Leagues: {progress['leagues_scraped']}")
                     logger.info(f"  Series: {progress['series_scraped']}")
                     logger.info(f"  Seasons: {progress['seasons_scraped']}")
                     logger.info(f"  Races: {progress['races_scraped']}")
                     logger.info(f"  Cached (skipped): {progress['skipped_cached']}")
 
-                    if progress['errors']:
+                    if progress["errors"]:
                         logger.warning(f"  Errors: {len(progress['errors'])}")
 
         except KeyboardInterrupt:

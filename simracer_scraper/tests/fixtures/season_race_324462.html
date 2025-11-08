@@ -69,5 +69,144 @@
             <a href="season_race.php?series_id=3714">Back to Season</a>
         </div>
     </div>
+
+    <!-- ReactDOM race results data -->
+    <script>
+    ReactDOM.createRoot(document.getElementById('driver_table_324462')).render(
+        React.createElement(ResultsTable, {
+            rps: [
+                {
+                    "race_participant_id": "1001",
+                    "race_id": "324462",
+                    "driver_id": "33132",
+                    "car_id": "51",
+                    "driver_number": "23",
+                    "qualify_pos": "1",
+                    "qualify_time": "00:48.835",
+                    "num_laps": "70",
+                    "laps_led": "27",
+                    "finish_pos": "1",
+                    "status": "Running",
+                    "fastest_lap_time": "00:49.023",
+                    "fastest_lap_number": "5",
+                    "incidents": "0",
+                    "avg_lap": "00:49.458",
+                    "irating": "2721",
+                    "rpts": "40",
+                    "bpts": "3",
+                    "ppts": "0",
+                    "tpts": "43",
+                    "intv_str": "Leader",
+                    "arp": "2.357",
+                    "passes": "17",
+                    "quality_passes": "12",
+                    "closing_passes": "5",
+                    "num_fast_lap": "45",
+                    "name": "Joshua A Robinson"
+                },
+                {
+                    "race_participant_id": "1002",
+                    "race_id": "324462",
+                    "driver_id": "12345",
+                    "car_id": "51",
+                    "driver_number": "42",
+                    "qualify_pos": "2",
+                    "qualify_time": "00:48.900",
+                    "num_laps": "70",
+                    "laps_led": "15",
+                    "finish_pos": "2",
+                    "status": "Running",
+                    "fastest_lap_time": "00:49.100",
+                    "fastest_lap_number": "10",
+                    "incidents": "1",
+                    "avg_lap": "00:49.500",
+                    "irating": "2500",
+                    "rpts": "38",
+                    "bpts": "2",
+                    "ppts": "0",
+                    "tpts": "40",
+                    "intv_str": "+0.267",
+                    "arp": "3.500",
+                    "passes": "13",
+                    "quality_passes": "10",
+                    "closing_passes": "3",
+                    "num_fast_lap": "40",
+                    "name": "John Doe"
+                },
+                {
+                    "race_participant_id": "1003",
+                    "race_id": "324462",
+                    "driver_id": "67890",
+                    "car_id": "51",
+                    "driver_number": "7",
+                    "qualify_pos": "3",
+                    "qualify_time": "00:49.200",
+                    "num_laps": "69",
+                    "laps_led": "0",
+                    "finish_pos": "3",
+                    "status": "Running",
+                    "fastest_lap_time": "00:49.300",
+                    "fastest_lap_number": "15",
+                    "incidents": "2",
+                    "avg_lap": "00:49.800",
+                    "irating": "2200",
+                    "rpts": "36",
+                    "bpts": "1",
+                    "ppts": "-2",
+                    "tpts": "35",
+                    "intv_str": "+0.523",
+                    "arp": "4.100",
+                    "passes": "8",
+                    "quality_passes": "5",
+                    "closing_passes": "3",
+                    "num_fast_lap": "30",
+                    "name": "Jane Smith"
+                }
+            ],
+            drivers: {
+                "33132": {
+                    "driver_id": "33132",
+                    "club_id": "5",
+                    "name": "Joshua A Robinson",
+                    "last_first": "Robinson, Joshua A",
+                    "is_ai": false
+                },
+                "12345": {
+                    "driver_id": "12345",
+                    "club_id": "5",
+                    "name": "John Doe",
+                    "last_first": "Doe, John",
+                    "is_ai": false
+                },
+                "67890": {
+                    "driver_id": "67890",
+                    "club_id": "5",
+                    "name": "Jane Smith",
+                    "last_first": "Smith, Jane",
+                    "is_ai": false
+                }
+            },
+            teams: {
+                "100": {
+                    "name": "Team Alpha",
+                    "tpts": 103
+                },
+                "200": {
+                    "name": "Team Beta",
+                    "tpts": 95
+                }
+            },
+            team_drivers: {
+                "33132": "100",
+                "12345": "100",
+                "67890": "200"
+            },
+            schedule: {
+                "schedule_id": "324462",
+                "season_id": "15532"
+            }
+        })
+    );
+    </script>
 </body>
 </html>

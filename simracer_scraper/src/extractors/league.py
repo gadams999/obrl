@@ -4,7 +4,7 @@ This module extracts league metadata and discovers series URLs from league pages
 """
 
 import re
-from typing import Any, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from bs4 import BeautifulSoup
 
@@ -310,11 +310,13 @@ class LeagueExtractor(BaseExtractor):
             if "id" in series:
                 series_id = series["id"]
                 url = f"{base_url}/series_seasons.php?series_id={series_id}"
-                series_urls.append({
-                    "url": url,
-                    "series_id": series_id,
-                    "name": series.get("name", "Unknown Series"),
-                })
+                series_urls.append(
+                    {
+                        "url": url,
+                        "series_id": series_id,
+                        "name": series.get("name", "Unknown Series"),
+                    }
+                )
 
         return series_urls
 

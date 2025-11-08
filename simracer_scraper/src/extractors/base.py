@@ -14,7 +14,7 @@ from typing import TYPE_CHECKING
 
 import requests
 from bs4 import BeautifulSoup
-from playwright.sync_api import sync_playwright, Browser, Page
+from playwright.sync_api import sync_playwright
 
 if TYPE_CHECKING:
     from ..utils.browser_manager import BrowserManager

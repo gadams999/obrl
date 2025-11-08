@@ -6,16 +6,13 @@ multiple extractors could fire requests simultaneously, violating respectful
 crawling behavior.
 """
 
-import atexit
 import logging
 import random
-import signal
-import sys
 import threading
 import time
 import warnings
 
-from playwright.sync_api import sync_playwright, Browser, Playwright
+from playwright.sync_api import Browser, Playwright, sync_playwright
 
 logger = logging.getLogger(__name__)
 
@@ -23,7 +20,9 @@ logger = logging.getLogger(__name__)
 # This prevents "Task was destroyed but it is pending!" messages when interrupted
 warnings.filterwarnings("ignore", message="coroutine.*was never awaited", category=RuntimeWarning)
 warnings.filterwarnings(
-    "ignore", message="Enable tracemalloc to get the object allocation traceback", category=RuntimeWarning
+    "ignore",
+    message="Enable tracemalloc to get the object allocation traceback",
+    category=RuntimeWarning,
 )
 
 

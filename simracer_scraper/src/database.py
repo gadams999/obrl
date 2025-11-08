@@ -179,22 +179,36 @@ class Database:
                 schedule_id INTEGER NOT NULL UNIQUE,
                 season_id INTEGER NOT NULL,
                 race_number INTEGER NOT NULL,
+                event_name TEXT,
+                date TIMESTAMP,
+                race_time TEXT,
+                practice_time TEXT,
+                track_id INTEGER,
+                track_config_id INTEGER,
                 track_name TEXT,
                 track_type TEXT,
-                date TIMESTAMP,
+                track_length REAL,
+                track_config_iracing_id TEXT,
+                planned_laps INTEGER,
+                points_race BOOLEAN,
+                off_week BOOLEAN,
+                night_race BOOLEAN,
+                playoff_race BOOLEAN,
                 race_duration_minutes INTEGER,
                 total_laps INTEGER,
                 leaders INTEGER,
                 lead_changes INTEGER,
                 cautions INTEGER,
                 caution_laps INTEGER,
+                num_drivers INTEGER,
                 weather_type TEXT,
                 cloud_conditions TEXT,
                 temperature_f INTEGER,
                 humidity_pct INTEGER,
                 fog_pct INTEGER,
-                wind TEXT,
-                num_drivers INTEGER,
+                weather_wind_speed TEXT,
+                weather_wind_dir TEXT,
+                weather_wind_unit TEXT,
                 url TEXT NOT NULL UNIQUE,
                 is_complete BOOLEAN DEFAULT 0,
                 scraped_at TIMESTAMP NOT NULL,
@@ -218,6 +232,7 @@ class Database:
                 result_id INTEGER PRIMARY KEY AUTOINCREMENT,
                 race_id INTEGER NOT NULL,
                 driver_id INTEGER NOT NULL,
+                team TEXT,
                 finish_position INTEGER,
                 starting_position INTEGER,
                 car_number TEXT,
@@ -228,9 +243,10 @@ class Database:
                 interval TEXT,
                 laps_completed INTEGER,
                 laps_led INTEGER,
-                incidents INTEGER,
+                incident_points INTEGER,
                 race_points INTEGER,
                 bonus_points INTEGER,
+                penalty_points INTEGER,
                 total_points INTEGER,
                 fast_laps INTEGER,
                 quality_passes INTEGER,
@@ -239,8 +255,7 @@ class Database:
                 average_running_position REAL,
                 irating INTEGER,
                 status TEXT,
-                car_type TEXT,
-                team TEXT,
+                car_id INTEGER,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY (race_id) REFERENCES races(race_id),
@@ -654,52 +669,83 @@ class Database:
             raise ValueError("url, scraped_at, and race_number are required fields")
 
         # Optional fields
+        event_name = data.get("event_name")
+        date = data.get("date")
+        race_time = data.get("race_time")
+        practice_time = data.get("practice_time")
+        track_id = data.get("track_id")
+        track_config_id = data.get("track_config_id")
         track_name = data.get("track_name")
         track_type = data.get("track_type")
-        date = data.get("date")
+        track_length = data.get("track_length")
+        track_config_iracing_id = data.get("track_config_iracing_id")
+        planned_laps = data.get("planned_laps")
+        points_race = data.get("points_race")
+        off_week = data.get("off_week")
+        night_race = data.get("night_race")
+        playoff_race = data.get("playoff_race")
         race_duration_minutes = data.get("race_duration_minutes")
         total_laps = data.get("total_laps")
         leaders = data.get("leaders")
         lead_changes = data.get("lead_changes")
         cautions = data.get("cautions")
         caution_laps = data.get("caution_laps")
+        num_drivers = data.get("num_drivers")
         weather_type = data.get("weather_type")
         cloud_conditions = data.get("cloud_conditions")
         temperature_f = data.get("temperature_f")
         humidity_pct = data.get("humidity_pct")
         fog_pct = data.get("fog_pct")
-        wind = data.get("wind")
-        num_drivers = data.get("num_drivers")
+        weather_wind_speed = data.get("weather_wind_speed")
+        weather_wind_dir = data.get("weather_wind_dir")
+        weather_wind_unit = data.get("weather_wind_unit")
         is_complete = data.get("is_complete", False)
 
         cursor.execute(
             """
             INSERT INTO races (
-                schedule_id, season_id, race_number, track_name,
-                track_type, date, race_duration_minutes, total_laps, leaders, lead_changes,
-                cautions, caution_laps, weather_type, cloud_conditions, temperature_f, humidity_pct, fog_pct, wind,
-                num_drivers, url, is_complete, scraped_at, updated_at
+                schedule_id, season_id, race_number, event_name, date, race_time, practice_time,
+                track_id, track_config_id, track_name, track_type, track_length, track_config_iracing_id,
+                planned_laps, points_race, off_week, night_race, playoff_race,
+                race_duration_minutes, total_laps, leaders, lead_changes, cautions, caution_laps, num_drivers,
+                weather_type, cloud_conditions, temperature_f, humidity_pct, fog_pct,
+                weather_wind_speed, weather_wind_dir, weather_wind_unit,
+                url, is_complete, scraped_at, updated_at
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
             ON CONFLICT(schedule_id) DO UPDATE SET
                 season_id = excluded.season_id,
                 race_number = excluded.race_number,
+                event_name = excluded.event_name,
+                date = excluded.date,
+                race_time = excluded.race_time,
+                practice_time = excluded.practice_time,
+                track_id = excluded.track_id,
+                track_config_id = excluded.track_config_id,
                 track_name = excluded.track_name,
                 track_type = excluded.track_type,
-                date = excluded.date,
+                track_length = excluded.track_length,
+                track_config_iracing_id = excluded.track_config_iracing_id,
+                planned_laps = excluded.planned_laps,
+                points_race = excluded.points_race,
+                off_week = excluded.off_week,
+                night_race = excluded.night_race,
+                playoff_race = excluded.playoff_race,
                 race_duration_minutes = excluded.race_duration_minutes,
                 total_laps = excluded.total_laps,
                 leaders = excluded.leaders,
                 lead_changes = excluded.lead_changes,
                 cautions = excluded.cautions,
                 caution_laps = excluded.caution_laps,
+                num_drivers = excluded.num_drivers,
                 weather_type = excluded.weather_type,
                 cloud_conditions = excluded.cloud_conditions,
                 temperature_f = excluded.temperature_f,
                 humidity_pct = excluded.humidity_pct,
                 fog_pct = excluded.fog_pct,
-                wind = excluded.wind,
-                num_drivers = excluded.num_drivers,
+                weather_wind_speed = excluded.weather_wind_speed,
+                weather_wind_dir = excluded.weather_wind_dir,
+                weather_wind_unit = excluded.weather_wind_unit,
                 url = excluded.url,
                 is_complete = excluded.is_complete,
                 scraped_at = excluded.scraped_at,
@@ -709,22 +755,36 @@ class Database:
                 schedule_id,
                 season_id,
                 race_number,
+                event_name,
+                date,
+                race_time,
+                practice_time,
+                track_id,
+                track_config_id,
                 track_name,
                 track_type,
-                date,
+                track_length,
+                track_config_iracing_id,
+                planned_laps,
+                points_race,
+                off_week,
+                night_race,
+                playoff_race,
                 race_duration_minutes,
                 total_laps,
                 leaders,
                 lead_changes,
                 cautions,
                 caution_laps,
+                num_drivers,
                 weather_type,
                 cloud_conditions,
                 temperature_f,
                 humidity_pct,
                 fog_pct,
-                wind,
-                num_drivers,
+                weather_wind_speed,
+                weather_wind_dir,
+                weather_wind_unit,
                 url,
                 is_complete,
                 scraped_at,
@@ -1074,6 +1134,7 @@ class Database:
         cursor = self.conn.cursor()
 
         # All fields are optional for race results
+        team = data.get("team")
         finish_position = data.get("finish_position")
         starting_position = data.get("starting_position")
         car_number = data.get("car_number")
@@ -1084,9 +1145,10 @@ class Database:
         interval = data.get("interval")
         laps_completed = data.get("laps_completed")
         laps_led = data.get("laps_led")
-        incidents = data.get("incidents")
+        incident_points = data.get("incident_points")
         race_points = data.get("race_points")
         bonus_points = data.get("bonus_points")
+        penalty_points = data.get("penalty_points")
         total_points = data.get("total_points")
         fast_laps = data.get("fast_laps")
         quality_passes = data.get("quality_passes")
@@ -1095,20 +1157,21 @@ class Database:
         average_running_position = data.get("average_running_position")
         irating = data.get("irating")
         status = data.get("status")
-        car_type = data.get("car_type")
-        team = data.get("team")
+        car_id = data.get("car_id")
 
         cursor.execute(
             """
             INSERT INTO race_results (
-                race_id, driver_id, finish_position, starting_position, car_number,
+                race_id, driver_id, team, finish_position, starting_position, car_number,
                 qualifying_time, fastest_lap, fastest_lap_number, average_lap, interval,
-                laps_completed, laps_led, incidents, race_points, bonus_points, total_points,
+                laps_completed, laps_led, incident_points, race_points, bonus_points,
+                penalty_points, total_points,
                 fast_laps, quality_passes, closing_passes, total_passes, average_running_position,
-                irating, status, car_type, team, updated_at
+                irating, status, car_id, updated_at
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
             ON CONFLICT(race_id, driver_id) DO UPDATE SET
+                team = excluded.team,
                 finish_position = excluded.finish_position,
                 starting_position = excluded.starting_position,
                 car_number = excluded.car_number,
@@ -1119,9 +1182,10 @@ class Database:
                 interval = excluded.interval,
                 laps_completed = excluded.laps_completed,
                 laps_led = excluded.laps_led,
-                incidents = excluded.incidents,
+                incident_points = excluded.incident_points,
                 race_points = excluded.race_points,
                 bonus_points = excluded.bonus_points,
+                penalty_points = excluded.penalty_points,
                 total_points = excluded.total_points,
                 fast_laps = excluded.fast_laps,
                 quality_passes = excluded.quality_passes,
@@ -1130,13 +1194,13 @@ class Database:
                 average_running_position = excluded.average_running_position,
                 irating = excluded.irating,
                 status = excluded.status,
-                car_type = excluded.car_type,
-                team = excluded.team,
+                car_id = excluded.car_id,
                 updated_at = CURRENT_TIMESTAMP
         """,
             (
                 race_id,
                 driver_id,
+                team,
                 finish_position,
                 starting_position,
                 car_number,
@@ -1147,9 +1211,10 @@ class Database:
                 interval,
                 laps_completed,
                 laps_led,
-                incidents,
+                incident_points,
                 race_points,
                 bonus_points,
+                penalty_points,
                 total_points,
                 fast_laps,
                 quality_passes,
@@ -1158,8 +1223,7 @@ class Database:
                 average_running_position,
                 irating,
                 status,
-                car_type,
-                team,
+                car_id,
             ),
         )
 
