@@ -239,7 +239,7 @@ class TestRaceExtractorEdgeCases:
             assert result["results"] == []
 
     def test_extract_insufficient_cells(self, race_extractor):
-        """Test extraction with rows that have too few cells."""
+        """Test extraction when ReactDOM JSON is missing (returns empty results)."""
         html = """
         <html><body>
         <h1>Race</h1>
@@ -248,11 +248,6 @@ class TestRaceExtractorEdgeCases:
                 <tr>
                     <td>1</td>
                     <td>Driver Name</td>
-                </tr>
-                <tr>
-                    <td>2</td>
-                    <td>42</td>
-                    <td><a href="driver_stats.php?driver_id=123">Valid Driver</a></td>
                 </tr>
             </tbody>
         </table>
@@ -263,13 +258,11 @@ class TestRaceExtractorEdgeCases:
             result = race_extractor.extract(
                 "https://www.simracerhub.com/season_race.php?schedule_id=999"
             )
-            # Only the valid row should be included (col order: position, car_number, driver)
-            assert len(result["results"]) == 1
-            assert result["results"][0]["driver_name"] == "Valid Driver"
-            assert result["results"][0]["car_number"] == "42"
+            # Without ReactDOM JSON, should return empty results
+            assert len(result["results"]) == 0
 
     def test_extract_driver_without_link(self, race_extractor):
-        """Test extraction when driver cell has no link."""
+        """Test extraction when ReactDOM JSON is missing (returns empty results)."""
         html = """
         <html><body>
         <h1>Race</h1>
@@ -289,11 +282,8 @@ class TestRaceExtractorEdgeCases:
             result = race_extractor.extract(
                 "https://www.simracerhub.com/season_race.php?schedule_id=999"
             )
-            # Col order: position, car_number, driver_name
-            assert len(result["results"]) == 1
-            assert result["results"][0]["driver_name"] == "Plain Driver Name"
-            assert result["results"][0]["car_number"] == "42"
-            assert "driver_id" not in result["results"][0]
+            # Without ReactDOM JSON, should return empty results
+            assert len(result["results"]) == 0
 
     def test_extract_invalid_position(self, race_extractor):
         """Test extraction with non-numeric position."""

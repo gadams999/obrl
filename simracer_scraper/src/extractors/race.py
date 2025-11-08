@@ -4,7 +4,7 @@ This module extracts race metadata and results from race detail pages.
 """
 
 import re
-from typing import Any, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from bs4 import BeautifulSoup
 
@@ -98,10 +98,11 @@ class RaceExtractor(BaseExtractor):
         # Extract race metadata
         metadata = self._extract_metadata(soup, schedule_id, url)
 
-        # Extract race results
+        # Extract race results and schedule object
         results = self._extract_results(soup)
+        schedule = self._extract_schedule(soup)
 
-        return {"metadata": metadata, "results": results}
+        return {"metadata": metadata, "results": results, "schedule": schedule}
 
     def _validate_url(self, url: str) -> None:
         """Validate that URL is a valid race detail URL.
@@ -232,6 +233,7 @@ class RaceExtractor(BaseExtractor):
             date_match = re.search(r"([A-Za-z]{3}\s+\d{1,2},\s+\d{4})", details_text)
             if date_match:
                 from datetime import datetime
+
                 date_str = date_match.group(1)
                 try:
                     # Parse the date string and convert to ISO format
@@ -400,7 +402,7 @@ class RaceExtractor(BaseExtractor):
 
                             # Convert to Fahrenheit if in Celsius
                             if temp_unit == "C":
-                                temp_f = int((temp_value * 9/5) + 32)
+                                temp_f = int((temp_value * 9 / 5) + 32)
                             else:
                                 temp_f = temp_value
 
@@ -441,6 +443,7 @@ class RaceExtractor(BaseExtractor):
             date_match = re.search(r"Date:\s*([A-Za-z]{3}\s+\d{1,2},\s+\d{4})", all_text)
             if date_match:
                 from datetime import datetime
+
                 date_str = date_match.group(1)
                 try:
                     # Parse the date string and convert to ISO format
@@ -480,215 +483,192 @@ class RaceExtractor(BaseExtractor):
         return "Unknown Race"
 
     def _extract_results(self, soup: BeautifulSoup) -> list[dict[str, Any]]:
-        """Extract race results from HTML table.
+        """Extract race results from ReactDOM JSON data.
+
+        SimRacerHub embeds race results in React props via:
+            ReactDOM.createRoot(...).render(React.createElement(ResultsTable, {
+                rps: [{...}, {...}, ...],  # Race participants
+                drivers: {...},            # Driver metadata
+                teams: {...},              # Team metadata
+            }))
 
         Args:
             soup: BeautifulSoup object
 
         Returns:
-            List of result dictionaries
+            List of result dictionaries with JSON field names
         """
-        results = []
+        from ..utils import js_parser
 
-        # Find the results table
-        table = soup.find("table", class_="results-table")
-        if not table:
-            table = soup.find("table")
+        # Find script tag containing ReactDOM
+        script_tags = soup.find_all("script", string=re.compile(r"ReactDOM"))
 
-        if not table:
-            return []
-
-        # Find table body
-        tbody = table.find("tbody")
-        if not tbody:
-            return []
-
-        # Process each row
-        rows = tbody.find_all("tr")
-        for row in rows:
-            cells = row.find_all("td")
-            if len(cells) < 3:  # Need at least position, driver, car#
+        for script_tag in script_tags:
+            if not script_tag.string:
                 continue
 
-            result = self._parse_result_row(cells)
-            if result:
-                results.append(result)
+            # Extract React props
+            react_data = js_parser.extract_race_results_json(script_tag.string)
 
-        return results
+            rps = react_data.get("rps")
+            if not rps:
+                continue
 
-    def _parse_result_row(self, cells: list) -> dict[str, Any] | None:
-        """Parse a single result row.
+            # Extract supplementary data
+            drivers_data = react_data.get("drivers") or {}
+            teams_data = react_data.get("teams") or {}
+            team_drivers = react_data.get("team_drivers") or {}
+
+            # Process each race participant
+            results = []
+            for participant in rps:
+                result = self._map_json_to_result(
+                    participant, drivers_data, teams_data, team_drivers
+                )
+                if result:
+                    results.append(result)
+
+            return results
+
+        # No JSON data found
+        return []
+
+    def _extract_schedule(self, soup: BeautifulSoup) -> dict[str, Any] | None:
+        """Extract schedule object from ReactDOM JSON data.
 
         Args:
-            cells: List of table cells
+            soup: BeautifulSoup object
 
         Returns:
-            Result dictionary or None if invalid
+            Schedule dictionary or None if not found
+        """
+        from ..utils import js_parser
 
-        Table structure (38 columns):
-        0: FIN (finish position)
-        1: CAR # (car number)
-        2: DRIVER (driver name/link)
-        3: ST (starting position)
-        4: QUAL TIME (qualifying time)
-        5: INT (interval)
-        6: RACE PTS (race points)
-        7: BNS PTS (bonus points)
-        8: TOT PTS (total points)
-        9: LAPS (laps completed)
-        10: LAPS LED (laps led)
-        11: FASTEST LAP (fastest lap time)
-        12: FAST LAP # (fastest lap number)
-        13: INC (incidents)
-        14: AVG LAP (average lap time)
-        15: STATUS (running/DNF/etc)
-        16: CAR (car type)
-        17: FAST LAPS (fast laps count)
-        18: QUALITY PASSES
-        19: CLOSING PASSES
-        20: TOTAL PASSES
-        21: ARP (average running position)
-        22: DRIVER RATING (iRating)
-        23: TEAM (team name)
-        24-37: Duplicate/bonus columns (ignored)
+        # Find script tag containing ReactDOM
+        script_tags = soup.find_all("script", string=re.compile(r"ReactDOM"))
+
+        for script_tag in script_tags:
+            if not script_tag.string:
+                continue
+
+            # Extract React props
+            react_data = js_parser.extract_race_results_json(script_tag.string)
+            schedule = react_data.get("schedule")
+
+            if schedule:
+                return schedule
+
+        # No schedule found
+        return None
+
+    def _map_json_to_result(
+        self,
+        participant: dict,
+        drivers_data: dict,
+        teams_data: dict,
+        team_drivers: dict,
+    ) -> dict[str, Any] | None:
+        """Map JSON participant data to result dictionary.
+
+        Args:
+            participant: Race participant object from rps array
+            drivers_data: Drivers metadata dictionary (for lookups)
+            teams_data: Teams metadata dictionary (for lookups)
+            team_drivers: Driver-to-team mapping dictionary
+
+        Returns:
+            Result dictionary with standardized field names, or None if invalid
         """
         try:
-            result = {}
-
-            # Helper function to safely get cell text
-            def get_cell(index: int, default: str = "") -> str:
-                if len(cells) > index:
-                    text = cells[index].get_text(strip=True)
-                    # Return None for empty strings, "-", or whitespace
-                    if text and text != "-" and text.strip():
-                        return text
-                return default
-
-            # Helper function to safely get integer
-            def get_int(index: int) -> int | None:
-                text = get_cell(index)
-                if text and text != "":
-                    try:
-                        return int(text)
-                    except ValueError:
-                        return None
+            # Extract driver_id (required)
+            driver_id = participant.get("driver_id")
+            if not driver_id:
                 return None
 
-            # Helper function to safely get float
-            def get_float(index: int) -> float | None:
-                text = get_cell(index)
-                if text and text != "":
-                    try:
-                        return float(text)
-                    except ValueError:
-                        return None
-                return None
+            # Extract team name using team_drivers mapping
+            team = None
+            if str(driver_id) in team_drivers:
+                team_id = team_drivers[str(driver_id)]
+                if team_id and str(team_id) in teams_data:
+                    team = teams_data[str(team_id)].get("name")
 
-            # Required fields
-            result["finish_position"] = int(cells[0].get_text(strip=True))
-            result["car_number"] = get_cell(1, "0")
+            # Map JSON fields to result fields
+            result = {
+                "driver_id": int(driver_id),
+                "team": team,
+                "finish_position": self._parse_int(participant.get("finish_pos")),
+                "starting_position": self._parse_int(participant.get("qualify_pos")),
+                "car_number": participant.get("driver_number"),
+                "qualifying_time": participant.get("qualify_time"),
+                "fastest_lap": participant.get("fastest_lap_time"),
+                "fastest_lap_number": self._parse_int(participant.get("fastest_lap_number")),
+                "average_lap": participant.get("avg_lap"),
+                "interval": participant.get("intv_str"),
+                "laps_completed": self._parse_int(participant.get("num_laps")),
+                "laps_led": self._parse_int(participant.get("laps_led")),
+                "incident_points": self._parse_int(participant.get("incidents")),
+                "race_points": self._parse_int(participant.get("rpts")),
+                "bonus_points": self._parse_int(participant.get("bpts")),
+                "penalty_points": self._parse_int(participant.get("ppts")),
+                "total_points": self._parse_int(participant.get("tpts")),
+                "fast_laps": self._parse_int(participant.get("num_fast_lap")),
+                "quality_passes": self._parse_int(participant.get("quality_passes")),
+                "closing_passes": self._parse_int(participant.get("closing_passes")),
+                "total_passes": self._parse_int(participant.get("passes")),
+                "average_running_position": self._parse_float(participant.get("arp")),
+                "irating": self._parse_int(participant.get("irating")),
+                "status": participant.get("status"),
+                "car_id": self._parse_int(participant.get("car_id")),
+            }
 
-            # Driver name and ID (column 2)
-            if len(cells) > 2:
-                driver_cell = cells[2]
-                driver_link = driver_cell.find("a")
-                if driver_link:
-                    result["driver_name"] = driver_link.get_text(strip=True)
-                    # Extract driver_id from href
-                    href = driver_link.get("href", "")
-                    match = re.search(r"driver_id=(\d+)", href)
-                    if match:
-                        result["driver_id"] = int(match.group(1))
-                else:
-                    result["driver_name"] = driver_cell.get_text(strip=True)
-
-            # Optional fields - only include if they have values
-            starting_pos = get_int(3)
-            if starting_pos is not None:
-                result["starting_position"] = starting_pos
-
-            qual_time = get_cell(4)
-            if qual_time:
-                result["qualifying_time"] = qual_time
-
-            interval = get_cell(5)
-            if interval:
-                result["interval"] = interval
-
-            race_points = get_int(6)
-            if race_points is not None:
-                result["race_points"] = race_points
-
-            bonus_points = get_int(7)
-            if bonus_points is not None:
-                result["bonus_points"] = bonus_points
-
-            total_points = get_int(8)
-            if total_points is not None:
-                result["total_points"] = total_points
-
-            laps = get_int(9)
-            if laps is not None:
-                result["laps_completed"] = laps
-
-            laps_led = get_int(10)
-            if laps_led is not None:
-                result["laps_led"] = laps_led
-
-            fastest_lap = get_cell(11)
-            if fastest_lap:
-                result["fastest_lap"] = fastest_lap
-
-            fastest_lap_num = get_int(12)
-            if fastest_lap_num is not None:
-                result["fastest_lap_number"] = fastest_lap_num
-
-            incidents = get_int(13)
-            if incidents is not None:
-                result["incidents"] = incidents
-
-            avg_lap = get_cell(14)
-            if avg_lap:
-                result["average_lap"] = avg_lap
-
-            status = get_cell(15)
-            if status:
-                result["status"] = status
-
-            car_type = get_cell(16)
-            if car_type:
-                result["car_type"] = car_type
-
-            fast_laps = get_int(17)
-            if fast_laps is not None:
-                result["fast_laps"] = fast_laps
-
-            quality_passes = get_int(18)
-            if quality_passes is not None:
-                result["quality_passes"] = quality_passes
-
-            closing_passes = get_int(19)
-            if closing_passes is not None:
-                result["closing_passes"] = closing_passes
-
-            total_passes = get_int(20)
-            if total_passes is not None:
-                result["total_passes"] = total_passes
-
-            arp = get_float(21)
-            if arp is not None:
-                result["average_running_position"] = arp
-
-            irating = get_float(22)
-            if irating is not None:
-                result["irating"] = int(irating)
-
-            team = get_cell(23)
-            if team:
-                result["team"] = team
+            # Extract driver name from participant or drivers_data
+            driver_name = participant.get("name")
+            if not driver_name and driver_id in drivers_data:
+                driver_name = drivers_data[driver_id].get("name")
+            if driver_name:
+                result["driver_name"] = driver_name
 
             return result
 
-        except (ValueError, IndexError) as e:
-            # Log the error for debugging but don't crash
+        except (ValueError, TypeError, KeyError):
+            return None
+
+    def _parse_int(self, value: str | int | float | None) -> int | None:
+        """Safely parse a value to int.
+
+        Args:
+            value: Value to parse
+
+        Returns:
+            Parsed int or None if parsing fails
+        """
+        if value is None:
+            return None
+        if isinstance(value, int):
+            return value
+        if isinstance(value, float):
+            return int(value)
+        try:
+            return int(value)
+        except (ValueError, TypeError):
+            return None
+
+    def _parse_float(self, value: str | int | float | None) -> float | None:
+        """Safely parse a value to float.
+
+        Args:
+            value: Value to parse
+
+        Returns:
+            Parsed float or None if parsing fails
+        """
+        if value is None:
+            return None
+        if isinstance(value, float):
+            return value
+        if isinstance(value, int):
+            return float(value)
+        try:
+            return float(value)
+        except (ValueError, TypeError):
             return None

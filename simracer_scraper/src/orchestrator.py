@@ -497,8 +497,8 @@ class Orchestrator:
             cache_max_age_days: Days before cache expires
             force: Force re-scrape even if race is marked complete
         """
-        import time as time_module
         import datetime
+        import time as time_module
 
         start_time = time_module.time()
 
@@ -537,33 +537,16 @@ class Orchestrator:
             race_data = self.race_extractor.extract(race_url)
             metadata = race_data["metadata"]
             results = race_data.get("results", [])
+            schedule = race_data.get("schedule")
+
+            # Build race data from schedule object + HTML metadata
+            race_dict = self._build_race_data(metadata, schedule, race_number, len(results))
 
             # Store race in database with completion flag
             race_id = self.db.upsert_race(
                 schedule_id=metadata["schedule_id"],
                 season_id=season_id,
-                data={
-                    "url": metadata["url"],
-                    "race_number": race_number,  # Use race_number from season schedule
-                    "track_name": metadata.get("track_name"),
-                    "track_type": metadata.get("track_type"),
-                    "date": metadata.get("date"),
-                    "race_duration_minutes": metadata.get("race_duration_minutes"),
-                    "total_laps": metadata.get("total_laps"),
-                    "leaders": metadata.get("leaders"),
-                    "lead_changes": metadata.get("lead_changes"),
-                    "cautions": metadata.get("cautions"),
-                    "caution_laps": metadata.get("caution_laps"),
-                    "weather_type": metadata.get("weather_type"),
-                    "cloud_conditions": metadata.get("cloud_conditions"),
-                    "temperature_f": metadata.get("temperature_f"),
-                    "humidity_pct": metadata.get("humidity_pct"),
-                    "fog_pct": metadata.get("fog_pct"),
-                    "wind": metadata.get("wind"),
-                    "num_drivers": len(results),  # Count of drivers who participated
-                    "is_complete": True,  # Mark as complete after successful scrape
-                    "scraped_at": datetime.datetime.now().isoformat(),
-                },
+                data=race_dict,
             )
 
             self.progress["races_scraped"] += 1
@@ -623,6 +606,9 @@ class Orchestrator:
 
         league_id = series["league_id"]
 
+        # Parse driver name into first and last name
+        first_name, last_name = self._parse_driver_name(driver_name)
+
         # Ensure driver exists in database
         try:
             self.db.upsert_driver(
@@ -630,6 +616,8 @@ class Orchestrator:
                 league_id=league_id,
                 data={
                     "name": driver_name,
+                    "first_name": first_name,
+                    "last_name": last_name,
                     "url": f"https://www.simracerhub.com/driver_stats.php?driver_id={driver_id}",
                     "scraped_at": datetime.datetime.now().isoformat(),
                 },
@@ -641,8 +629,9 @@ class Orchestrator:
             return
 
         # Map result fields to database schema
-        # Extract provides fields with proper names, just need to validate types
+        # RaceExtractor provides fields with proper names that match database schema
         result_data = {
+            "team": result.get("team"),
             "finish_position": result.get("finish_position"),
             "starting_position": result.get("starting_position"),
             "car_number": result.get("car_number"),
@@ -653,9 +642,10 @@ class Orchestrator:
             "interval": result.get("interval"),
             "laps_completed": result.get("laps_completed"),
             "laps_led": result.get("laps_led"),
-            "incidents": result.get("incidents"),
+            "incident_points": result.get("incident_points"),
             "race_points": result.get("race_points"),
             "bonus_points": result.get("bonus_points"),
+            "penalty_points": result.get("penalty_points"),
             "total_points": result.get("total_points"),
             "fast_laps": result.get("fast_laps"),
             "quality_passes": result.get("quality_passes"),
@@ -664,8 +654,7 @@ class Orchestrator:
             "average_running_position": result.get("average_running_position"),
             "irating": result.get("irating"),
             "status": result.get("status"),
-            "car_type": result.get("car_type"),
-            "team": result.get("team"),
+            "car_id": result.get("car_id"),
         }
 
         # Store race result
@@ -714,3 +703,158 @@ class Orchestrator:
             return float(value)
         except (ValueError, TypeError):
             return None
+
+    def _yn_to_bool(self, value: str | None) -> bool | None:
+        """Convert Y/N string to boolean.
+
+        Args:
+            value: "Y", "N", or None
+
+        Returns:
+            True for "Y", False for "N", None otherwise
+        """
+        if value == "Y":
+            return True
+        elif value == "N":
+            return False
+        return None
+
+    def _parse_driver_name(self, full_name: str | None) -> tuple[str | None, str | None]:
+        """Parse full driver name into first and last name.
+
+        Handles common name formats:
+        - "LastName, FirstName" -> ("FirstName", "LastName")
+        - "LastName, FirstName MiddleName" -> ("FirstName MiddleName", "LastName")
+        - "FirstName LastName" -> ("FirstName", "LastName")
+        - "FirstName" -> ("FirstName", None)
+        - None or empty -> (None, None)
+
+        Args:
+            full_name: Full driver name string
+
+        Returns:
+            Tuple of (first_name, last_name)
+        """
+        if not full_name or not full_name.strip():
+            return (None, None)
+
+        full_name = full_name.strip()
+
+        # Check if name is in "LastName, FirstName" format
+        if "," in full_name:
+            parts = full_name.split(",", 1)  # Split on first comma only
+            if len(parts) == 2:
+                last_name = parts[0].strip()
+                first_name = parts[1].strip()
+                # Handle case where there's nothing after the comma
+                if not first_name:
+                    return (None, last_name) if last_name else (None, None)
+                if not last_name:
+                    return (first_name, None) if first_name else (None, None)
+                return (first_name, last_name)
+
+        # No comma, assume "FirstName LastName" format
+        parts = full_name.split()
+
+        if len(parts) == 0:
+            return (None, None)
+        elif len(parts) == 1:
+            # Only one name provided
+            return (parts[0], None)
+        else:
+            # First word is first name, rest is last name
+            first_name = parts[0]
+            last_name = " ".join(parts[1:])
+            return (first_name, last_name)
+
+    def _build_race_data(
+        self,
+        metadata: dict,
+        schedule: dict | None,
+        race_number: int,
+        num_drivers: int,
+    ) -> dict:
+        """Build race data dict from schedule object and HTML metadata.
+
+        Uses schedule object fields when available, falls back to HTML metadata.
+
+        Args:
+            metadata: HTML metadata from RaceExtractor
+            schedule: Schedule object from ReactDOM (or None)
+            race_number: Race number from season
+            num_drivers: Count of drivers in results
+
+        Returns:
+            Dictionary ready for upsert_race()
+        """
+        import datetime
+
+        race_data = {
+            "url": metadata["url"],
+            "race_number": race_number,
+            "num_drivers": num_drivers,
+            "is_complete": True,
+            "scraped_at": datetime.datetime.now().isoformat(),
+        }
+
+        if schedule:
+            # Use schedule object for primary data
+            race_data.update(
+                {
+                    # Basic info
+                    "event_name": schedule.get("event_name"),
+                    "date": schedule.get("race_date"),
+                    "race_time": schedule.get("race_time"),
+                    "practice_time": schedule.get("pract_time"),
+                    # Track info
+                    "track_id": self._parse_int(schedule.get("track_id")),
+                    "track_config_id": self._parse_int(schedule.get("track_config_id")),
+                    "track_name": schedule.get("track_name"),
+                    "track_type": schedule.get("track_config_name"),
+                    "track_length": self._parse_float(schedule.get("track_length")),
+                    "track_config_iracing_id": schedule.get("track_config_iracing_id"),
+                    # Race config
+                    "planned_laps": self._parse_int(schedule.get("planned_laps")),
+                    "points_race": self._yn_to_bool(schedule.get("points_count")),
+                    "off_week": self._yn_to_bool(schedule.get("off_week")),
+                    "night_race": self._yn_to_bool(schedule.get("night")),
+                    "playoff_race": self._yn_to_bool(schedule.get("chase")),
+                    # Weather
+                    "weather_type": schedule.get("weather_type"),
+                    "cloud_conditions": schedule.get("weather_skies"),
+                    "temperature_f": self._parse_int(schedule.get("weather_temp")),
+                    "humidity_pct": self._parse_int(schedule.get("weather_rh")),
+                    "fog_pct": self._parse_int(schedule.get("weather_fog")),
+                    "weather_wind_speed": schedule.get("weather_wind"),
+                    "weather_wind_dir": schedule.get("weather_winddir"),
+                    "weather_wind_unit": schedule.get("weather_windunit"),
+                }
+            )
+        else:
+            # Fallback to HTML metadata
+            race_data.update(
+                {
+                    "track_name": metadata.get("track_name"),
+                    "track_type": metadata.get("track_type"),
+                    "date": metadata.get("date"),
+                    "weather_type": metadata.get("weather_type"),
+                    "cloud_conditions": metadata.get("cloud_conditions"),
+                    "temperature_f": metadata.get("temperature_f"),
+                    "humidity_pct": metadata.get("humidity_pct"),
+                    "fog_pct": metadata.get("fog_pct"),
+                }
+            )
+
+        # Always use HTML metadata for race statistics (computed from results)
+        race_data.update(
+            {
+                "race_duration_minutes": metadata.get("race_duration_minutes"),
+                "total_laps": metadata.get("total_laps"),
+                "leaders": metadata.get("leaders"),
+                "lead_changes": metadata.get("lead_changes"),
+                "cautions": metadata.get("cautions"),
+                "caution_laps": metadata.get("caution_laps"),
+            }
+        )
+
+        return race_data

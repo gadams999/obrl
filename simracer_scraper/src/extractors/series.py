@@ -4,7 +4,7 @@ This module extracts series metadata and discovers season URLs from series pages
 """
 
 import re
-from typing import Any, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from bs4 import BeautifulSoup
 

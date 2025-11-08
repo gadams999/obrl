@@ -1,7 +1,6 @@
 """Tests for JavaScript parser utilities."""
 
 
-
 def test_extract_series_data_valid():
     """Test extracting series data from valid JavaScript."""
     try:
@@ -338,3 +337,162 @@ def test_parse_js_object_with_null():
 
     assert result["id"] == 100
     assert result["description"] is None
+
+
+def test_extract_react_props_array():
+    """Test extracting array prop from ReactDOM."""
+    try:
+        from utils.js_parser import extract_react_props
+    except ImportError:
+        from src.utils.js_parser import extract_react_props
+
+    html = """
+    <script>
+    ReactDOM.createRoot(document.getElementById('root')).render(
+        React.createElement(Table, {
+            rps: [{"id": 1, "name": "Driver 1"}, {"id": 2, "name": "Driver 2"}],
+            other: "value"
+        })
+    );
+    </script>
+    """
+
+    result = extract_react_props(html, "rps")
+
+    assert result is not None
+    assert isinstance(result, list)
+    assert len(result) == 2
+    assert result[0]["id"] == 1
+    assert result[0]["name"] == "Driver 1"
+    assert result[1]["id"] == 2
+
+
+def test_extract_react_props_object():
+    """Test extracting object prop from ReactDOM."""
+    try:
+        from utils.js_parser import extract_react_props
+    except ImportError:
+        from src.utils.js_parser import extract_react_props
+
+    html = """
+    <script>
+    ReactDOM.render(
+        React.createElement(Table, {
+            drivers: {"123": {"name": "Test Driver", "irating": 2000}, "456": {"name": "Another"}},
+            other: []
+        })
+    );
+    </script>
+    """
+
+    result = extract_react_props(html, "drivers")
+
+    assert result is not None
+    assert isinstance(result, dict)
+    assert "123" in result
+    assert result["123"]["name"] == "Test Driver"
+    assert result["123"]["irating"] == 2000
+    assert "456" in result
+
+
+def test_extract_react_props_not_found():
+    """Test handling of missing prop."""
+    try:
+        from utils.js_parser import extract_react_props
+    except ImportError:
+        from src.utils.js_parser import extract_react_props
+
+    html = """
+    <script>
+    ReactDOM.render(React.createElement(Table, {other: []}));
+    </script>
+    """
+
+    result = extract_react_props(html, "rps")
+
+    assert result is None
+
+
+def test_extract_react_props_nested_objects():
+    """Test extracting nested object structures."""
+    try:
+        from utils.js_parser import extract_react_props
+    except ImportError:
+        from src.utils.js_parser import extract_react_props
+
+    html = """
+    <script>
+    ReactDOM.createRoot(...).render(
+        React.createElement(ResultsTable, {
+            teams: {
+                "100": {"name": "Team Alpha", "tpts": 103, "members": ["1", "2"]},
+                "200": {"name": "Team Beta", "tpts": 95}
+            }
+        })
+    );
+    </script>
+    """
+
+    result = extract_react_props(html, "teams")
+
+    assert result is not None
+    assert isinstance(result, dict)
+    assert result["100"]["name"] == "Team Alpha"
+    assert result["100"]["tpts"] == 103
+    assert isinstance(result["100"]["members"], list)
+
+
+def test_extract_race_results_json():
+    """Test extraction of all race result props."""
+    try:
+        from utils.js_parser import extract_race_results_json
+    except ImportError:
+        from src.utils.js_parser import extract_race_results_json
+
+    html = """
+    <script>
+    ReactDOM.createRoot(document.getElementById('driver_table_12345')).render(
+        React.createElement(ResultsTable, {
+            rps: [{"driver_id": "1", "finish_pos": "1"}],
+            drivers: {"1": {"name": "Driver One"}},
+            teams: {"1": {"name": "Team One"}},
+            schedule: {"schedule_id": "12345"}
+        })
+    );
+    </script>
+    """
+
+    result = extract_race_results_json(html)
+
+    assert result["rps"] is not None
+    assert isinstance(result["rps"], list)
+    assert len(result["rps"]) == 1
+    assert result["drivers"] is not None
+    assert isinstance(result["drivers"], dict)
+    assert result["teams"] is not None
+    assert result["schedule"] is not None
+
+
+def test_extract_race_results_json_missing_props():
+    """Test handling when some props are missing."""
+    try:
+        from utils.js_parser import extract_race_results_json
+    except ImportError:
+        from src.utils.js_parser import extract_race_results_json
+
+    html = """
+    <script>
+    ReactDOM.render(
+        React.createElement(ResultsTable, {
+            rps: [{"driver_id": "1"}]
+        })
+    );
+    </script>
+    """
+
+    result = extract_race_results_json(html)
+
+    assert result["rps"] is not None
+    assert result["drivers"] is None
+    assert result["teams"] is None
+    assert result["schedule"] is None

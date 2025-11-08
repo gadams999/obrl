@@ -8,7 +8,12 @@
       "Bash(sqlite3:*)",
       "Bash(python check_db.py:*)",
       "Bash(python:*)",
-      "Bash(find:*)"
+      "Bash(find:*)",
+      "WebFetch(domain:www.simracerhub.com)",
+      "Bash(python3:*)",
+      "Bash(curl -s \"https://www.simracerhub.com/season_race.php?schedule_id=314716\")",
+      "Bash(timeout 120 python scraper.py scrape --db obrl-test.db --depth race)",
+      "Bash(curl -s \"https://www.simracerhub.com/season_race.php?schedule_id=181983\")"
     ],
     "deny": [],
     "ask": []
