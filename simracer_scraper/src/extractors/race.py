@@ -146,7 +146,7 @@ class RaceExtractor(BaseExtractor):
         Returns:
             Dictionary with race metadata including:
             - schedule_id, url, name (required)
-            - track, track_config, track_type, date, weather, temperature, humidity (optional)
+            - track, track_type, date, weather, temperature_f, humidity_pct, fog_pct (optional)
         """
         metadata = {
             "schedule_id": schedule_id,
@@ -324,9 +324,20 @@ class RaceExtractor(BaseExtractor):
             parts = [p.strip() for p in stats_line.split("·")]
 
             for part in parts:
-                # Duration: "1h 11m"
+                # Duration: "1h 11m" - convert to total minutes
                 if "h " in part and "m" in part:
-                    info["race_duration"] = part
+                    try:
+                        # Parse format like "1h 11m"
+                        hours_match = re.search(r"(\d+)h", part)
+                        minutes_match = re.search(r"(\d+)m", part)
+
+                        hours = int(hours_match.group(1)) if hours_match else 0
+                        minutes = int(minutes_match.group(1)) if minutes_match else 0
+
+                        total_minutes = (hours * 60) + minutes
+                        info["race_duration_minutes"] = total_minutes
+                    except (ValueError, AttributeError):
+                        pass
 
                 # Total laps: "140 laps"
                 elif part.endswith(" laps") and "cautions" not in part:
@@ -379,17 +390,43 @@ class RaceExtractor(BaseExtractor):
                 elif any(word in part for word in ["Cloudy", "Clear", "Overcast", "Rain", "Storm"]):
                     info["cloud_conditions"] = part
 
-                # Temperature: "88° F" or "23° C"
+                # Temperature: "88° F" or "23° C" - convert to Fahrenheit integer
                 elif "°" in part and ("C" in part or "F" in part):
-                    info["temperature"] = part
+                    try:
+                        temp_match = re.search(r"(\d+)°\s*([CF])", part)
+                        if temp_match:
+                            temp_value = int(temp_match.group(1))
+                            temp_unit = temp_match.group(2)
 
-                # Humidity: "Humidity 55%"
+                            # Convert to Fahrenheit if in Celsius
+                            if temp_unit == "C":
+                                temp_f = int((temp_value * 9/5) + 32)
+                            else:
+                                temp_f = temp_value
+
+                            info["temperature_f"] = temp_f
+                    except (ValueError, AttributeError):
+                        pass
+
+                # Humidity: "Humidity 55%" - extract percentage as integer
                 elif "Humidity" in part:
-                    info["humidity"] = part.replace("Humidity", "").strip()
+                    try:
+                        humidity_str = part.replace("Humidity", "").strip()
+                        pct_match = re.search(r"(\d+)%?", humidity_str)
+                        if pct_match:
+                            info["humidity_pct"] = int(pct_match.group(1))
+                    except (ValueError, AttributeError):
+                        pass
 
-                # Fog: "Fog 0%"
+                # Fog: "Fog 0%" - extract percentage as integer
                 elif "Fog" in part:
-                    info["fog"] = part.replace("Fog", "").strip()
+                    try:
+                        fog_str = part.replace("Fog", "").strip()
+                        pct_match = re.search(r"(\d+)%?", fog_str)
+                        if pct_match:
+                            info["fog_pct"] = int(pct_match.group(1))
+                    except (ValueError, AttributeError):
+                        pass
 
                 # Wind: "Wind N @2 MPH"
                 elif "Wind" in part:

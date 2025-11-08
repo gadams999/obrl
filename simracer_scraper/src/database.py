@@ -177,15 +177,12 @@ class Database:
             CREATE TABLE IF NOT EXISTS races (
                 race_id INTEGER PRIMARY KEY AUTOINCREMENT,
                 schedule_id INTEGER NOT NULL UNIQUE,
-                internal_race_id INTEGER,
                 season_id INTEGER NOT NULL,
                 race_number INTEGER NOT NULL,
-                name TEXT,
                 track_name TEXT,
-                track_config TEXT,
                 track_type TEXT,
                 date TIMESTAMP,
-                race_duration TEXT,
+                race_duration_minutes INTEGER,
                 total_laps INTEGER,
                 leaders INTEGER,
                 lead_changes INTEGER,
@@ -193,12 +190,12 @@ class Database:
                 caution_laps INTEGER,
                 weather_type TEXT,
                 cloud_conditions TEXT,
-                temperature TEXT,
-                humidity TEXT,
-                fog TEXT,
+                temperature_f INTEGER,
+                humidity_pct INTEGER,
+                fog_pct INTEGER,
                 wind TEXT,
+                num_drivers INTEGER,
                 url TEXT NOT NULL UNIQUE,
-                status TEXT CHECK(status IN ('upcoming', 'ongoing', 'completed')),
                 is_complete BOOLEAN DEFAULT 0,
                 scraped_at TIMESTAMP NOT NULL,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -211,7 +208,6 @@ class Database:
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_races_season_id ON races(season_id)")
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_races_url ON races(url)")
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_races_date ON races(date)")
-        cursor.execute("CREATE INDEX IF NOT EXISTS idx_races_status ON races(status)")
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_races_is_complete ON races(is_complete)")
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_races_scraped_at ON races(scraped_at)")
 
@@ -658,13 +654,10 @@ class Database:
             raise ValueError("url, scraped_at, and race_number are required fields")
 
         # Optional fields
-        internal_race_id = data.get("internal_race_id")
-        name = data.get("name")
         track_name = data.get("track_name")
-        track_config = data.get("track_config")
         track_type = data.get("track_type")
         date = data.get("date")
-        race_duration = data.get("race_duration")
+        race_duration_minutes = data.get("race_duration_minutes")
         total_laps = data.get("total_laps")
         leaders = data.get("leaders")
         lead_changes = data.get("lead_changes")
@@ -672,32 +665,29 @@ class Database:
         caution_laps = data.get("caution_laps")
         weather_type = data.get("weather_type")
         cloud_conditions = data.get("cloud_conditions")
-        temperature = data.get("temperature")
-        humidity = data.get("humidity")
-        fog = data.get("fog")
+        temperature_f = data.get("temperature_f")
+        humidity_pct = data.get("humidity_pct")
+        fog_pct = data.get("fog_pct")
         wind = data.get("wind")
-        status = data.get("status")
+        num_drivers = data.get("num_drivers")
         is_complete = data.get("is_complete", False)
 
         cursor.execute(
             """
             INSERT INTO races (
-                schedule_id, internal_race_id, season_id, race_number, name, track_name,
-                track_config, track_type, date, race_duration, total_laps, leaders, lead_changes,
-                cautions, caution_laps, weather_type, cloud_conditions, temperature, humidity, fog, wind,
-                url, status, is_complete, scraped_at, updated_at
+                schedule_id, season_id, race_number, track_name,
+                track_type, date, race_duration_minutes, total_laps, leaders, lead_changes,
+                cautions, caution_laps, weather_type, cloud_conditions, temperature_f, humidity_pct, fog_pct, wind,
+                num_drivers, url, is_complete, scraped_at, updated_at
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
             ON CONFLICT(schedule_id) DO UPDATE SET
-                internal_race_id = excluded.internal_race_id,
                 season_id = excluded.season_id,
                 race_number = excluded.race_number,
-                name = excluded.name,
                 track_name = excluded.track_name,
-                track_config = excluded.track_config,
                 track_type = excluded.track_type,
                 date = excluded.date,
-                race_duration = excluded.race_duration,
+                race_duration_minutes = excluded.race_duration_minutes,
                 total_laps = excluded.total_laps,
                 leaders = excluded.leaders,
                 lead_changes = excluded.lead_changes,
@@ -705,27 +695,24 @@ class Database:
                 caution_laps = excluded.caution_laps,
                 weather_type = excluded.weather_type,
                 cloud_conditions = excluded.cloud_conditions,
-                temperature = excluded.temperature,
-                humidity = excluded.humidity,
-                fog = excluded.fog,
+                temperature_f = excluded.temperature_f,
+                humidity_pct = excluded.humidity_pct,
+                fog_pct = excluded.fog_pct,
                 wind = excluded.wind,
+                num_drivers = excluded.num_drivers,
                 url = excluded.url,
-                status = excluded.status,
                 is_complete = excluded.is_complete,
                 scraped_at = excluded.scraped_at,
                 updated_at = CURRENT_TIMESTAMP
         """,
             (
                 schedule_id,
-                internal_race_id,
                 season_id,
                 race_number,
-                name,
                 track_name,
-                track_config,
                 track_type,
                 date,
-                race_duration,
+                race_duration_minutes,
                 total_laps,
                 leaders,
                 lead_changes,
@@ -733,12 +720,12 @@ class Database:
                 caution_laps,
                 weather_type,
                 cloud_conditions,
-                temperature,
-                humidity,
-                fog,
+                temperature_f,
+                humidity_pct,
+                fog_pct,
                 wind,
+                num_drivers,
                 url,
-                status,
                 is_complete,
                 scraped_at,
             ),

@@ -336,6 +336,7 @@ class TestSeasonExtractorEdgeCases:
             <table class="schedule-table">
                 <tbody>
                     <tr>
+                        <td>1</td>
                         <td><a href="https://www.simracerhub.com/season_race.php?schedule_id=100">Track</a></td>
                     </tr>
                 </tbody>

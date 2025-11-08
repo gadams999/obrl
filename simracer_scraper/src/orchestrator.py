@@ -514,7 +514,6 @@ class Orchestrator:
                         "is_complete": False,
                         "scraped_at": datetime.datetime.now().isoformat(),
                         "race_number": race_number,
-                        "name": "TBD",
                     },
                 )
                 return
@@ -537,20 +536,19 @@ class Orchestrator:
             logger.info(f"🌐 FETCHING: {race_url}")
             race_data = self.race_extractor.extract(race_url)
             metadata = race_data["metadata"]
+            results = race_data.get("results", [])
 
             # Store race in database with completion flag
             race_id = self.db.upsert_race(
                 schedule_id=metadata["schedule_id"],
                 season_id=season_id,
                 data={
-                    "name": metadata["name"],
                     "url": metadata["url"],
                     "race_number": race_number,  # Use race_number from season schedule
                     "track_name": metadata.get("track_name"),
-                    "track_config": metadata.get("track_config"),
                     "track_type": metadata.get("track_type"),
                     "date": metadata.get("date"),
-                    "race_duration": metadata.get("race_duration"),
+                    "race_duration_minutes": metadata.get("race_duration_minutes"),
                     "total_laps": metadata.get("total_laps"),
                     "leaders": metadata.get("leaders"),
                     "lead_changes": metadata.get("lead_changes"),
@@ -558,10 +556,11 @@ class Orchestrator:
                     "caution_laps": metadata.get("caution_laps"),
                     "weather_type": metadata.get("weather_type"),
                     "cloud_conditions": metadata.get("cloud_conditions"),
-                    "temperature": metadata.get("temperature"),
-                    "humidity": metadata.get("humidity"),
-                    "fog": metadata.get("fog"),
+                    "temperature_f": metadata.get("temperature_f"),
+                    "humidity_pct": metadata.get("humidity_pct"),
+                    "fog_pct": metadata.get("fog_pct"),
                     "wind": metadata.get("wind"),
+                    "num_drivers": len(results),  # Count of drivers who participated
                     "is_complete": True,  # Mark as complete after successful scrape
                     "scraped_at": datetime.datetime.now().isoformat(),
                 },
@@ -570,7 +569,6 @@ class Orchestrator:
             self.progress["races_scraped"] += 1
 
             # Store race results
-            results = race_data.get("results", [])
             for result in results:
                 self._store_race_result(race_id, result, season_id)
 

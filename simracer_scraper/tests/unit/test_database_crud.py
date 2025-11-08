@@ -102,12 +102,9 @@ def test_upsert_race(test_db):
         12345,
         {
             "race_number": 1,
-            "name": "Week 1 - Daytona",
             "url": "http://test.com/race/67890",
             "track_name": "Daytona International Speedway",
-            "track_config": "Oval",
             "laps": 200,
-            "status": "completed",
             "scraped_at": "2025-01-15",
         },
     )
@@ -119,7 +116,6 @@ def test_upsert_race(test_db):
     assert race["schedule_id"] == 67890
     assert race["season_id"] == 12345
     assert race["race_number"] == 1
-    assert race["name"] == "Week 1 - Daytona"
     assert race["track_name"] == "Daytona International Speedway"
 
 

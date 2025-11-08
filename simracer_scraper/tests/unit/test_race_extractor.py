@@ -352,7 +352,7 @@ class TestRaceExtractorMetadata:
             assert metadata["date"] == "2025-10-29T00:00:00"
 
     def test_extract_weather(self, race_extractor, race_fixture_html):
-        """Test weather conditions and temperature are extracted."""
+        """Test weather conditions and temperature are extracted and converted."""
         with patch.object(race_extractor, "fetch_page") as mock_fetch:
             mock_fetch.return_value = BeautifulSoup(race_fixture_html, "html.parser")
 
@@ -365,12 +365,15 @@ class TestRaceExtractorMetadata:
             assert metadata["weather_type"] == "Realistic weather"
             assert "cloud_conditions" in metadata
             assert metadata["cloud_conditions"] == "Partly Cloudy"
-            assert "temperature" in metadata
-            assert metadata["temperature"] == "23° C"
-            assert "humidity" in metadata
-            assert metadata["humidity"] == "0%"
-            assert "fog" in metadata
-            assert metadata["fog"] == "0%"
+            # 23° C = (23 * 9/5) + 32 = 73.4 → 73° F
+            assert "temperature_f" in metadata
+            assert metadata["temperature_f"] == 73
+            # 0% humidity
+            assert "humidity_pct" in metadata
+            assert metadata["humidity_pct"] == 0
+            # 0% fog
+            assert "fog_pct" in metadata
+            assert metadata["fog_pct"] == 0
             assert "wind" in metadata
             assert metadata["wind"] == "SE @1 KPH"
 
@@ -385,8 +388,9 @@ class TestRaceExtractorMetadata:
 
             metadata = result["metadata"]
             # From: "0h 59m · 63 laps · 9 Leaders · 22 Lead Changes · 4 cautions (9 laps)"
-            assert "race_duration" in metadata
-            assert metadata["race_duration"] == "0h 59m"
+            # 0h 59m = 0*60 + 59 = 59 minutes
+            assert "race_duration_minutes" in metadata
+            assert metadata["race_duration_minutes"] == 59
             assert "total_laps" in metadata
             assert metadata["total_laps"] == 63
             assert "leaders" in metadata
