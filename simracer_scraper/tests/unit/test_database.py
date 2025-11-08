@@ -99,7 +99,6 @@ def test_leagues_table_columns(test_db):
         "league_id",
         "name",
         "description",
-        "organizer",
         "url",
         "scraped_at",
         "created_at",
@@ -169,11 +168,8 @@ def test_series_table_columns(test_db):
         "league_id",
         "name",
         "description",
-        "vehicle_type",
-        "day_of_week",
-        "active",
-        "season_count",
         "created_date",
+        "num_seasons",
         "url",
         "scraped_at",
         "created_at",
@@ -193,16 +189,7 @@ def test_seasons_table_columns(test_db):
         "season_id",
         "series_id",
         "name",
-        "year",
-        "start_date",
-        "start_timestamp",
-        "end_date",
-        "scheduled_races",
-        "completed_races",
-        "status",
-        "hc",
-        "mc",
-        "psn",
+        "description",
         "url",
         "scraped_at",
         "created_at",
@@ -507,43 +494,6 @@ def test_check_constraints_on_scrape_log(test_db):
         )
 
 
-def test_check_constraints_on_season_status(test_db):
-    """Test that CHECK constraints work on season status."""
-    cursor = test_db.conn.cursor()
-
-    # Setup
-    cursor.execute(
-        """
-        INSERT INTO leagues (league_id, name, url, scraped_at)
-        VALUES (1, 'League', 'http://league.com', datetime('now'))
-    """
-    )
-    cursor.execute(
-        """
-        INSERT INTO series (series_id, league_id, name, url, scraped_at)
-        VALUES (1, 1, 'Series', 'http://series.com', datetime('now'))
-    """
-    )
-
-    # Valid status should work
-    cursor.execute(
-        """
-        INSERT INTO seasons (season_id, series_id, name, url, status, scraped_at)
-        VALUES (1, 1, 'Season', 'http://season.com', 'active', datetime('now'))
-    """
-    )
-    test_db.conn.commit()
-
-    # Invalid status should fail
-    with pytest.raises(sqlite3.IntegrityError):
-        cursor.execute(
-            """
-            INSERT INTO seasons (season_id, series_id, name, url, status, scraped_at)
-            VALUES (2, 1, 'Season2', 'http://season2.com', 'invalid', datetime('now'))
-        """
-        )
-
-
 # Task 2.2: League CRUD Operations Tests
 
 
@@ -555,7 +505,6 @@ def test_upsert_league_inserts_new(test_db):
             "name": "The OBRL",
             "url": "http://simracerhub.com/league.php?league_id=1558",
             "description": "Online Racing League",
-            "organizer": "OBRL Staff",
             "scraped_at": "2025-01-15 10:00:00",
         },
     )
@@ -569,7 +518,6 @@ def test_upsert_league_inserts_new(test_db):
     assert league["name"] == "The OBRL"
     assert league["url"] == "http://simracerhub.com/league.php?league_id=1558"
     assert league["description"] == "Online Racing League"
-    assert league["organizer"] == "OBRL Staff"
 
 
 def test_upsert_league_updates_existing(test_db):
@@ -599,7 +547,6 @@ def test_upsert_league_updates_existing(test_db):
             "name": "The OBRL Updated",
             "url": "http://simracerhub.com/league.php?league_id=1558",
             "description": "New description",
-            "organizer": "New Staff",
             "scraped_at": "2025-01-15 11:00:00",
         },
     )
@@ -608,7 +555,6 @@ def test_upsert_league_updates_existing(test_db):
     league2 = test_db.get_league(1558)
     assert league2["name"] == "The OBRL Updated"
     assert league2["description"] == "New description"
-    assert league2["organizer"] == "New Staff"
     assert league2["scraped_at"] == "2025-01-15 11:00:00"
 
     # Verify updated_at changed
@@ -782,10 +728,8 @@ def test_upsert_series(test_db):
             "name": "Wednesday Night Series",
             "url": "http://test.com/series/3714",
             "description": "Weekly oval racing",
-            "vehicle_type": "Stock Car",
-            "day_of_week": "Wednesday",
-            "active": True,
-            "season_count": 5,
+            "created_date": "2020-01-15",
+            "num_seasons": 5,
             "scraped_at": "2025-01-15 10:00:00",
         },
     )
@@ -798,8 +742,8 @@ def test_upsert_series(test_db):
     assert series["series_id"] == 3714
     assert series["league_id"] == 1558
     assert series["name"] == "Wednesday Night Series"
-    assert series["vehicle_type"] == "Stock Car"
-    assert series["active"] == 1  # SQLite stores boolean as int
+    assert series["created_date"] == "2020-01-15"
+    assert series["num_seasons"] == 5
 
     # Update series
     time.sleep(0.01)
@@ -809,14 +753,14 @@ def test_upsert_series(test_db):
         {
             "name": "Wednesday Night Series Updated",
             "url": "http://test.com/series/3714",
-            "active": False,
+            "num_seasons": 10,
             "scraped_at": "2025-01-15 11:00:00",
         },
     )
 
     series_updated = test_db.get_series(3714)
     assert series_updated["name"] == "Wednesday Night Series Updated"
-    assert series_updated["active"] == 0
+    assert series_updated["num_seasons"] == 10
     assert series_updated["updated_at"] >= series["updated_at"]
 
 

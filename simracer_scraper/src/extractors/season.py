@@ -151,6 +151,11 @@ class SeasonExtractor(BaseExtractor):
         name = self._extract_season_name(soup)
         metadata["name"] = name
 
+        # Extract description from pageTitleDescr div
+        description = self._extract_description(soup)
+        if description:
+            metadata["description"] = description
+
         return metadata
 
     def _extract_season_name(self, soup: BeautifulSoup) -> str:
@@ -188,6 +193,24 @@ class SeasonExtractor(BaseExtractor):
 
         # Fallback
         return "Unknown Season"
+
+    def _extract_description(self, soup: BeautifulSoup) -> str | None:
+        """Extract season description from pageTitleDescr div.
+
+        Args:
+            soup: BeautifulSoup object
+
+        Returns:
+            Description text or None if not found
+        """
+        # Look for div with class "pageTitleDescr" (lowercase)
+        descr_div = soup.find("div", class_="pageTitleDescr")
+        if descr_div:
+            description = descr_div.get_text(strip=True)
+            if description:
+                return description
+
+        return None
 
     def _extract_child_urls(self, soup: BeautifulSoup) -> dict[str, Any]:
         """Extract child entity URLs (races).

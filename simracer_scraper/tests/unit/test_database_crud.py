@@ -29,11 +29,8 @@ def test_upsert_season(test_db):
         3714,
         {
             "name": "2025 Season 1",
+            "description": "Test season description",
             "url": "http://test.com/season/12345",
-            "year": 2025,
-            "status": "active",
-            "scheduled_races": 12,
-            "completed_races": 3,
             "scraped_at": "2025-01-15",
         },
     )
@@ -45,8 +42,7 @@ def test_upsert_season(test_db):
     assert season["season_id"] == 12345
     assert season["series_id"] == 3714
     assert season["name"] == "2025 Season 1"
-    assert season["year"] == 2025
-    assert season["status"] == "active"
+    assert season["description"] == "Test season description"
 
 
 def test_get_seasons_by_series(test_db):

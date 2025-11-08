@@ -52,7 +52,6 @@ class Database:
                 league_id INTEGER PRIMARY KEY,
                 name TEXT NOT NULL,
                 description TEXT,
-                organizer TEXT,
                 url TEXT NOT NULL UNIQUE,
                 scraped_at TIMESTAMP NOT NULL,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -122,11 +121,8 @@ class Database:
                 league_id INTEGER NOT NULL,
                 name TEXT NOT NULL,
                 description TEXT,
-                vehicle_type TEXT,
-                day_of_week TEXT,
-                active BOOLEAN,
-                season_count INTEGER,
-                created_date TEXT,
+                created_date DATE,
+                num_seasons INTEGER,
                 url TEXT NOT NULL UNIQUE,
                 scraped_at TIMESTAMP NOT NULL,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -137,7 +133,6 @@ class Database:
         )
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_series_league_id ON series(league_id)")
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_series_url ON series(url)")
-        cursor.execute("CREATE INDEX IF NOT EXISTS idx_series_active ON series(active)")
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_series_scraped_at ON series(scraped_at)")
 
         # Table: seasons
@@ -147,16 +142,7 @@ class Database:
                 season_id INTEGER PRIMARY KEY,
                 series_id INTEGER NOT NULL,
                 name TEXT NOT NULL,
-                year INTEGER,
-                start_date DATE,
-                start_timestamp INTEGER,
-                end_date DATE,
-                scheduled_races INTEGER,
-                completed_races INTEGER,
-                status TEXT CHECK(status IN ('upcoming', 'active', 'completed')),
-                hc BOOLEAN,
-                mc BOOLEAN,
-                psn INTEGER,
+                description TEXT,
                 url TEXT NOT NULL UNIQUE,
                 scraped_at TIMESTAMP NOT NULL,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -167,8 +153,6 @@ class Database:
         )
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_seasons_series_id ON seasons(series_id)")
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_seasons_url ON seasons(url)")
-        cursor.execute("CREATE INDEX IF NOT EXISTS idx_seasons_year ON seasons(year)")
-        cursor.execute("CREATE INDEX IF NOT EXISTS idx_seasons_status ON seasons(status)")
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_seasons_scraped_at ON seasons(scraped_at)")
 
         # Table: races
@@ -326,7 +310,7 @@ class Database:
 
         Args:
             league_id: League ID
-            data: Dictionary with league fields (name, url, description, organizer, scraped_at)
+            data: Dictionary with league fields (name, url, description, scraped_at)
 
         Returns:
             The league_id of the inserted/updated record
@@ -346,21 +330,19 @@ class Database:
 
         # Optional fields
         description = data.get("description")
-        organizer = data.get("organizer")
 
         cursor.execute(
             """
-            INSERT INTO leagues (league_id, name, url, description, organizer, scraped_at, updated_at)
-            VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+            INSERT INTO leagues (league_id, name, url, description, scraped_at, updated_at)
+            VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
             ON CONFLICT(league_id) DO UPDATE SET
                 name = excluded.name,
                 url = excluded.url,
                 description = excluded.description,
-                organizer = excluded.organizer,
                 scraped_at = excluded.scraped_at,
                 updated_at = CURRENT_TIMESTAMP
         """,
-            (league_id, name, url, description, organizer, scraped_at),
+            (league_id, name, url, description, scraped_at),
         )
 
         self.conn.commit()
@@ -435,29 +417,23 @@ class Database:
 
         # Optional fields
         description = data.get("description")
-        vehicle_type = data.get("vehicle_type")
-        day_of_week = data.get("day_of_week")
-        active = data.get("active")
-        season_count = data.get("season_count")
         created_date = data.get("created_date")
+        num_seasons = data.get("num_seasons")
 
         cursor.execute(
             """
             INSERT INTO series (
-                series_id, league_id, name, url, description, vehicle_type,
-                day_of_week, active, season_count, created_date, scraped_at, updated_at
+                series_id, league_id, name, url, description,
+                created_date, num_seasons, scraped_at, updated_at
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
             ON CONFLICT(series_id) DO UPDATE SET
                 league_id = excluded.league_id,
                 name = excluded.name,
                 url = excluded.url,
                 description = excluded.description,
-                vehicle_type = excluded.vehicle_type,
-                day_of_week = excluded.day_of_week,
-                active = excluded.active,
-                season_count = excluded.season_count,
                 created_date = excluded.created_date,
+                num_seasons = excluded.num_seasons,
                 scraped_at = excluded.scraped_at,
                 updated_at = CURRENT_TIMESTAMP
         """,
@@ -467,11 +443,8 @@ class Database:
                 name,
                 url,
                 description,
-                vehicle_type,
-                day_of_week,
-                active,
-                season_count,
                 created_date,
+                num_seasons,
                 scraped_at,
             ),
         )
@@ -545,39 +518,20 @@ class Database:
             raise ValueError("name, url, and scraped_at are required fields")
 
         # Optional fields
-        year = data.get("year")
-        start_date = data.get("start_date")
-        start_timestamp = data.get("start_timestamp")
-        end_date = data.get("end_date")
-        scheduled_races = data.get("scheduled_races")
-        completed_races = data.get("completed_races")
-        status = data.get("status")
-        hc = data.get("hc")
-        mc = data.get("mc")
-        psn = data.get("psn")
+        description = data.get("description")
 
         cursor.execute(
             """
             INSERT INTO seasons (
-                season_id, series_id, name, url, year, start_date, start_timestamp,
-                end_date, scheduled_races, completed_races, status, hc, mc, psn,
+                season_id, series_id, name, description, url,
                 scraped_at, updated_at
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+            VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
             ON CONFLICT(season_id) DO UPDATE SET
                 series_id = excluded.series_id,
                 name = excluded.name,
+                description = excluded.description,
                 url = excluded.url,
-                year = excluded.year,
-                start_date = excluded.start_date,
-                start_timestamp = excluded.start_timestamp,
-                end_date = excluded.end_date,
-                scheduled_races = excluded.scheduled_races,
-                completed_races = excluded.completed_races,
-                status = excluded.status,
-                hc = excluded.hc,
-                mc = excluded.mc,
-                psn = excluded.psn,
                 scraped_at = excluded.scraped_at,
                 updated_at = CURRENT_TIMESTAMP
         """,
@@ -585,17 +539,8 @@ class Database:
                 season_id,
                 series_id,
                 name,
+                description,
                 url,
-                year,
-                start_date,
-                start_timestamp,
-                end_date,
-                scheduled_races,
-                completed_races,
-                status,
-                hc,
-                mc,
-                psn,
                 scraped_at,
             ),
         )

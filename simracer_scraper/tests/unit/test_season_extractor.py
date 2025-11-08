@@ -119,6 +119,65 @@ class TestSeasonExtractorExtraction:
             assert isinstance(name, str)
             assert len(name) > 0
 
+    def test_extract_description(self, season_extractor):
+        """Test description is correctly extracted from pageTitleDescr div."""
+        html = """
+        <html>
+        <head><title>Season</title></head>
+        <body>
+            <h1>Test Season</h1>
+            <div class="pageTitleDescr">This is a test season description.</div>
+            <table class="schedule-table">
+                <tbody>
+                    <tr>
+                        <td>1</td>
+                        <td><a href="season_race.php?schedule_id=100">Track</a></td>
+                    </tr>
+                </tbody>
+            </table>
+        </body>
+        </html>
+        """
+
+        with patch.object(season_extractor, "fetch_page") as mock_fetch:
+            mock_fetch.return_value = BeautifulSoup(html, "html.parser")
+
+            result = season_extractor.extract(
+                "https://www.simracerhub.com/season_schedule.php?season_id=100"
+            )
+
+            assert "description" in result["metadata"]
+            assert result["metadata"]["description"] == "This is a test season description."
+
+    def test_extract_description_missing(self, season_extractor):
+        """Test that description is not present when pageTitleDescr div is missing."""
+        html = """
+        <html>
+        <head><title>Season</title></head>
+        <body>
+            <h1>Test Season</h1>
+            <table class="schedule-table">
+                <tbody>
+                    <tr>
+                        <td>1</td>
+                        <td><a href="season_race.php?schedule_id=100">Track</a></td>
+                    </tr>
+                </tbody>
+            </table>
+        </body>
+        </html>
+        """
+
+        with patch.object(season_extractor, "fetch_page") as mock_fetch:
+            mock_fetch.return_value = BeautifulSoup(html, "html.parser")
+
+            result = season_extractor.extract(
+                "https://www.simracerhub.com/season_schedule.php?season_id=100"
+            )
+
+            # description should not be in metadata when not found
+            assert "description" not in result["metadata"]
+
     def test_extract_race_urls(self, season_extractor, season_fixture_html):
         """Test race URLs are extracted from table."""
         with patch.object(season_extractor, "fetch_page") as mock_fetch:

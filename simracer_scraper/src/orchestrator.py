@@ -232,14 +232,24 @@ class Orchestrator:
                 # NOTE: We set scraped_at to a very old date so cache checks know
                 # we haven't actually scraped the series page yet
                 for series_info in series_urls:
+                    series_data = {
+                        "name": series_info.get("name", "Unknown Series"),
+                        "url": series_info["url"],
+                        "scraped_at": "1970-01-01T00:00:00",  # Epoch - forces re-scrape
+                    }
+
+                    # Add optional metadata from league page
+                    if "description" in series_info:
+                        series_data["description"] = series_info["description"]
+                    if "created_date" in series_info:
+                        series_data["created_date"] = series_info["created_date"]
+                    if "num_seasons" in series_info:
+                        series_data["num_seasons"] = series_info["num_seasons"]
+
                     self.db.upsert_series(
                         series_id=series_info["series_id"],
                         league_id=metadata["league_id"],
-                        data={
-                            "name": series_info.get("name", "Unknown Series"),
-                            "url": series_info["url"],
-                            "scraped_at": "1970-01-01T00:00:00",  # Epoch - forces re-scrape
-                        },
+                        data=series_data,
                     )
 
                 # Scrape each series
@@ -429,14 +439,20 @@ class Orchestrator:
                 # Preserve the name from series JavaScript (more accurate)
                 season_name = existing_season["name"]
 
+            season_data_dict = {
+                "name": season_name,
+                "url": metadata["url"],
+                "scraped_at": datetime.datetime.now().isoformat(),
+            }
+
+            # Add description if available
+            if "description" in metadata:
+                season_data_dict["description"] = metadata["description"]
+
             self.db.upsert_season(
                 season_id=season_id,
                 series_id=series_id,
-                data={
-                    "name": season_name,
-                    "url": metadata["url"],
-                    "scraped_at": datetime.datetime.now().isoformat(),
-                },
+                data=season_data_dict,
             )
 
             self.progress["seasons_scraped"] += 1

@@ -246,12 +246,19 @@ class LeagueExtractor(BaseExtractor):
         Returns:
             Description string or None if not found
         """
-        # Try finding description in common locations
+        # Try finding description in pageTitleDescr div (SimRacerHub standard)
+        desc_div = soup.find("div", class_="pageTitleDescr")
+        if desc_div:
+            description = desc_div.get_text(strip=True)
+            if description:
+                return description
+
+        # Fallback: Try finding description in league-description class
         desc_div = soup.find("div", class_="league-description")
         if desc_div:
             return desc_div.get_text(strip=True)
 
-        # Try finding first paragraph after H1
+        # Fallback: Try finding first paragraph after H1
         h1 = soup.find("h1")
         if h1:
             next_p = h1.find_next("p")
@@ -290,17 +297,44 @@ class LeagueExtractor(BaseExtractor):
         return child_urls
 
     def _extract_series_urls(self, soup: BeautifulSoup) -> list[dict[str, Any]]:
-        """Extract series URLs from JavaScript data.
+        """Extract series URLs and metadata from JavaScript data and HTML table.
 
         Args:
             soup: BeautifulSoup object
 
         Returns:
-            List of dicts with "url", "series_id", and "name" keys
+            List of dicts with "url", "series_id", "name", and optional metadata
         """
+        from datetime import datetime
+
         # Extract series data from JavaScript
         html_str = str(soup)
         series_data = extract_series_data(html_str)
+
+        # Extract descriptions from HTML table
+        # The table has rows with series info including description in 4th <td>
+        series_descriptions = {}
+
+        # Find all table rows with series data
+        for row in soup.find_all("tr", class_="jsTableRow"):
+            # Look for series link with series_id
+            series_link = row.find("a", href=re.compile(r"series_seasons\.php\?series_id=\d+"))
+            if series_link:
+                href = series_link.get("href", "")
+                match = re.search(r"series_id=(\d+)", href)
+                if match:
+                    row_series_id = int(match.group(1))
+
+                    # Find all td elements in this row
+                    cells = row.find_all("td")
+
+                    # Description is typically in the 4th cell (index 3)
+                    # Structure: Active | Name | URL | Stats | Description | Created | Seasons
+                    if len(cells) >= 5:
+                        description_cell = cells[4]  # 5th cell (0-indexed = 4)
+                        description = description_cell.get_text(strip=True)
+                        if description:
+                            series_descriptions[row_series_id] = description
 
         # Build URLs from series IDs
         base_url = "https://www.simracerhub.com"
@@ -310,13 +344,31 @@ class LeagueExtractor(BaseExtractor):
             if "id" in series:
                 series_id = series["id"]
                 url = f"{base_url}/series_seasons.php?series_id={series_id}"
-                series_urls.append(
-                    {
-                        "url": url,
-                        "series_id": series_id,
-                        "name": series.get("name", "Unknown Series"),
-                    }
-                )
+
+                series_dict = {
+                    "url": url,
+                    "series_id": series_id,
+                    "name": series.get("name", "Unknown Series"),
+                }
+
+                # Add description from HTML table if available
+                if series_id in series_descriptions:
+                    series_dict["description"] = series_descriptions[series_id]
+
+                # Add created_date if scrt (Unix timestamp) is present
+                if "scrt" in series:
+                    try:
+                        created_timestamp = series["scrt"]
+                        created_dt = datetime.fromtimestamp(created_timestamp)
+                        series_dict["created_date"] = created_dt.strftime("%Y-%m-%d")
+                    except (ValueError, OSError):
+                        pass
+
+                # Add num_seasons if nsea is present
+                if "nsea" in series:
+                    series_dict["num_seasons"] = series["nsea"]
+
+                series_urls.append(series_dict)
 
         return series_urls
 
