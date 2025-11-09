@@ -8,7 +8,13 @@ import logging
 from typing import Any
 
 from .database import Database
-from .extractors import LeagueExtractor, RaceExtractor, SeasonExtractor, SeriesExtractor
+from .extractors import (
+    DriverExtractor,
+    LeagueExtractor,
+    RaceExtractor,
+    SeasonExtractor,
+    SeriesExtractor,
+)
 from .schema_validator import SchemaValidator
 from .utils.browser_manager import BrowserManager
 
@@ -87,6 +93,9 @@ class Orchestrator:
         # Season and Race require JavaScript rendering (slow but necessary)
         self.season_extractor = SeasonExtractor(**extractor_kwargs | {"render_js": True})
         self.race_extractor = RaceExtractor(**extractor_kwargs | {"render_js": True})
+
+        # Driver uses static HTML (fast) - no JavaScript needed
+        self.driver_extractor = DriverExtractor(**extractor_kwargs | {"render_js": False})
 
         # Progress tracking
         self.progress = {
@@ -311,27 +320,45 @@ class Orchestrator:
             # Store series in database
             import datetime
 
-            # Check if series already has a name (from league JavaScript)
+            # Check if series already exists to preserve metadata from league JavaScript
             existing_series = self.db.get_series(metadata["series_id"])
             series_name = metadata["name"]
             if existing_series and existing_series.get("name"):
                 # Preserve the name from league JavaScript (more accurate)
                 series_name = existing_series["name"]
 
+            # Build database data dict, preserving existing values for fields not in series page
+            db_data = {
+                "name": series_name,
+                "url": metadata["url"],
+                "scraped_at": datetime.datetime.now().isoformat(),
+            }
+
+            # Only update description if we have a value (preserve existing if not)
+            if metadata.get("description"):
+                db_data["description"] = metadata["description"]
+            elif existing_series and existing_series.get("description"):
+                db_data["description"] = existing_series["description"]
+
+            # Only update created_date if we have a value (preserve existing if not)
+            if metadata.get("created_date"):
+                db_data["created_date"] = metadata["created_date"]
+            elif existing_series and existing_series.get("created_date"):
+                db_data["created_date"] = existing_series["created_date"]
+
+            # Only update num_seasons if we have a value (preserve existing if not)
+            # Note: metadata might have 'season_count' which maps to 'num_seasons'
+            if metadata.get("season_count"):
+                db_data["num_seasons"] = metadata["season_count"]
+            elif metadata.get("num_seasons"):
+                db_data["num_seasons"] = metadata["num_seasons"]
+            elif existing_series and existing_series.get("num_seasons"):
+                db_data["num_seasons"] = existing_series["num_seasons"]
+
             self.db.upsert_series(
                 series_id=metadata["series_id"],
                 league_id=league_id,
-                data={
-                    "name": series_name,
-                    "url": metadata["url"],
-                    "description": metadata.get("description"),
-                    "vehicle_type": metadata.get("vehicle_type"),
-                    "day_of_week": metadata.get("day_of_week"),
-                    "active": metadata.get("active"),
-                    "season_count": metadata.get("season_count"),
-                    "created_date": metadata.get("created_date"),
-                    "scraped_at": datetime.datetime.now().isoformat(),
-                },
+                data=db_data,
             )
 
             self.progress["series_scraped"] += 1
@@ -874,3 +901,122 @@ class Orchestrator:
         )
 
         return race_data
+
+    def refresh_driver_data(
+        self, driver_id: int, cache_max_age_days: int = 7, force: bool = False
+    ) -> None:
+        """Refresh driver profile data from driver stats page.
+
+        Fetches complete driver profile (irating, safety_rating, license_class)
+        and updates the database. Respects caching unless force=True.
+
+        Args:
+            driver_id: Driver ID to refresh
+            cache_max_age_days: Days before cache expires (default: 7)
+            force: Force refresh even if recently scraped (default: False)
+
+        Note:
+            This only updates driver stats. The driver record must already exist
+            in the database (created via race result scraping).
+        """
+        import datetime
+        import time as time_module
+
+        start_time = time_module.time()
+
+        # Build driver URL
+        driver_url = f"https://www.simracerhub.com/driver_stats.php?driver_id={driver_id}"
+
+        try:
+            # Check cache unless force refresh
+            if not force:
+                is_cached = self.db.is_url_cached(driver_url, "driver", cache_max_age_days)
+                if is_cached:
+                    logger.info(f"⚡ CACHED (skipped): {driver_url}")
+                    self.progress["skipped_cached"] += 1
+                    return
+
+            # Extract driver data
+            logger.info(f"🌐 FETCHING: {driver_url}")
+            driver_data = self.driver_extractor.extract(driver_url)
+            metadata = driver_data["metadata"]
+
+            # Get existing driver to preserve league_id and other fields
+            existing_driver = self.db.get_driver(driver_id)
+            if not existing_driver:
+                logger.warning(f"⚠️  Driver {driver_id} not found in database, skipping")
+                return
+
+            # Update driver stats in database (must include name as required field)
+            self.db.upsert_driver(
+                driver_id=driver_id,
+                league_id=existing_driver["league_id"],
+                data={
+                    "name": existing_driver["name"],  # Required field from existing record
+                    "url": driver_url,
+                    "irating": metadata.get("irating"),
+                    "safety_rating": metadata.get("safety_rating"),
+                    "license_class": metadata.get("license_class"),
+                    "scraped_at": datetime.datetime.now().isoformat(),
+                },
+            )
+
+            logger.info(
+                f"✅ Updated driver {driver_id}: "
+                f"iRating={metadata.get('irating')}, "
+                f"SR={metadata.get('safety_rating')}, "
+                f"License={metadata.get('license_class')}"
+            )
+
+            # Log successful scrape
+            duration_ms = int((time_module.time() - start_time) * 1000)
+            self.db.log_scrape("driver", driver_url, "success", duration_ms=duration_ms)
+
+        except Exception as e:
+            self.progress["errors"].append(
+                {"entity": "driver", "url": driver_url, "error": str(e)}
+            )
+            duration_ms = int((time_module.time() - start_time) * 1000)
+            self.db.log_scrape(
+                "driver", driver_url, "failed", error_msg=str(e), duration_ms=duration_ms
+            )
+            logger.error(f"❌ Failed to refresh driver {driver_id}: {e}")
+
+    def refresh_all_drivers(
+        self, cache_max_age_days: int = 7, force: bool = False, league_id: int | None = None
+    ) -> None:
+        """Refresh all drivers in the database.
+
+        Iterates through all drivers and updates their profile data.
+        Optionally filters by league_id.
+
+        Args:
+            cache_max_age_days: Days before cache expires (default: 7)
+            force: Force refresh even if recently scraped (default: False)
+            league_id: Only refresh drivers from this league (optional)
+
+        Progress is tracked in self.progress["drivers_refreshed"].
+        """
+        # Add drivers_refreshed to progress if not present
+        if "drivers_refreshed" not in self.progress:
+            self.progress["drivers_refreshed"] = 0
+
+        # Get all drivers (optionally filtered by league)
+        if league_id:
+            drivers = self.db.get_drivers_by_league(league_id)
+            logger.info(f"🔄 Refreshing {len(drivers)} drivers from league {league_id}...")
+        else:
+            drivers = self.db.get_all_drivers()
+            logger.info(f"🔄 Refreshing all {len(drivers)} drivers...")
+
+        for i, driver in enumerate(drivers, 1):
+            driver_id = driver["driver_id"]
+            logger.info(f"[{i}/{len(drivers)}] Refreshing driver {driver_id}...")
+
+            self.refresh_driver_data(
+                driver_id=driver_id, cache_max_age_days=cache_max_age_days, force=force
+            )
+
+            self.progress["drivers_refreshed"] += 1
+
+        logger.info(f"✅ Driver refresh complete: {self.progress['drivers_refreshed']} updated")

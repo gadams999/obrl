@@ -51,6 +51,15 @@ Examples:
 
   # Force refresh (ignore cache)
   python scraper.py scrape league 1558 --force
+
+  # Refresh a single driver's stats
+  python scraper.py scrape driver 1071
+
+  # Refresh all drivers
+  python scraper.py scrape drivers
+
+  # Refresh all drivers from a specific league
+  python scraper.py scrape drivers --league 1558
         """,
     )
 
@@ -62,8 +71,8 @@ Examples:
     scrape_parser.add_argument(
         "entity",
         nargs="?",
-        choices=["league", "all"],
-        help="What to scrape (league, all) - optional if config has league.id",
+        choices=["league", "all", "driver", "drivers"],
+        help="What to scrape (league, all, driver, drivers) - optional if config has league.id",
     )
     scrape_parser.add_argument(
         "league_id",
@@ -131,7 +140,8 @@ Examples:
     if not league_id and config.get("league"):
         league_id = config["league"].get("id")
 
-    if not league_id:
+    # League ID not required for driver commands
+    if not league_id and args.entity not in ["driver", "drivers"]:
         logger.error("League ID required. Provide via command line or config.yaml")
         logger.error("Usage: python scraper.py scrape league <league_id>")
         logger.error("   Or: python scraper.py (with league.id in config.yaml)")
@@ -159,13 +169,45 @@ Examples:
                     validator=validator,
                     rate_limit_range=(2.0, 4.0),
                 ) as orchestrator:
+                    # Set cache behavior
+                    cache_max_age = None if args.force else 7
+
+                    # Handle driver-specific commands
+                    if args.entity == "driver":
+                        # Scrape single driver
+                        if not args.league_id:
+                            logger.error("Driver ID required. Usage: scrape driver <driver_id>")
+                            return 1
+                        driver_id = int(args.league_id)  # Reuse league_id arg for driver_id
+                        logger.info(f"Refreshing driver {driver_id}...")
+                        orchestrator.refresh_driver_data(
+                            driver_id=driver_id,
+                            cache_max_age_days=cache_max_age,
+                            force=args.force,
+                        )
+                        logger.info("Driver refresh complete!")
+                        return 0
+
+                    elif args.entity == "drivers":
+                        # Scrape all drivers (optionally filtered by league)
+                        logger.info("Refreshing all drivers...")
+                        orchestrator.refresh_all_drivers(
+                            cache_max_age_days=cache_max_age,
+                            force=args.force,
+                            league_id=int(league_id) if league_id else None,
+                        )
+                        progress = orchestrator.get_progress()
+                        logger.info("Driver refresh complete!")
+                        logger.info(f"  Drivers refreshed: {progress.get('drivers_refreshed', 0)}")
+                        logger.info(f"  Cached (skipped): {progress['skipped_cached']}")
+                        if progress["errors"]:
+                            logger.warning(f"  Errors: {len(progress['errors'])}")
+                        return 0
+
                     # Build league URL
                     league_url = (
                         f"https://www.simracerhub.com/league_series.php?league_id={league_id}"
                     )
-
-                    # Set cache behavior
-                    cache_max_age = None if args.force else 7
 
                     logger.info(f"Scraping league {league_id} with depth={depth}")
 

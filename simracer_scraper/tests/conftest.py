@@ -1,8 +1,9 @@
 """Shared pytest fixtures."""
 
-import pytest
 import sys
 from pathlib import Path
+
+import pytest
 
 # Add claude_temp to path for testing work-in-progress code
 CLAUDE_TEMP = Path(__file__).parent.parent / "claude_temp"

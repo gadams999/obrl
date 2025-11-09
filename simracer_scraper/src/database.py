@@ -1013,6 +1013,22 @@ class Database:
             return dict(row)
         return None
 
+    def get_all_drivers(self) -> list[dict]:
+        """
+        Get all drivers in the database.
+
+        Returns:
+            List of dictionaries with driver data
+        """
+        if not self.conn:
+            raise RuntimeError("Database not connected")
+
+        cursor = self.conn.cursor()
+        cursor.execute("SELECT * FROM drivers ORDER BY driver_id")
+        rows = cursor.fetchall()
+
+        return [dict(row) for row in rows]
+
     def get_drivers_by_league(self, league_id: int) -> list[dict]:
         """
         Get all drivers for a league.
