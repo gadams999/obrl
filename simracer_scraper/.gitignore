@@ -12,3 +12,7 @@ htmlcov/
 
 # Ruff cache
 .ruff_cache/
+
+# Parquet export output
+parquet_output/
+*.parquet
