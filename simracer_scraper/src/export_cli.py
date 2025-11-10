@@ -4,7 +4,7 @@ import argparse
 import sys
 from pathlib import Path
 
-from export import ParquetExporter
+from src.export import ParquetExporter
 
 
 def main():

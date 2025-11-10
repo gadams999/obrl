@@ -1,0 +1,53 @@
+{
+  "export_timestamp": "2025-11-10T07:25:12.888069",
+  "source_database": "obrl-nov8.db",
+  "compression": "snappy",
+  "partitioned": true,
+  "tables": {
+    "leagues": {
+      "row_count": 1,
+      "file_size": 3739,
+      "file_path": "parquet_output/leagues.parquet"
+    },
+    "teams": {
+      "row_count": 0,
+      "file_size": 0,
+      "file_path": null
+    },
+    "drivers": {
+      "row_count": 664,
+      "file_size": 43655,
+      "file_path": "parquet_output/drivers.parquet"
+    },
+    "series": {
+      "row_count": 4,
+      "file_size": 6822,
+      "file_path": "parquet_output/series.parquet"
+    },
+    "seasons": {
+      "row_count": 95,
+      "file_size": 16608,
+      "file_path": "parquet_output/seasons.parquet"
+    },
+    "races": {
+      "row_count": 1535,
+      "file_size": 114084,
+      "file_path": "parquet_output/races.parquet"
+    },
+    "race_results": {
+      "row_count": 41651,
+      "file_size": 1741209,
+      "file_path": "parquet_output/race_results.parquet"
+    },
+    "scrape_log": {
+      "row_count": 2299,
+      "file_size": 56673,
+      "file_path": "parquet_output/scrape_log.parquet"
+    },
+    "schema_alerts": {
+      "row_count": 0,
+      "file_size": 0,
+      "file_path": null
+    }
+  }
+}

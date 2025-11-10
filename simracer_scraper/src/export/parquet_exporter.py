@@ -168,6 +168,10 @@ class ParquetExporter:
         # Convert to PyArrow table
         schema = self._get_schema_for_table(table_name)
         data = [dict(row) for row in rows]
+
+        # Convert boolean fields from SQLite integers (0, 1) to Python booleans
+        data = self._convert_booleans(data, table_name)
+
         table = pa.Table.from_pylist(data, schema=schema)
 
         # Write to Parquet
@@ -217,6 +221,41 @@ class ParquetExporter:
         # Placeholder for partitioned export implementation
         # For now, export as single file
         return self._export_table("race_results", output_path, compression)
+
+    def _convert_booleans(self, data: list[dict], table_name: str) -> list[dict]:
+        """
+        Convert SQLite integer boolean values (0, 1) to Python booleans.
+
+        Args:
+            data: List of dictionaries representing rows
+            table_name: Name of the table
+
+        Returns:
+            Modified data with boolean fields converted
+        """
+        # Define boolean fields for each table
+        boolean_fields = {
+            "races": [
+                "points_race",
+                "off_week",
+                "night_race",
+                "playoff_race",
+                "is_complete",
+            ],
+            "schema_alerts": ["resolved"],
+        }
+
+        if table_name not in boolean_fields:
+            return data
+
+        # Convert integers to booleans
+        fields_to_convert = boolean_fields[table_name]
+        for row in data:
+            for field in fields_to_convert:
+                if field in row and row[field] is not None:
+                    row[field] = bool(row[field])
+
+        return data
 
     def _get_schema_for_table(self, table_name: str) -> pa.Schema:
         """
