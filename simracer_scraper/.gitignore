@@ -16,3 +16,4 @@ htmlcov/
 # Parquet export output
 parquet_output/
 *.parquet
+_metadata.json
