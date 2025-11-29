@@ -114,23 +114,6 @@ class ParquetExporter:
             )
             metadata["tables"]["race_results"] = result
 
-        # Export metadata tables
-        metadata_tables = ["scrape_log", "schema_alerts"]
-        for table in metadata_tables:
-            result = self._export_table(
-                table,
-                output_path / table,
-                compression=compression,
-            )
-            metadata["tables"][table] = result
-
-        # Write export metadata
-        metadata_file = output_path / "_metadata.json"
-        import json
-
-        with open(metadata_file, "w") as f:
-            json.dump(metadata, f, indent=2)
-
         return metadata
 
     def _export_table(
