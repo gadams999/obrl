@@ -25,8 +25,9 @@
 - **Device Enumeration**: Ability to list connected DirectInput devices.
 - **Device Selection**: Mechanism (config file or hardcoded initially) to select the specific controller GUID.
 - **Button Mapping**:
-    - Map a range of buttons (e.g., Button 0 to Button 11) to specific display text.
-    - Logic: Identify which button in the configured range is currently pressed.
+    - **Target Device**: Bavarian Sim Tec Alpha.
+    - **Button Range**: Buttons 58-65 (1-indexed) => Buttons 57-64 (DirectInput 0-indexed).
+    - **Logic**: Monitor this specific range. If `Button[i]` is pressed, update UI to `Index = i - 57`.
 
 ### 3.3. Window Management
 - **Click-Through**: Use Windows API (`SetWindowLong`, `GetWindowLong`, `WS_EX_TRANSPARENT`, `WS_EX_LAYERED`) to ensure the window is click-through.
@@ -46,4 +47,4 @@
 - **Inno Setup**: (Alternative) for creating simple installers.
 
 ### 5.3. Testing Tools
-- **DIView (DirectInput Viewer)**: Recommended for verifying controller button IDs and hardware behavior outside the app.
+- **Joystick Test Application**: [Planet Pointy Joystick Test App](https://www.planetpointy.co.uk/joystick-test-application/). Essential for verifying devices with more than 32 buttons (which DIView and standard Windows tools often fail to display).

@@ -33,12 +33,20 @@ The Wheel Overlay is a lightweight Windows utility designed for sim racers. It v
 
 ## 3. Input Handling
 ### 3.1. Controller Support
-- **Device Detection**: Must detect specific USB devices by name (names to be provided).
+- **Device Detection**: Must detect the **Bavarian Sim Tec Alpha** racing wheel.
 - **Protocol**: DirectInput.
 
 ### 3.2. Rotary Logic
-- **Button Mode Only**: The system will listen for a specific range of buttons.
-- **State Detection**: It assumes the hardware behaves such that only **one** button in the defined range is depressed at any given time. The overlay highlights the entry corresponding to the currently held button.
+- **Hardware Behavior**: The center rotary is activated by pushing it in (Button 9, 1-indexed). It then reports its position as a single held button in the range **58-65** (1-indexed).
+- **State Detection**:
+    - The application should listen for Buttons 58-65.
+    - **Mapping**:
+        - Button 58 -> Item 1
+        - Button 59 -> Item 2
+        - ...
+        - Button 65 -> Item 8
+    - **Wrap-around**: The rotary wraps from 65 to 58 and vice versa.
+    - **Highlighting**: The overlay highlights the text entry corresponding to the currently active button (58-65).
 
 ## 4. Performance
 - **Latency**: Updates must be near-instantaneous (<16ms).
