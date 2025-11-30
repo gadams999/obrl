@@ -1,3 +1,4 @@
+using System;
 using System.Windows;
 using System.Windows.Controls;
 using WheelOverlay.Models;
@@ -7,6 +8,7 @@ namespace WheelOverlay
     public partial class SettingsWindow : Window
     {
         private AppSettings _settings;
+        public event EventHandler? SettingsChanged;
 
         public SettingsWindow(AppSettings settings)
         {
@@ -35,7 +37,7 @@ namespace WheelOverlay
             OpacitySlider.Value = _settings.MoveOverlayOpacity;
         }
 
-        private void SaveButton_Click(object sender, RoutedEventArgs e)
+        private void ApplyButton_Click(object sender, RoutedEventArgs e)
         {
             // Save layout
             if (LayoutComboBox.SelectedItem is ComboBoxItem selectedItem)
@@ -51,13 +53,13 @@ namespace WheelOverlay
             _settings.MoveOverlayOpacity = (int)OpacitySlider.Value;
 
             _settings.Save();
-            DialogResult = true;
-            Close();
+            
+            // Notify that settings changed
+            SettingsChanged?.Invoke(this, EventArgs.Empty);
         }
 
-        private void CancelButton_Click(object sender, RoutedEventArgs e)
+        private void CloseButton_Click(object sender, RoutedEventArgs e)
         {
-            DialogResult = false;
             Close();
         }
     }

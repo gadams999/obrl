@@ -77,12 +77,15 @@ namespace WheelOverlay
         {
             var settings = AppSettings.Load();
             var settingsWindow = new SettingsWindow(settings);
-            if (settingsWindow.ShowDialog() == true)
+            settingsWindow.SettingsChanged += (s, e) =>
             {
-                // Settings were saved, reload main window if needed
-                // For now, user will need to restart to see changes
-                System.Windows.MessageBox.Show("Settings saved! Restart the app to apply changes.", "Wheel Overlay");
-            }
+                // Settings were applied, reload main window
+                if (_mainWindow != null)
+                {
+                    _mainWindow.ApplySettings(settings);
+                }
+            };
+            settingsWindow.Show();
         }
 
         private void ToggleConfigMode(bool enabled)

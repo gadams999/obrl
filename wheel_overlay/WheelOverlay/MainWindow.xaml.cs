@@ -1,7 +1,7 @@
-﻿using System;
-using System.Windows;
+﻿using System.Windows;
 using System.Windows.Interop;
 using WheelOverlay.Services;
+using WheelOverlay.Models;
 
 namespace WheelOverlay
 {
@@ -36,6 +36,24 @@ namespace WheelOverlay
             _inputService.Start();
             
             MakeWindowTransparent();
+        }
+
+        public void ApplySettings(AppSettings settings)
+        {
+            // Update font size
+            StatusText.FontSize = settings.FontSize;
+            
+            // Update text color
+            StatusText.Foreground = new System.Windows.Media.SolidColorBrush(
+                (System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString(settings.SelectedTextColor));
+            
+            // Update move overlay opacity if in config mode
+            if (_configMode)
+            {
+                byte alpha = (byte)(settings.MoveOverlayOpacity * 255 / 100);
+                Background = new System.Windows.Media.SolidColorBrush(
+                    System.Windows.Media.Color.FromArgb(alpha, 128, 128, 128));
+            }
         }
 
 
