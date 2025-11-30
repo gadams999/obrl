@@ -10,8 +10,6 @@ namespace WheelOverlay
         private readonly InputService _inputService;
         private readonly string[] _displayItems = { "DASH", "TC2", "MAP", "FUEL", "BRGT", "VOL", "BOX", "DIFF" };
         private bool _configMode = false;
-        private readonly bool _ownsInputService;
-        private bool _isRecreating = false;
 
         public bool ConfigMode
         {
@@ -23,21 +21,10 @@ namespace WheelOverlay
             }
         }
 
-        public MainWindow(InputService? sharedInputService = null)
+        public MainWindow()
         {
             InitializeComponent();
-            
-            if (sharedInputService != null)
-            {
-                _inputService = sharedInputService;
-                _ownsInputService = false;
-            }
-            else
-            {
-                _inputService = new InputService();
-                _ownsInputService = true;
-            }
-            
+            _inputService = new InputService();
             _inputService.RotaryPositionChanged += OnRotaryPositionChanged;
             
             Loaded += MainWindow_Loaded;
@@ -46,24 +33,12 @@ namespace WheelOverlay
 
         private void MainWindow_Loaded(object sender, RoutedEventArgs e)
         {
-            // Only start the InputService if this window created it
-            if (_ownsInputService)
-            {
-                _inputService.Start();
-            }
+            _inputService.Start();
             
             MakeWindowTransparent();
         }
 
-        public InputService GetInputService()
-        {
-            return _inputService;
-        }
 
-        public void SetRecreating(bool isRecreating)
-        {
-            _isRecreating = isRecreating;
-        }
 
         private void MakeWindowTransparent()
         {
@@ -79,21 +54,40 @@ namespace WheelOverlay
         {
             if (_configMode)
             {
-                // Config mode: visible, draggable window
-                AllowsTransparency = false;
+                // Config mode: Make window visible and interactive
+                // Note: Can't change AllowsTransparency, so background stays transparent
+                // We'll add a white rectangle in XAML that can be toggled
                 Background = System.Windows.Media.Brushes.White;
-                WindowStyle = WindowStyle.SingleBorderWindow;
-                ResizeMode = ResizeMode.CanResizeWithGrip;
-                ShowInTaskbar = true;
+                
+                // Remove click-through
+                var hwnd = new WindowInteropHelper(this).Handle;
+                if (hwnd != IntPtr.Zero)
+                {
+                    int extendedStyle = GetWindowLong(hwnd, GWL_EXSTYLE);
+                    SetWindowLong(hwnd, GWL_EXSTYLE, extendedStyle & ~WS_EX_TRANSPARENT);
+                }
+                
+                // Make window draggable by handling MouseDown
+                this.MouseDown += Window_MouseDown;
             }
             else
             {
                 // Overlay mode: transparent, click-through
-                AllowsTransparency = true;
                 Background = System.Windows.Media.Brushes.Transparent;
-                WindowStyle = WindowStyle.None;
-                ResizeMode = ResizeMode.NoResize;
-                ShowInTaskbar = true;
+                
+                // Re-apply click-through
+                MakeWindowTransparent();
+                
+                // Remove drag handler
+                this.MouseDown -= Window_MouseDown;
+            }
+        }
+
+        private void Window_MouseDown(object sender, System.Windows.Input.MouseButtonEventArgs e)
+        {
+            if (e.ChangedButton == System.Windows.Input.MouseButton.Left && _configMode)
+            {
+                this.DragMove();
             }
         }
 
@@ -110,12 +104,8 @@ namespace WheelOverlay
 
         private void MainWindow_Closed(object? sender, EventArgs e)
         {
-            // Don't dispose if we're recreating the window
-            if (!_isRecreating && _ownsInputService)
-            {
-                _inputService.Stop();
-                _inputService.Dispose();
-            }
+            _inputService.Stop();
+            _inputService.Dispose();
         }
 
         private void OnRotaryPositionChanged(object? sender, int position)

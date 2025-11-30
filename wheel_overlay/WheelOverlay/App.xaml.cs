@@ -82,35 +82,7 @@ namespace WheelOverlay
         {
             if (_mainWindow != null)
             {
-                // Save current state
-                var left = _mainWindow.Left;
-                var top = _mainWindow.Top;
-                var width = _mainWindow.Width;
-                var height = _mainWindow.Height;
-                var isVisible = _mainWindow.IsVisible;
-
-                // Get the InputService before closing
-                var inputService = _mainWindow.GetInputService();
-
-                // Mark as recreating to prevent disposal
-                _mainWindow.SetRecreating(true);
-
-                // Close old window (but don't dispose InputService)
-                _mainWindow.Close();
-
-                // Create new window with shared InputService
-                _mainWindow = new MainWindow(inputService);
                 _mainWindow.ConfigMode = enabled;
-                _mainWindow.Left = left;
-                _mainWindow.Top = top;
-                _mainWindow.Width = width;
-                _mainWindow.Height = height;
-
-                // Show if it was visible before
-                if (isVisible)
-                {
-                    _mainWindow.Show();
-                }
             }
         }
 
