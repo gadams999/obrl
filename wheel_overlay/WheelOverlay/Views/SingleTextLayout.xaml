@@ -12,10 +12,8 @@
                    FontFamily="{Binding Settings.FontFamily}"
                    FontWeight="Bold"
                    HorizontalAlignment="Center"
-                   VerticalAlignment="Center">
-            <TextBlock.Foreground>
-                <SolidColorBrush Color="{Binding Settings.SelectedTextColor}"/>
-            </TextBlock.Foreground>
+                   VerticalAlignment="Center"
+                   Foreground="{Binding Settings.SelectedTextColor}">
             <TextBlock.Effect>
                 <DropShadowEffect Color="Black" BlurRadius="4" ShadowDepth="2" Opacity="0.8"/>
             </TextBlock.Effect>

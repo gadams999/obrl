@@ -8,7 +8,8 @@
         xmlns:cv="clr-namespace:WheelOverlay.Converters"
         xmlns:v="clr-namespace:WheelOverlay.Views"
         mc:Ignorable="d"
-        Title="WheelOverlay" Height="200" Width="400"
+        Title="WheelOverlay" Height="Auto" Width="Auto"
+        SizeToContent="WidthAndHeight"
         WindowStyle="None"
         AllowsTransparency="True"
         Background="Transparent"
@@ -34,23 +35,25 @@
     </Window.Resources>
 
     <Grid>
-        <ContentControl Content="{Binding}">
-            <ContentControl.Style>
-                <Style TargetType="ContentControl">
-                    <Setter Property="ContentTemplate" Value="{StaticResource SingleTextTemplate}" />
-                    <Style.Triggers>
-                        <DataTrigger Binding="{Binding Settings.Layout}" Value="Vertical">
-                            <Setter Property="ContentTemplate" Value="{StaticResource VerticalTemplate}" />
-                        </DataTrigger>
-                        <DataTrigger Binding="{Binding Settings.Layout}" Value="Horizontal">
-                            <Setter Property="ContentTemplate" Value="{StaticResource HorizontalTemplate}" />
-                        </DataTrigger>
-                        <DataTrigger Binding="{Binding Settings.Layout}" Value="Grid">
-                            <Setter Property="ContentTemplate" Value="{StaticResource GridTemplate}" />
-                        </DataTrigger>
-                    </Style.Triggers>
-                </Style>
-            </ContentControl.Style>
-        </ContentControl>
+        <Border x:Name="ConfigBorder" BorderThickness="0" BorderBrush="Red" CornerRadius="5">
+            <ContentControl Content="{Binding}">
+                <ContentControl.Style>
+                    <Style TargetType="ContentControl">
+                        <Setter Property="ContentTemplate" Value="{StaticResource SingleTextTemplate}" />
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding Settings.Layout}" Value="Vertical">
+                                <Setter Property="ContentTemplate" Value="{StaticResource VerticalTemplate}" />
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding Settings.Layout}" Value="Horizontal">
+                                <Setter Property="ContentTemplate" Value="{StaticResource HorizontalTemplate}" />
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding Settings.Layout}" Value="Grid">
+                                <Setter Property="ContentTemplate" Value="{StaticResource GridTemplate}" />
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </ContentControl.Style>
+            </ContentControl>
+        </Border>
     </Grid>
 </Window>

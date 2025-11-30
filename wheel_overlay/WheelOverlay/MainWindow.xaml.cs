@@ -81,6 +81,10 @@ namespace WheelOverlay
                 Background = new System.Windows.Media.SolidColorBrush(
                     System.Windows.Media.Color.FromArgb(204, 128, 128, 128));
                 
+                // Show border
+                ConfigBorder.BorderThickness = new Thickness(2);
+                ConfigBorder.BorderBrush = System.Windows.Media.Brushes.Red;
+                
                 // Remove click-through
                 var hwnd = new WindowInteropHelper(this).Handle;
                 if (hwnd != IntPtr.Zero)
@@ -96,6 +100,9 @@ namespace WheelOverlay
             {
                 // Overlay mode: transparent, click-through
                 Background = System.Windows.Media.Brushes.Transparent;
+                
+                // Hide border
+                ConfigBorder.BorderThickness = new Thickness(0);
                 
                 // Re-apply click-through
                 MakeWindowTransparent();
