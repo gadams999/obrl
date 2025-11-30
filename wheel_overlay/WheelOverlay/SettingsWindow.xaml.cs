@@ -28,7 +28,11 @@ namespace WheelOverlay
 
         private void SettingsWindow_Loaded(object sender, RoutedEventArgs e)
         {
-            ShowDisplaySettings();
+            // Use Dispatcher to ensure UI is fully loaded
+            Dispatcher.BeginInvoke(new Action(() =>
+            {
+                ShowDisplaySettings();
+            }), System.Windows.Threading.DispatcherPriority.Loaded);
         }
 
         private void CategoryListBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
