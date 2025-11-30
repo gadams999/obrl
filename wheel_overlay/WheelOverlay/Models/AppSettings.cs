@@ -25,20 +25,6 @@ namespace WheelOverlay.Models
         public string NonSelectedTextColor { get; set; } = "#808080"; // Gray
         public int FontSize { get; set; } = 48;
         public string FontFamily { get; set; } = "Segoe UI";
-
-        // Move Overlay Appearance
-        public string MoveOverlayBackgroundColor { get; set; } = "#CC808080"; // Semi-transparent gray
-        public int MoveOverlayOpacity { get; set; } = 80; // Percentage
-
-        // Layout Spacing
-        public int ItemSpacing { get; set; } = 10;
-        public int ItemPadding { get; set; } = 5;
-
-        private static readonly string SettingsPath = Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-            "WheelOverlay",
-            "settings.json");
-
         public static AppSettings Load()
         {
             try

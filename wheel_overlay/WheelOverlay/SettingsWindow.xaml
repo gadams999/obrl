@@ -42,20 +42,6 @@
                 <TextBlock Text="Item Spacing" FontWeight="Bold" Margin="0,0,0,5"/>
                 <StackPanel Orientation="Horizontal" Margin="0,0,0,15">
                     <Slider x:Name="SpacingSlider" Minimum="0" Maximum="50" Width="200" TickFrequency="5" IsSnapToTickEnabled="True"/>
-                    <TextBlock Text="{Binding ElementName=SpacingSlider, Path=Value}" Margin="10,0,0,0" VerticalAlignment="Center"/>
-                </StackPanel>
-
-                <!-- Move Overlay Opacity -->
-                <TextBlock Text="Move Overlay Opacity (%)" FontWeight="Bold" Margin="0,0,0,5"/>
-                <StackPanel Orientation="Horizontal" Margin="0,0,0,15">
-                    <Slider x:Name="OpacitySlider" Minimum="0" Maximum="100" Width="200" TickFrequency="10" IsSnapToTickEnabled="True"/>
-                    <TextBlock Text="{Binding ElementName=OpacitySlider, Path=Value}" Margin="10,0,0,0" VerticalAlignment="Center"/>
-                </StackPanel>
-            </StackPanel>
-        </ScrollViewer>
-
-        <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,10,0,0">
-            <Button Content="Apply" Width="75" Margin="0,0,10,0" Click="ApplyButton_Click"/>
             <Button Content="Close" Width="75" Click="CloseButton_Click"/>
         </StackPanel>
     </Grid>

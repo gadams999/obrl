@@ -13,13 +13,25 @@ namespace WheelOverlay
         private bool _configMode = false;
         private OverlayViewModel _viewModel;
 
+        private double _originalLeft;
+        private double _originalTop;
+
         public bool ConfigMode
         {
             get => _configMode;
             set
             {
-                _configMode = value;
-                ApplyConfigMode();
+                if (_configMode != value)
+                {
+                    _configMode = value;
+                    if (_configMode)
+                    {
+                        // Store original position when entering config mode
+                        _originalLeft = Left;
+                        _originalTop = Top;
+                    }
+                    ApplyConfigMode();
+                }
             }
         }
 
@@ -37,6 +49,26 @@ namespace WheelOverlay
             
             Loaded += MainWindow_Loaded;
             Closed += MainWindow_Closed;
+            KeyDown += MainWindow_KeyDown;
+        }
+
+        private void MainWindow_KeyDown(object sender, System.Windows.Input.KeyEventArgs e)
+        {
+            if (_configMode)
+            {
+                if (e.Key == System.Windows.Input.Key.Enter)
+                {
+                    // Accept new position
+                    ConfigMode = false;
+                }
+                else if (e.Key == System.Windows.Input.Key.Escape)
+                {
+                    // Cancel move, restore position
+                    Left = _originalLeft;
+                    Top = _originalTop;
+                    ConfigMode = false;
+                }
+            }
         }
 
         private void MainWindow_Loaded(object sender, RoutedEventArgs e)
@@ -51,6 +83,16 @@ namespace WheelOverlay
             // Update ViewModel settings
             _viewModel.Settings = settings;
             
+            // Handle Minimize to Taskbar
+            if (settings.MinimizeToTaskbar)
+            {
+                WindowState = WindowState.Minimized;
+            }
+            else
+            {
+                WindowState = WindowState.Normal;
+            }
+
             // Update move overlay opacity if in config mode
             if (_configMode)
             {

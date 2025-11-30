@@ -35,6 +35,7 @@ namespace WheelOverlay
             NonSelectedColorTextBox.Text = _settings.NonSelectedTextColor;
             SpacingSlider.Value = _settings.ItemSpacing;
             OpacitySlider.Value = _settings.MoveOverlayOpacity;
+            MinimizeCheckBox.IsChecked = _settings.MinimizeToTaskbar;
         }
 
         private void ApplyButton_Click(object sender, RoutedEventArgs e)
@@ -51,6 +52,7 @@ namespace WheelOverlay
             _settings.NonSelectedTextColor = NonSelectedColorTextBox.Text;
             _settings.ItemSpacing = (int)SpacingSlider.Value;
             _settings.MoveOverlayOpacity = (int)OpacitySlider.Value;
+            _settings.MinimizeToTaskbar = MinimizeCheckBox.IsChecked ?? false;
 
             _settings.Save();
             
