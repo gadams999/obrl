@@ -23,6 +23,11 @@ namespace WheelOverlay
         {
             InitializeComponent();
             _settings = settings;
+            Loaded += SettingsWindow_Loaded;
+        }
+
+        private void SettingsWindow_Loaded(object sender, RoutedEventArgs e)
+        {
             ShowDisplaySettings();
         }
 
