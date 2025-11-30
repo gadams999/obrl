@@ -52,7 +52,9 @@ namespace WheelOverlay
         {
             if (_configMode)
             {
-                // Enable interaction
+                // Enable interaction - must disable transparency first
+                AllowsTransparency = false;
+                Background = System.Windows.Media.Brushes.White;
                 WindowStyle = WindowStyle.SingleBorderWindow;
                 ResizeMode = ResizeMode.CanResizeWithGrip;
                 ShowInTaskbar = true;
@@ -67,10 +69,12 @@ namespace WheelOverlay
             }
             else
             {
-                // Disable interaction
+                // Disable interaction - must set WindowStyle to None before enabling transparency
                 WindowStyle = WindowStyle.None;
                 ResizeMode = ResizeMode.NoResize;
                 ShowInTaskbar = true;
+                AllowsTransparency = true;
+                Background = System.Windows.Media.Brushes.Transparent;
                 
                 // Re-apply click-through
                 MakeWindowTransparent();

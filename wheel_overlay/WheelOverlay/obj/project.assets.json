@@ -199,7 +199,6 @@
   },
   "projectFileDependencyGroups": {
     "net8.0-windows7.0": [
-      "System.Windows.Forms >= 8.0.0",
       "Vortice.DirectInput >= 3.5.0"
     ]
   },
@@ -253,10 +252,6 @@
       "net8.0-windows7.0": {
         "targetAlias": "net8.0-windows",
         "dependencies": {
-          "System.Windows.Forms": {
-            "target": "Package",
-            "version": "[8.0.0, )"
-          },
           "Vortice.DirectInput": {
             "target": "Package",
             "version": "[3.5.0, )"
@@ -277,6 +272,9 @@
           "Microsoft.NETCore.App": {
             "privateAssets": "all"
           },
+          "Microsoft.WindowsDesktop.App.WindowsForms": {
+            "privateAssets": "none"
+          },
           "Microsoft.WindowsDesktop.App.WPF": {
             "privateAssets": "none"
           }
@@ -284,16 +282,5 @@
         "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.100/PortableRuntimeIdentifierGraph.json"
       }
     }
-  },
-  "logs": [
-    {
-      "code": "NU1102",
-      "level": "Error",
-      "message": "Unable to find package System.Windows.Forms with version (>= 8.0.0)\r\n  - Found 1 version(s) in nuget.org [ Nearest version: 4.0.0 ]",
-      "libraryId": "System.Windows.Forms",
-      "targetGraphs": [
-        "net8.0-windows7.0"
-      ]
-    }
-  ]
+  }
 }
