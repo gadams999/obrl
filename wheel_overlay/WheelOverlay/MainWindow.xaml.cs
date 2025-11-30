@@ -52,32 +52,21 @@ namespace WheelOverlay
         {
             if (_configMode)
             {
-                // Enable interaction - must disable transparency first
+                // Config mode: visible, draggable window
                 AllowsTransparency = false;
                 Background = System.Windows.Media.Brushes.White;
                 WindowStyle = WindowStyle.SingleBorderWindow;
                 ResizeMode = ResizeMode.CanResizeWithGrip;
                 ShowInTaskbar = true;
-                
-                // Remove click-through
-                var hwnd = new WindowInteropHelper(this).Handle;
-                if (hwnd != IntPtr.Zero)
-                {
-                    int extendedStyle = GetWindowLong(hwnd, GWL_EXSTYLE);
-                    SetWindowLong(hwnd, GWL_EXSTYLE, extendedStyle & ~WS_EX_TRANSPARENT & ~WS_EX_TOOLWINDOW);
-                }
             }
             else
             {
-                // Disable interaction - must set WindowStyle to None before enabling transparency
+                // Overlay mode: transparent, click-through
+                AllowsTransparency = true;
+                Background = System.Windows.Media.Brushes.Transparent;
                 WindowStyle = WindowStyle.None;
                 ResizeMode = ResizeMode.NoResize;
                 ShowInTaskbar = true;
-                AllowsTransparency = true;
-                Background = System.Windows.Media.Brushes.Transparent;
-                
-                // Re-apply click-through
-                MakeWindowTransparent();
             }
         }
 

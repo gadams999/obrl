@@ -82,7 +82,29 @@ namespace WheelOverlay
         {
             if (_mainWindow != null)
             {
+                // Save current state
+                var left = _mainWindow.Left;
+                var top = _mainWindow.Top;
+                var width = _mainWindow.Width;
+                var height = _mainWindow.Height;
+                var isVisible = _mainWindow.IsVisible;
+
+                // Close and dispose old window
+                _mainWindow.Close();
+
+                // Create new window with config mode set
+                _mainWindow = new MainWindow();
                 _mainWindow.ConfigMode = enabled;
+                _mainWindow.Left = left;
+                _mainWindow.Top = top;
+                _mainWindow.Width = width;
+                _mainWindow.Height = height;
+
+                // Show if it was visible before
+                if (isVisible)
+                {
+                    _mainWindow.Show();
+                }
             }
         }
 
