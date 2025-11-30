@@ -10,6 +10,7 @@ namespace WheelOverlay
         private readonly InputService _inputService;
         private readonly string[] _displayItems = { "DASH", "TC2", "MAP", "FUEL", "BRGT", "VOL", "BOX", "DIFF" };
         private bool _configMode = false;
+        private readonly bool _ownsInputService;
 
         public bool ConfigMode
         {
@@ -21,10 +22,21 @@ namespace WheelOverlay
             }
         }
 
-        public MainWindow()
+        public MainWindow(InputService? sharedInputService = null)
         {
             InitializeComponent();
-            _inputService = new InputService();
+            
+            if (sharedInputService != null)
+            {
+                _inputService = sharedInputService;
+                _ownsInputService = false;
+            }
+            else
+            {
+                _inputService = new InputService();
+                _ownsInputService = true;
+            }
+            
             _inputService.RotaryPositionChanged += OnRotaryPositionChanged;
             
             Loaded += MainWindow_Loaded;
@@ -83,8 +95,11 @@ namespace WheelOverlay
 
         private void MainWindow_Closed(object? sender, EventArgs e)
         {
-            _inputService.Stop();
-            _inputService.Dispose();
+            if (_ownsInputService)
+            {
+                _inputService.Stop();
+                _inputService.Dispose();
+            }
         }
 
         private void OnRotaryPositionChanged(object? sender, int position)

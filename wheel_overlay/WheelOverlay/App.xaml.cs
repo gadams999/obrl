@@ -89,11 +89,14 @@ namespace WheelOverlay
                 var height = _mainWindow.Height;
                 var isVisible = _mainWindow.IsVisible;
 
-                // Close and dispose old window
+                // Get the InputService before closing
+                var inputService = _mainWindow.GetInputService();
+
+                // Close old window (but don't dispose InputService)
                 _mainWindow.Close();
 
-                // Create new window with config mode set
-                _mainWindow = new MainWindow();
+                // Create new window with shared InputService
+                _mainWindow = new MainWindow(inputService);
                 _mainWindow.ConfigMode = enabled;
                 _mainWindow.Left = left;
                 _mainWindow.Top = top;
