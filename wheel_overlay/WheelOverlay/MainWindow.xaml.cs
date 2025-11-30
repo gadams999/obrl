@@ -45,9 +45,18 @@ namespace WheelOverlay
 
         private void MainWindow_Loaded(object sender, RoutedEventArgs e)
         {
-            _inputService.Start();
+            // Only start the InputService if this window created it
+            if (_ownsInputService)
+            {
+                _inputService.Start();
+            }
             
             MakeWindowTransparent();
+        }
+
+        public InputService GetInputService()
+        {
+            return _inputService;
         }
 
         private void MakeWindowTransparent()
