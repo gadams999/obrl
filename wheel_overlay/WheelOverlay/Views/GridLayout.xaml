@@ -15,7 +15,7 @@
                            FontWeight="Bold"
                            HorizontalAlignment="Center"
                            VerticalAlignment="Center"
-                           Margin="{Binding DataContext.Settings.ItemPadding, RelativeSource={RelativeSource AncestorType=UserControl}}">
+                           Margin="{Binding DataContext.Settings.ItemSpacing, RelativeSource={RelativeSource AncestorType=UserControl}}">
                     <TextBlock.Style>
                         <Style TargetType="TextBlock">
                             <Setter Property="Foreground" Value="{Binding DataContext.Settings.NonSelectedTextColor, RelativeSource={RelativeSource AncestorType=UserControl}}"/>
