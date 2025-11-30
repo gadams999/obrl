@@ -55,9 +55,9 @@ namespace WheelOverlay
             if (_configMode)
             {
                 // Config mode: Make window visible and interactive
-                // Note: Can't change AllowsTransparency, so background stays transparent
-                // We'll add a white rectangle in XAML that can be toggled
-                Background = System.Windows.Media.Brushes.White;
+                // Semi-transparent gray background (80% opacity)
+                Background = new System.Windows.Media.SolidColorBrush(
+                    System.Windows.Media.Color.FromArgb(204, 128, 128, 128));
                 
                 // Remove click-through
                 var hwnd = new WindowInteropHelper(this).Handle;

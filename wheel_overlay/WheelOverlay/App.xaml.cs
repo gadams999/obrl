@@ -38,7 +38,7 @@ namespace WheelOverlay
             contextMenu.Items.Add("Show Overlay", null, (s, args) => ShowOverlay());
             contextMenu.Items.Add("Hide Overlay", null, (s, args) => HideOverlay());
             contextMenu.Items.Add("-");
-            var configModeItem = new ToolStripMenuItem("Config Mode");
+            var configModeItem = new ToolStripMenuItem("Move Overlay...");
             configModeItem.CheckOnClick = true;
             configModeItem.Click += (s, args) => ToggleConfigMode(configModeItem.Checked);
             contextMenu.Items.Add(configModeItem);
