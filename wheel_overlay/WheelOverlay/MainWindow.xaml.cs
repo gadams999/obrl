@@ -11,6 +11,7 @@ namespace WheelOverlay
         private readonly string[] _displayItems = { "DASH", "TC2", "MAP", "FUEL", "BRGT", "VOL", "BOX", "DIFF" };
         private bool _configMode = false;
         private readonly bool _ownsInputService;
+        private bool _isRecreating = false;
 
         public bool ConfigMode
         {
@@ -59,6 +60,11 @@ namespace WheelOverlay
             return _inputService;
         }
 
+        public void SetRecreating(bool isRecreating)
+        {
+            _isRecreating = isRecreating;
+        }
+
         private void MakeWindowTransparent()
         {
             if (!_configMode)
@@ -104,7 +110,8 @@ namespace WheelOverlay
 
         private void MainWindow_Closed(object? sender, EventArgs e)
         {
-            if (_ownsInputService)
+            // Don't dispose if we're recreating the window
+            if (!_isRecreating && _ownsInputService)
             {
                 _inputService.Stop();
                 _inputService.Dispose();

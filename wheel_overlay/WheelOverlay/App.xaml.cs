@@ -92,6 +92,9 @@ namespace WheelOverlay
                 // Get the InputService before closing
                 var inputService = _mainWindow.GetInputService();
 
+                // Mark as recreating to prevent disposal
+                _mainWindow.SetRecreating(true);
+
                 // Close old window (but don't dispose InputService)
                 _mainWindow.Close();
 
