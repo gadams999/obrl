@@ -5,8 +5,23 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:WheelOverlay"
         mc:Ignorable="d"
-        Title="MainWindow" Height="450" Width="800">
+        Title="WheelOverlay" Height="200" Width="400"
+        WindowStyle="None"
+        AllowsTransparency="True"
+        Background="Transparent"
+        Topmost="True"
+        ShowInTaskbar="True">
     <Grid>
-
+        <TextBlock x:Name="StatusText" 
+                   Text="Waiting for Input..." 
+                   HorizontalAlignment="Center" 
+                   VerticalAlignment="Center" 
+                   FontSize="48" 
+                   FontWeight="Bold" 
+                   Foreground="White">
+            <TextBlock.Effect>
+                <DropShadowEffect Color="Black" BlurRadius="5" ShadowDepth="2"/>
+            </TextBlock.Effect>
+        </TextBlock>
     </Grid>
 </Window>
