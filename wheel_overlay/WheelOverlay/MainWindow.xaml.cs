@@ -30,6 +30,14 @@ namespace WheelOverlay
                         _originalLeft = Left;
                         _originalTop = Top;
                     }
+                    else
+                    {
+                        // Save new position when exiting config mode
+                        var settings = AppSettings.Load();
+                        settings.WindowLeft = Left;
+                        settings.WindowTop = Top;
+                        settings.Save();
+                    }
                     ApplyConfigMode();
                 }
             }
@@ -44,12 +52,35 @@ namespace WheelOverlay
             _viewModel = new OverlayViewModel(settings);
             DataContext = _viewModel;
 
+            // Restore saved position
+            Left = settings.WindowLeft;
+            Top = settings.WindowTop;
+
             _inputService = new InputService();
             _inputService.RotaryPositionChanged += OnRotaryPositionChanged;
+            _inputService.DeviceNotFound += OnDeviceNotFound;
             
             Loaded += MainWindow_Loaded;
             Closed += MainWindow_Closed;
             KeyDown += MainWindow_KeyDown;
+            StateChanged += MainWindow_StateChanged;
+        }
+
+        private void MainWindow_StateChanged(object? sender, EventArgs e)
+        {
+            // If window is restored from minimized state, uncheck the minimize menu item
+            if (WindowState == WindowState.Normal)
+            {
+                ((App)System.Windows.Application.Current).ClearMinimizeCheckmark();
+            }
+        }
+
+        private void OnDeviceNotFound(object? sender, string deviceName)
+        {
+            Dispatcher.Invoke(() =>
+            {
+                _viewModel.IsDeviceNotFound = true;
+            });
         }
 
         private void MainWindow_KeyDown(object sender, System.Windows.Input.KeyEventArgs e)
@@ -60,6 +91,7 @@ namespace WheelOverlay
                 {
                     // Accept new position
                     ConfigMode = false;
+                    ((App)System.Windows.Application.Current).ClearConfigModeCheckmark();
                 }
                 else if (e.Key == System.Windows.Input.Key.Escape)
                 {
@@ -67,13 +99,15 @@ namespace WheelOverlay
                     Left = _originalLeft;
                     Top = _originalTop;
                     ConfigMode = false;
+                    ((App)System.Windows.Application.Current).ClearConfigModeCheckmark();
                 }
             }
         }
 
         private void MainWindow_Loaded(object sender, RoutedEventArgs e)
         {
-            _inputService.Start();
+            var settings = AppSettings.Load();
+            _inputService.Start(settings.SelectedDeviceName);
             
             MakeWindowTransparent();
         }
@@ -82,16 +116,6 @@ namespace WheelOverlay
         {
             // Update ViewModel settings
             _viewModel.Settings = settings;
-            
-            // Handle Minimize to Taskbar
-            if (settings.MinimizeToTaskbar)
-            {
-                WindowState = WindowState.Minimized;
-            }
-            else
-            {
-                WindowState = WindowState.Normal;
-            }
 
             // Update move overlay opacity if in config mode
             if (_configMode)

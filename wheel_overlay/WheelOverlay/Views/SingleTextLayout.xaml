@@ -7,13 +7,22 @@
              mc:Ignorable="d" 
              d:DataContext="{d:DesignInstance Type=vm:OverlayViewModel}">
     <Grid>
-        <TextBlock Text="{Binding CurrentItem}"
+        <TextBlock Text="{Binding DisplayMessage}"
                    FontSize="{Binding Settings.FontSize}"
                    FontFamily="{Binding Settings.FontFamily}"
                    FontWeight="Bold"
                    HorizontalAlignment="Center"
-                   VerticalAlignment="Center"
-                   Foreground="{Binding Settings.SelectedTextColor}">
+                   VerticalAlignment="Center">
+            <TextBlock.Style>
+                <Style TargetType="TextBlock">
+                    <Setter Property="Foreground" Value="{Binding Settings.SelectedTextColor}"/>
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding IsDeviceNotFound}" Value="True">
+                            <Setter Property="Foreground" Value="Red"/>
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </TextBlock.Style>
             <TextBlock.Effect>
                 <DropShadowEffect Color="Black" BlurRadius="4" ShadowDepth="2" Opacity="0.8"/>
             </TextBlock.Effect>

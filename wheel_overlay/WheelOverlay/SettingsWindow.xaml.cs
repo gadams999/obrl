@@ -29,13 +29,20 @@ namespace WheelOverlay
                 }
             }
 
+            // Populate and set device selection
+            DeviceComboBox.Items.Clear();
+            foreach (var deviceName in AppSettings.DefaultDeviceNames)
+            {
+                DeviceComboBox.Items.Add(deviceName);
+            }
+            DeviceComboBox.SelectedItem = _settings.SelectedDeviceName;
+
             // Set other values
             FontSizeSlider.Value = _settings.FontSize;
             SelectedColorTextBox.Text = _settings.SelectedTextColor;
             NonSelectedColorTextBox.Text = _settings.NonSelectedTextColor;
             SpacingSlider.Value = _settings.ItemSpacing;
             OpacitySlider.Value = _settings.MoveOverlayOpacity;
-            MinimizeCheckBox.IsChecked = _settings.MinimizeToTaskbar;
         }
 
         private void ApplyButton_Click(object sender, RoutedEventArgs e)
@@ -46,13 +53,18 @@ namespace WheelOverlay
                 _settings.Layout = System.Enum.Parse<DisplayLayout>(selectedItem.Tag.ToString()!);
             }
 
+            // Save device selection
+            if (DeviceComboBox.SelectedItem is string selectedDevice)
+            {
+                _settings.SelectedDeviceName = selectedDevice;
+            }
+
             // Save other values
             _settings.FontSize = (int)FontSizeSlider.Value;
             _settings.SelectedTextColor = SelectedColorTextBox.Text;
             _settings.NonSelectedTextColor = NonSelectedColorTextBox.Text;
             _settings.ItemSpacing = (int)SpacingSlider.Value;
             _settings.MoveOverlayOpacity = (int)OpacitySlider.Value;
-            _settings.MinimizeToTaskbar = MinimizeCheckBox.IsChecked ?? false;
 
             _settings.Save();
             

@@ -18,6 +18,8 @@ namespace WheelOverlay
     {
         private NotifyIcon? _notifyIcon;
         private MainWindow? _mainWindow;
+        private ToolStripMenuItem? _configModeMenuItem;
+        private ToolStripMenuItem? _minimizeMenuItem;
 
         protected override void OnStartup(StartupEventArgs e)
         {
@@ -39,10 +41,16 @@ namespace WheelOverlay
             contextMenu.Items.Add("Show Overlay", null, (s, args) => ShowOverlay());
             contextMenu.Items.Add("Hide Overlay", null, (s, args) => HideOverlay());
             contextMenu.Items.Add("-");
-            var configModeItem = new ToolStripMenuItem("Move Overlay...");
-            configModeItem.CheckOnClick = true;
-            configModeItem.Click += (s, args) => ToggleConfigMode(configModeItem.Checked);
-            contextMenu.Items.Add(configModeItem);
+            
+            _minimizeMenuItem = new ToolStripMenuItem("Minimize to Taskbar");
+            _minimizeMenuItem.CheckOnClick = true;
+            _minimizeMenuItem.Click += (s, args) => ToggleMinimize(_minimizeMenuItem.Checked);
+            contextMenu.Items.Add(_minimizeMenuItem);
+            
+            _configModeMenuItem = new ToolStripMenuItem("Move Overlay...");
+            _configModeMenuItem.CheckOnClick = true;
+            _configModeMenuItem.Click += (s, args) => ToggleConfigMode(_configModeMenuItem.Checked);
+            contextMenu.Items.Add(_configModeMenuItem);
             contextMenu.Items.Add("-");
             contextMenu.Items.Add("Settings...", null, (s, args) => OpenSettings());
             contextMenu.Items.Add("-");
@@ -88,11 +96,42 @@ namespace WheelOverlay
             settingsWindow.Show();
         }
 
+        private void ToggleMinimize(bool enabled)
+        {
+            if (_mainWindow != null)
+            {
+                if (enabled)
+                {
+                    _mainWindow.WindowState = WindowState.Minimized;
+                }
+                else
+                {
+                    _mainWindow.WindowState = WindowState.Normal;
+                }
+            }
+        }
+
         private void ToggleConfigMode(bool enabled)
         {
             if (_mainWindow != null)
             {
                 _mainWindow.ConfigMode = enabled;
+            }
+        }
+
+        public void ClearConfigModeCheckmark()
+        {
+            if (_configModeMenuItem != null)
+            {
+                _configModeMenuItem.Checked = false;
+            }
+        }
+
+        public void ClearMinimizeCheckmark()
+        {
+            if (_minimizeMenuItem != null)
+            {
+                _minimizeMenuItem.Checked = false;
             }
         }
 

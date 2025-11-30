@@ -17,17 +17,21 @@ namespace WheelOverlay.Services
         // 1-indexed buttons 58-65 map to 0-indexed 57-64
         private const int ButtonStart = 57; 
         private const int ButtonEnd = 64;
-        private const string TargetDeviceName = "BavarianSimTec Alpha"; // Exact match
+        private string _targetDeviceName = "BavarianSimTec Alpha";
+        private bool _deviceNotFoundEmitted = false;
 
         public event EventHandler<int>? RotaryPositionChanged;
+        public event EventHandler<string>? DeviceNotFound;
 
         public InputService()
         {
             _directInput = DInput.DirectInput8Create();
         }
 
-        public void Start()
+        public void Start(string deviceName)
         {
+            _targetDeviceName = deviceName;
+            _deviceNotFoundEmitted = false;
             _cancellationTokenSource = new CancellationTokenSource();
             _pollingTask = Task.Run(() => PollLoop(_cancellationTokenSource.Token));
         }
@@ -96,10 +100,12 @@ namespace WheelOverlay.Services
         {
             Debug.WriteLine("[InputService] Scanning for devices...");
             var devices = _directInput.GetDevices(DeviceClass.GameControl, DeviceEnumerationFlags.AttachedOnly);
+            
+            bool deviceFound = false;
             foreach (var deviceInstance in devices)
             {
                 Debug.WriteLine($"[InputService] Found device: '{deviceInstance.ProductName}' (GUID: {deviceInstance.InstanceGuid})");
-                if (deviceInstance.ProductName.Contains(TargetDeviceName, StringComparison.OrdinalIgnoreCase))
+                if (deviceInstance.ProductName.Contains(_targetDeviceName, StringComparison.OrdinalIgnoreCase))
                 {
                     Debug.WriteLine($"[InputService] MATCH FOUND! Attempting to acquire '{deviceInstance.ProductName}'...");
                     _device = _directInput.CreateDevice(deviceInstance.InstanceGuid);
@@ -109,9 +115,19 @@ namespace WheelOverlay.Services
                         _device.SetCooperativeLevel(IntPtr.Zero, CooperativeLevel.Background | CooperativeLevel.NonExclusive);
                         _device.Acquire();
                         Debug.WriteLine("[InputService] Device acquired successfully.");
+                        deviceFound = true;
+                        _deviceNotFoundEmitted = false; // Reset flag when device is found
                         break;
                     }
                 }
+            }
+            
+            // Emit DeviceNotFound event only once
+            if (!deviceFound && !_deviceNotFoundEmitted)
+            {
+                Debug.WriteLine($"[InputService] Device '{_targetDeviceName}' not found.");
+                DeviceNotFound?.Invoke(this, _targetDeviceName);
+                _deviceNotFoundEmitted = true;
             }
         }
 

@@ -8,6 +8,7 @@ namespace WheelOverlay.ViewModels
     {
         private int _currentPosition;
         private AppSettings _settings;
+        private bool _isDeviceNotFound;
 
         public OverlayViewModel(AppSettings settings)
         {
@@ -53,6 +54,22 @@ namespace WheelOverlay.ViewModels
                 return string.Empty;
             }
         }
+
+        public bool IsDeviceNotFound
+        {
+            get => _isDeviceNotFound;
+            set
+            {
+                if (_isDeviceNotFound != value)
+                {
+                    _isDeviceNotFound = value;
+                    OnPropertyChanged();
+                    OnPropertyChanged(nameof(DisplayMessage));
+                }
+            }
+        }
+
+        public string DisplayMessage => IsDeviceNotFound ? "🚨 Not Found! 🚨" : CurrentItem;
 
         public event PropertyChangedEventHandler? PropertyChanged;
 

@@ -36,6 +36,19 @@ namespace WheelOverlay.Models
 
         // Window Behavior
         public bool MinimizeToTaskbar { get; set; } = false;
+        public double WindowLeft { get; set; } = 100;
+        public double WindowTop { get; set; } = 100;
+
+        // Device Selection
+        public string SelectedDeviceName { get; set; } = "BavarianSimTec Alpha";
+        
+        public static readonly string[] DefaultDeviceNames = new[]
+        {
+            "BavarianSimTec Alpha",
+            "Fanatec CSL DD",
+            "Logitech G923",
+            "Thrustmaster T300"
+        };
 
         private static readonly string SettingsPath = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
