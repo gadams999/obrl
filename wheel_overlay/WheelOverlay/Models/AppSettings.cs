@@ -44,10 +44,7 @@ namespace WheelOverlay.Models
         
         public static readonly string[] DefaultDeviceNames = new[]
         {
-            "BavarianSimTec Alpha",
-            "Fanatec CSL DD",
-            "Logitech G923",
-            "Thrustmaster T300"
+            "BavarianSimTec Alpha"
         };
 
         private static readonly string SettingsPath = Path.Combine(
