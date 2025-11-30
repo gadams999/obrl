@@ -3,14 +3,15 @@ using System.Windows;
 using System.Windows.Interop;
 using WheelOverlay.Services;
 using WheelOverlay.Models;
+using WheelOverlay.ViewModels;
 
 namespace WheelOverlay
 {
     public partial class MainWindow : Window
     {
         private readonly InputService _inputService;
-        private readonly string[] _displayItems = { "DASH", "TC2", "MAP", "FUEL", "BRGT", "VOL", "BOX", "DIFF" };
         private bool _configMode = false;
+        private OverlayViewModel _viewModel;
 
         public bool ConfigMode
         {
@@ -25,6 +26,12 @@ namespace WheelOverlay
         public MainWindow()
         {
             InitializeComponent();
+            
+            // Initialize ViewModel with settings
+            var settings = AppSettings.Load();
+            _viewModel = new OverlayViewModel(settings);
+            DataContext = _viewModel;
+
             _inputService = new InputService();
             _inputService.RotaryPositionChanged += OnRotaryPositionChanged;
             
@@ -41,12 +48,8 @@ namespace WheelOverlay
 
         public void ApplySettings(AppSettings settings)
         {
-            // Update font size
-            StatusText.FontSize = settings.FontSize;
-            
-            // Update text color
-            StatusText.Foreground = new System.Windows.Media.SolidColorBrush(
-                (System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString(settings.SelectedTextColor));
+            // Update ViewModel settings
+            _viewModel.Settings = settings;
             
             // Update move overlay opacity if in config mode
             if (_configMode)
@@ -129,13 +132,10 @@ namespace WheelOverlay
 
         private void OnRotaryPositionChanged(object? sender, int position)
         {
-            if (position >= 0 && position < _displayItems.Length)
+            Dispatcher.Invoke(() =>
             {
-                Dispatcher.Invoke(() =>
-                {
-                    StatusText.Text = _displayItems[position];
-                });
-            }
+                _viewModel.CurrentPosition = position;
+            });
         }
     }
 }

@@ -1,0 +1,46 @@
+<UserControl x:Class="WheelOverlay.Views.HorizontalLayout"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:WheelOverlay.ViewModels"
+             mc:Ignorable="d" 
+             d:DataContext="{d:DesignInstance Type=vm:OverlayViewModel}">
+    <ItemsControl ItemsSource="{Binding DisplayItems}">
+        <ItemsControl.ItemTemplate>
+            <DataTemplate>
+                <TextBlock Text="{Binding}"
+                           FontSize="{Binding DataContext.Settings.FontSize, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                           FontFamily="{Binding DataContext.Settings.FontFamily, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                           FontWeight="Bold"
+                           HorizontalAlignment="Center"
+                           Margin="{Binding DataContext.Settings.ItemPadding, RelativeSource={RelativeSource AncestorType=UserControl}}">
+                    <TextBlock.Style>
+                        <Style TargetType="TextBlock">
+                            <Setter Property="Foreground" Value="{Binding DataContext.Settings.NonSelectedTextColor, RelativeSource={RelativeSource AncestorType=UserControl}}"/>
+                            <Style.Triggers>
+                                <DataTrigger Value="True">
+                                    <DataTrigger.Binding>
+                                        <MultiBinding Converter="{StaticResource IsSelectedConverter}">
+                                            <Binding Path="DataContext.CurrentItem" RelativeSource="{RelativeSource AncestorType=UserControl}"/>
+                                            <Binding Path="."/>
+                                        </MultiBinding>
+                                    </DataTrigger.Binding>
+                                    <Setter Property="Foreground" Value="{Binding DataContext.Settings.SelectedTextColor, RelativeSource={RelativeSource AncestorType=UserControl}}"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </TextBlock.Style>
+                    <TextBlock.Effect>
+                        <DropShadowEffect Color="Black" BlurRadius="2" ShadowDepth="1" Opacity="0.8"/>
+                    </TextBlock.Effect>
+                </TextBlock>
+            </DataTemplate>
+        </ItemsControl.ItemTemplate>
+        <ItemsControl.ItemsPanel>
+            <ItemsPanelTemplate>
+                <StackPanel Orientation="Horizontal"/>
+            </ItemsPanelTemplate>
+        </ItemsControl.ItemsPanel>
+    </ItemsControl>
+</UserControl>
