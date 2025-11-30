@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Forms;
 using Application = System.Windows.Application;
+using WheelOverlay.Models;
 
 namespace WheelOverlay
 {
@@ -74,8 +75,14 @@ namespace WheelOverlay
 
         private void OpenSettings()
         {
-            // TODO: Implement settings window
-            System.Windows.MessageBox.Show("Settings window coming soon!", "Wheel Overlay");
+            var settings = AppSettings.Load();
+            var settingsWindow = new SettingsWindow(settings);
+            if (settingsWindow.ShowDialog() == true)
+            {
+                // Settings were saved, reload main window if needed
+                // For now, user will need to restart to see changes
+                System.Windows.MessageBox.Show("Settings saved! Restart the app to apply changes.", "Wheel Overlay");
+            }
         }
 
         private void ToggleConfigMode(bool enabled)
