@@ -50,6 +50,10 @@
         "net8.0-windows7.0": {
           "targetAlias": "net8.0-windows",
           "dependencies": {
+            "System.Windows.Forms": {
+              "target": "Package",
+              "version": "[8.0.0, )"
+            },
             "Vortice.DirectInput": {
               "target": "Package",
               "version": "[3.5.0, )"

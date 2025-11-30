@@ -9,6 +9,7 @@
 
   <ItemGroup>
     <PackageReference Include="Vortice.DirectInput" Version="3.5.0" />
+    <PackageReference Include="System.Windows.Forms" Version="8.0.0" />
   </ItemGroup>
 
 </Project>

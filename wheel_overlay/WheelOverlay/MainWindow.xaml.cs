@@ -9,6 +9,17 @@ namespace WheelOverlay
     {
         private readonly InputService _inputService;
         private readonly string[] _displayItems = { "DASH", "TC2", "MAP", "FUEL", "BRGT", "VOL", "BOX", "DIFF" };
+        private bool _configMode = false;
+
+        public bool ConfigMode
+        {
+            get => _configMode;
+            set
+            {
+                _configMode = value;
+                ApplyConfigMode();
+            }
+        }
 
         public MainWindow()
         {
@@ -29,9 +40,41 @@ namespace WheelOverlay
 
         private void MakeWindowTransparent()
         {
-            var hwnd = new WindowInteropHelper(this).Handle;
-            int extendedStyle = GetWindowLong(hwnd, GWL_EXSTYLE);
-            SetWindowLong(hwnd, GWL_EXSTYLE, extendedStyle | WS_EX_TRANSPARENT | WS_EX_TOOLWINDOW);
+            if (!_configMode)
+            {
+                var hwnd = new WindowInteropHelper(this).Handle;
+                int extendedStyle = GetWindowLong(hwnd, GWL_EXSTYLE);
+                SetWindowLong(hwnd, GWL_EXSTYLE, extendedStyle | WS_EX_TRANSPARENT | WS_EX_TOOLWINDOW);
+            }
+        }
+
+        private void ApplyConfigMode()
+        {
+            if (_configMode)
+            {
+                // Enable interaction
+                WindowStyle = WindowStyle.SingleBorderWindow;
+                ResizeMode = ResizeMode.CanResizeWithGrip;
+                ShowInTaskbar = true;
+                
+                // Remove click-through
+                var hwnd = new WindowInteropHelper(this).Handle;
+                if (hwnd != IntPtr.Zero)
+                {
+                    int extendedStyle = GetWindowLong(hwnd, GWL_EXSTYLE);
+                    SetWindowLong(hwnd, GWL_EXSTYLE, extendedStyle & ~WS_EX_TRANSPARENT & ~WS_EX_TOOLWINDOW);
+                }
+            }
+            else
+            {
+                // Disable interaction
+                WindowStyle = WindowStyle.None;
+                ResizeMode = ResizeMode.NoResize;
+                ShowInTaskbar = true;
+                
+                // Re-apply click-through
+                MakeWindowTransparent();
+            }
         }
 
         private const int GWL_EXSTYLE = -20;
