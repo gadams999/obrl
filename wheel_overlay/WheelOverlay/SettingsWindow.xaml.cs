@@ -102,6 +102,7 @@ namespace WheelOverlay
 
         private void ShowDeviceSettings()
         {
+            if (_settingsPanel == null) return;
             _settingsPanel.Children.Clear();
 
             var title = new TextBlock { Text = "Device Settings", FontSize = 20, FontWeight = FontWeights.Bold, Margin = new Thickness(0, 0, 0, 20) };
@@ -119,6 +120,7 @@ namespace WheelOverlay
 
         private void ShowAppearanceSettings()
         {
+            if (_settingsPanel == null) return;
             _settingsPanel.Children.Clear();
 
             var title = new TextBlock { Text = "Appearance Settings", FontSize = 20, FontWeight = FontWeights.Bold, Margin = new Thickness(0, 0, 0, 20) };
@@ -135,6 +137,7 @@ namespace WheelOverlay
 
         private void ShowAdvancedSettings()
         {
+            if (_settingsPanel == null) return;
             _settingsPanel.Children.Clear();
 
             var title = new TextBlock { Text = "Advanced Settings", FontSize = 20, FontWeight = FontWeights.Bold, Margin = new Thickness(0, 0, 0, 20) };
@@ -146,12 +149,14 @@ namespace WheelOverlay
 
         private void AddLabel(string text)
         {
+            if (_settingsPanel == null) return;
             var label = new TextBlock { Text = text, FontWeight = FontWeights.Bold, Margin = new Thickness(0, 0, 0, 5) };
             _settingsPanel.Children.Add(label);
         }
 
         private Slider AddSlider(double min, double max, double tickFreq, double value)
         {
+            if (_settingsPanel == null) return new Slider();
             var panel = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, 0, 15) };
             var slider = new Slider { Minimum = min, Maximum = max, Width = 200, TickFrequency = tickFreq, IsSnapToTickEnabled = true, Value = value };
             var valueText = new TextBlock { Margin = new Thickness(10, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center };
