@@ -50,6 +50,7 @@ namespace WheelOverlay
             // Initialize ViewModel with settings
             var settings = AppSettings.Load();
             _viewModel = new OverlayViewModel(settings);
+            _viewModel.IsDeviceNotFound = true; // Start with "not found" until device connects
             DataContext = _viewModel;
 
             // Restore saved position
@@ -207,6 +208,7 @@ namespace WheelOverlay
         {
             Dispatcher.Invoke(() =>
             {
+                _viewModel.IsDeviceNotFound = false; // Device is connected
                 _viewModel.CurrentPosition = position;
             });
         }

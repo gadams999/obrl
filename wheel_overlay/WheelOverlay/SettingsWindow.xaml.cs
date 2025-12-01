@@ -18,6 +18,7 @@ namespace WheelOverlay
         private TextBox? _nonSelectedColorTextBox;
         private Slider? _spacingSlider;
         private Slider? _opacitySlider;
+        private TextBox[]? _labelTextBoxes;
 
         private StackPanel? _settingsPanel;
 
@@ -98,6 +99,20 @@ namespace WheelOverlay
             // Item Spacing
             AddLabel("Item Spacing (pixels)");
             _spacingSlider = AddSlider(2, 20, 2, _settings.ItemSpacing);
+
+            // Text Labels
+            AddLabel("Text Labels (8 positions)");
+            _labelTextBoxes = new TextBox[8];
+            for (int i = 0; i < 8; i++)
+            {
+                var panel = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 5, 0, 0) };
+                var label = new TextBlock { Text = $"Position {i + 1}:", Width = 80, VerticalAlignment = VerticalAlignment.Center };
+                var textBox = new TextBox { Width = 150, Text = _settings.TextLabels[i] };
+                _labelTextBoxes[i] = textBox;
+                panel.Children.Add(label);
+                panel.Children.Add(textBox);
+                _settingsPanel?.Children.Add(panel);
+            }
         }
 
         private void ShowDeviceSettings()
@@ -184,6 +199,15 @@ namespace WheelOverlay
             if (_deviceComboBox?.SelectedItem is string selectedDevice)
             {
                 _settings.SelectedDeviceName = selectedDevice;
+            }
+
+            // Save text labels
+            if (_labelTextBoxes != null)
+            {
+                for (int i = 0; i < 8 && i < _labelTextBoxes.Length; i++)
+                {
+                    _settings.TextLabels[i] = _labelTextBoxes[i].Text;
+                }
             }
 
             // Save other values
