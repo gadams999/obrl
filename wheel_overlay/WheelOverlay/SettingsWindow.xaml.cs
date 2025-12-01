@@ -19,6 +19,8 @@ namespace WheelOverlay
         private Slider? _spacingSlider;
         private Slider? _opacitySlider;
 
+        private StackPanel? _settingsPanel;
+
         public SettingsWindow(AppSettings settings)
         {
             InitializeComponent();
@@ -28,11 +30,16 @@ namespace WheelOverlay
 
         private void SettingsWindow_Loaded(object sender, RoutedEventArgs e)
         {
-            // Use Dispatcher to ensure UI is fully loaded
-            Dispatcher.BeginInvoke(new Action(() =>
+            // Find SettingsPanel manually since XAML binding isn't working
+            _settingsPanel = FindName("SettingsPanel") as StackPanel;
+            
+            if (_settingsPanel == null)
             {
-                ShowDisplaySettings();
-            }), System.Windows.Threading.DispatcherPriority.Loaded);
+                MessageBox.Show("Could not find SettingsPanel control!", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                return;
+            }
+
+            ShowDisplaySettings();
         }
 
         private void CategoryListBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -60,11 +67,12 @@ namespace WheelOverlay
 
         private void ShowDisplaySettings()
         {
-            SettingsPanel.Children.Clear();
+            if (_settingsPanel == null) return;
+            __settingsPanel.Children.Clear();
 
             // Title
             var title = new TextBlock { Text = "Display Settings", FontSize = 20, FontWeight = FontWeights.Bold, Margin = new Thickness(0, 0, 0, 20) };
-            SettingsPanel.Children.Add(title);
+            __settingsPanel.Children.Add(title);
 
             // Layout
             AddLabel("Display Layout");
@@ -81,7 +89,7 @@ namespace WheelOverlay
                     break;
                 }
             }
-            SettingsPanel.Children.Add(_layoutComboBox);
+            _settingsPanel.Children.Add(_layoutComboBox);
 
             // Font Size
             AddLabel("Font Size");
@@ -94,10 +102,10 @@ namespace WheelOverlay
 
         private void ShowDeviceSettings()
         {
-            SettingsPanel.Children.Clear();
+            _settingsPanel.Children.Clear();
 
             var title = new TextBlock { Text = "Device Settings", FontSize = 20, FontWeight = FontWeights.Bold, Margin = new Thickness(0, 0, 0, 20) };
-            SettingsPanel.Children.Add(title);
+            _settingsPanel.Children.Add(title);
 
             AddLabel("Device Selection");
             _deviceComboBox = new ComboBox { Margin = new Thickness(0, 0, 0, 15) };
@@ -106,31 +114,31 @@ namespace WheelOverlay
                 _deviceComboBox.Items.Add(deviceName);
             }
             _deviceComboBox.SelectedItem = _settings.SelectedDeviceName;
-            SettingsPanel.Children.Add(_deviceComboBox);
+            _settingsPanel.Children.Add(_deviceComboBox);
         }
 
         private void ShowAppearanceSettings()
         {
-            SettingsPanel.Children.Clear();
+            _settingsPanel.Children.Clear();
 
             var title = new TextBlock { Text = "Appearance Settings", FontSize = 20, FontWeight = FontWeights.Bold, Margin = new Thickness(0, 0, 0, 20) };
-            SettingsPanel.Children.Add(title);
+            _settingsPanel.Children.Add(title);
 
             AddLabel("Selected Text Color");
             _selectedColorTextBox = new TextBox { Text = _settings.SelectedTextColor, Margin = new Thickness(0, 0, 0, 15) };
-            SettingsPanel.Children.Add(_selectedColorTextBox);
+            _settingsPanel.Children.Add(_selectedColorTextBox);
 
             AddLabel("Non-Selected Text Color");
             _nonSelectedColorTextBox = new TextBox { Text = _settings.NonSelectedTextColor, Margin = new Thickness(0, 0, 0, 15) };
-            SettingsPanel.Children.Add(_nonSelectedColorTextBox);
+            _settingsPanel.Children.Add(_nonSelectedColorTextBox);
         }
 
         private void ShowAdvancedSettings()
         {
-            SettingsPanel.Children.Clear();
+            _settingsPanel.Children.Clear();
 
             var title = new TextBlock { Text = "Advanced Settings", FontSize = 20, FontWeight = FontWeights.Bold, Margin = new Thickness(0, 0, 0, 20) };
-            SettingsPanel.Children.Add(title);
+            _settingsPanel.Children.Add(title);
 
             AddLabel("Move Overlay Opacity (%)");
             _opacitySlider = AddSlider(0, 100, 10, _settings.MoveOverlayOpacity);
@@ -139,7 +147,7 @@ namespace WheelOverlay
         private void AddLabel(string text)
         {
             var label = new TextBlock { Text = text, FontWeight = FontWeights.Bold, Margin = new Thickness(0, 0, 0, 5) };
-            SettingsPanel.Children.Add(label);
+            _settingsPanel.Children.Add(label);
         }
 
         private Slider AddSlider(double min, double max, double tickFreq, double value)
@@ -150,7 +158,7 @@ namespace WheelOverlay
             valueText.SetBinding(TextBlock.TextProperty, new System.Windows.Data.Binding("Value") { Source = slider });
             panel.Children.Add(slider);
             panel.Children.Add(valueText);
-            SettingsPanel.Children.Add(panel);
+            _settingsPanel.Children.Add(panel);
             return slider;
         }
 
