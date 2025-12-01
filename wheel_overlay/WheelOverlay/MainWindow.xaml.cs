@@ -115,13 +115,16 @@ namespace WheelOverlay
 
         public void ApplySettings(AppSettings settings)
         {
+            // Reload settings from disk to get latest changes
+            var latestSettings = AppSettings.Load();
+            
             // Update ViewModel settings
-            _viewModel.Settings = settings;
+            _viewModel.Settings = latestSettings;
 
             // Update move overlay opacity if in config mode
             if (_configMode)
             {
-                byte alpha = (byte)(settings.MoveOverlayOpacity * 255 / 100);
+                byte alpha = (byte)(latestSettings.MoveOverlayOpacity * 255 / 100);
                 Background = new System.Windows.Media.SolidColorBrush(
                     System.Windows.Media.Color.FromArgb(alpha, 128, 128, 128));
             }

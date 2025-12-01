@@ -47,6 +47,9 @@ namespace WheelOverlay
         {
             if (CategoryListBox.SelectedItem is ListBoxItem selectedItem)
             {
+                // Save current category values before switching
+                SaveCurrentCategoryValues();
+                
                 string category = selectedItem.Tag.ToString()!;
                 switch (category)
                 {
@@ -64,6 +67,40 @@ namespace WheelOverlay
                         break;
                 }
             }
+        }
+
+        private void SaveCurrentCategoryValues()
+        {
+            // Save layout
+            if (_layoutComboBox?.SelectedItem is ComboBoxItem selectedItem)
+            {
+                _settings.Layout = Enum.Parse<DisplayLayout>(selectedItem.Tag.ToString()!);
+            }
+
+            // Save device selection
+            if (_deviceComboBox?.SelectedItem is string selectedDevice)
+            {
+                _settings.SelectedDeviceName = selectedDevice;
+            }
+
+            // Save text labels
+            if (_labelTextBoxes != null)
+            {
+                for (int i = 0; i < 8 && i < _labelTextBoxes.Length; i++)
+                {
+                    if (_labelTextBoxes[i] != null)
+                    {
+                        _settings.TextLabels[i] = _labelTextBoxes[i].Text;
+                    }
+                }
+            }
+
+            // Save other values
+            if (_fontSizeSlider != null) _settings.FontSize = (int)_fontSizeSlider.Value;
+            if (_selectedColorTextBox != null) _settings.SelectedTextColor = _selectedColorTextBox.Text;
+            if (_nonSelectedColorTextBox != null) _settings.NonSelectedTextColor = _nonSelectedColorTextBox.Text;
+            if (_spacingSlider != null) _settings.ItemSpacing = (int)_spacingSlider.Value;
+            if (_opacitySlider != null) _settings.MoveOverlayOpacity = (int)_opacitySlider.Value;
         }
 
         private void ShowDisplaySettings()
@@ -189,33 +226,8 @@ namespace WheelOverlay
 
         private void ApplyButton_Click(object sender, RoutedEventArgs e)
         {
-            // Save layout
-            if (_layoutComboBox?.SelectedItem is ComboBoxItem selectedItem)
-            {
-                _settings.Layout = Enum.Parse<DisplayLayout>(selectedItem.Tag.ToString()!);
-            }
-
-            // Save device selection
-            if (_deviceComboBox?.SelectedItem is string selectedDevice)
-            {
-                _settings.SelectedDeviceName = selectedDevice;
-            }
-
-            // Save text labels
-            if (_labelTextBoxes != null)
-            {
-                for (int i = 0; i < 8 && i < _labelTextBoxes.Length; i++)
-                {
-                    _settings.TextLabels[i] = _labelTextBoxes[i].Text;
-                }
-            }
-
-            // Save other values
-            if (_fontSizeSlider != null) _settings.FontSize = (int)_fontSizeSlider.Value;
-            if (_selectedColorTextBox != null) _settings.SelectedTextColor = _selectedColorTextBox.Text;
-            if (_nonSelectedColorTextBox != null) _settings.NonSelectedTextColor = _nonSelectedColorTextBox.Text;
-            if (_spacingSlider != null) _settings.ItemSpacing = (int)_spacingSlider.Value;
-            if (_opacitySlider != null) _settings.MoveOverlayOpacity = (int)_opacitySlider.Value;
+            // Save current category values
+            SaveCurrentCategoryValues();
 
             _settings.Save();
             
