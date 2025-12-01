@@ -127,3 +127,7 @@ htmlcov/
 *.tmp
 *.temp
 .cache/
+
+# Release Artifacts
+*.zip
+Publish/
