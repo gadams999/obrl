@@ -22,6 +22,7 @@ namespace WheelOverlay.Services
 
         public event EventHandler<int>? RotaryPositionChanged;
         public event EventHandler<string>? DeviceNotFound;
+        public event EventHandler? DeviceConnected;
 
         public InputService()
         {
@@ -117,6 +118,7 @@ namespace WheelOverlay.Services
                         Debug.WriteLine("[InputService] Device acquired successfully.");
                         deviceFound = true;
                         _deviceNotFoundEmitted = false; // Reset flag when device is found
+                        DeviceConnected?.Invoke(this, EventArgs.Empty); // Notify that device connected
                         break;
                     }
                 }

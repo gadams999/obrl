@@ -60,6 +60,7 @@ namespace WheelOverlay
             _inputService = new InputService();
             _inputService.RotaryPositionChanged += OnRotaryPositionChanged;
             _inputService.DeviceNotFound += OnDeviceNotFound;
+            _inputService.DeviceConnected += OnDeviceConnected;
             
             Loaded += MainWindow_Loaded;
             Closed += MainWindow_Closed;
@@ -74,6 +75,14 @@ namespace WheelOverlay
             {
                 ((App)System.Windows.Application.Current).ClearMinimizeCheckmark();
             }
+        }
+
+        private void OnDeviceConnected(object? sender, EventArgs e)
+        {
+            Dispatcher.Invoke(() =>
+            {
+                _viewModel.IsDeviceNotFound = false;
+            });
         }
 
         private void OnDeviceNotFound(object? sender, string deviceName)
