@@ -68,11 +68,11 @@ namespace WheelOverlay
         private void ShowDisplaySettings()
         {
             if (_settingsPanel == null) return;
-            __settingsPanel.Children.Clear();
+            _settingsPanel.Children.Clear();
 
             // Title
             var title = new TextBlock { Text = "Display Settings", FontSize = 20, FontWeight = FontWeights.Bold, Margin = new Thickness(0, 0, 0, 20) };
-            __settingsPanel.Children.Add(title);
+            _settingsPanel.Children.Add(title);
 
             // Layout
             AddLabel("Display Layout");
