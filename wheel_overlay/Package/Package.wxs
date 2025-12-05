@@ -22,7 +22,7 @@
   <Fragment>
     <ComponentGroup Id="AppComponents" Directory="INSTALLFOLDER">
       <Component Id="MainExecutable">
-        <File Source="..\WheelOverlay\bin\Release\net8.0-windows\win-x64\publish\WheelOverlay.exe" />
+        <File Source="WheelOverlay.exe" />
       </Component>
     </ComponentGroup>
   </Fragment>
