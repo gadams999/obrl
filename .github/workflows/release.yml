@@ -56,29 +56,13 @@ jobs:
     - name: Install WiX Toolset
       run: dotnet tool install --global wix
 
-    - name: Publish Single File
-      run: dotnet publish WheelOverlay/WheelOverlay.csproj -c Release -r win-x64 --self-contained -p:PublishSingleFile=true -o ./publish
-
-    - name: Build MSI
-      # Run from Package/ so relative paths work
-      run: |
-        cd Package
-        wix build Package.wxs -o ../WheelOverlay.msi -b ../publish
-      # Note: -b ../publish might fail if Package.wxs uses explicit source. 
-      # Since we hardcoded relative path in Package.wxs ("..\WheelOverlay\bin\Release..."), we must invoke it such that path resolves.
-      # If we just force the file to be where Package.wxs expects it, we are good.
-      # "dotnet publish ... -o ./publish" puts it in ./wheel_overlay/publish
-      # Package.wxs expects "..\WheelOverlay\bin\....." 
-      # Let's adjust Strategy:
-      # 1. Publish to default location (bin/Release/...) so Package.wxs stays valid.
-      
     - name: Publish (Default Location)
       run: dotnet publish WheelOverlay/WheelOverlay.csproj -c Release -r win-x64 --self-contained -p:PublishSingleFile=true
 
-    - name: Build MSI (Retry)
+    - name: Build MSI
       run: |
         cd Package
-        wix build Package.wxs -o ../WheelOverlay.msi
+        wix build Package.wxs -o ../WheelOverlay.msi -b ../WheelOverlay/bin/Release/net8.0-windows/win-x64/publish
 
     - name: Create Release
       uses: softprops/action-gh-release@v1
