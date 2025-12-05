@@ -1,14 +1,18 @@
 {
   "version": 2,
-  "dgSpecHash": "URhxaIXIhJk=",
+  "dgSpecHash": "+8rh8cpH0Gc=",
   "success": true,
   "projectFilePath": "C:\\Users\\me\\github\\obrl\\wheel_overlay\\WheelOverlay\\WheelOverlay.csproj",
   "expectedPackageFiles": [
+    "C:\\Users\\me\\.nuget\\packages\\microsoft.net.illink.tasks\\8.0.22\\microsoft.net.illink.tasks.8.0.22.nupkg.sha512",
     "C:\\Users\\me\\.nuget\\packages\\sharpgen.runtime\\2.1.2-beta\\sharpgen.runtime.2.1.2-beta.nupkg.sha512",
     "C:\\Users\\me\\.nuget\\packages\\sharpgen.runtime.com\\2.1.2-beta\\sharpgen.runtime.com.2.1.2-beta.nupkg.sha512",
     "C:\\Users\\me\\.nuget\\packages\\vortice.directinput\\3.5.0\\vortice.directinput.3.5.0.nupkg.sha512",
     "C:\\Users\\me\\.nuget\\packages\\vortice.directx\\3.5.0\\vortice.directx.3.5.0.nupkg.sha512",
-    "C:\\Users\\me\\.nuget\\packages\\vortice.mathematics\\1.7.8\\vortice.mathematics.1.7.8.nupkg.sha512"
+    "C:\\Users\\me\\.nuget\\packages\\vortice.mathematics\\1.7.8\\vortice.mathematics.1.7.8.nupkg.sha512",
+    "C:\\Users\\me\\.nuget\\packages\\microsoft.netcore.app.runtime.win-x64\\8.0.22\\microsoft.netcore.app.runtime.win-x64.8.0.22.nupkg.sha512",
+    "C:\\Users\\me\\.nuget\\packages\\microsoft.windowsdesktop.app.runtime.win-x64\\8.0.22\\microsoft.windowsdesktop.app.runtime.win-x64.8.0.22.nupkg.sha512",
+    "C:\\Users\\me\\.nuget\\packages\\microsoft.aspnetcore.app.runtime.win-x64\\8.0.22\\microsoft.aspnetcore.app.runtime.win-x64.8.0.22.nupkg.sha512"
   ],
   "logs": []
 }
