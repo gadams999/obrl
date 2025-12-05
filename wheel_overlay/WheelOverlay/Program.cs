@@ -11,10 +11,17 @@ namespace WheelOverlay
             try
             {
                 // Force an early log to verify we are running
-                LogService.Info("Program.Main started. Initializing App...");
+                LogService.Info("Program.Main started. Initializing Windows Forms...");
+                System.Windows.Forms.Application.EnableVisualStyles();
+                System.Windows.Forms.Application.SetCompatibleTextRenderingDefault(false);
 
+                LogService.Info("Creating App instance...");
                 var app = new App();
+                
+                LogService.Info("InitializeComponent...");
                 app.InitializeComponent();
+                
+                LogService.Info("Calling app.Run()...");
                 app.Run();
             }
             catch (Exception ex)
