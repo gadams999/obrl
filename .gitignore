@@ -131,3 +131,5 @@ htmlcov/
 # Release Artifacts
 *.zip
 Publish/
+*.msi
+*.wixpdb
