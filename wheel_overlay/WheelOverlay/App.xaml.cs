@@ -25,42 +25,72 @@ namespace WheelOverlay
         {
             base.OnStartup(e);
 
-            // Create main window but don't show it yet
-            _mainWindow = new MainWindow();
+            Services.LogService.Info("Application identifying startup sequence...");
 
-            // Create system tray icon
-            _notifyIcon = new NotifyIcon
+            // Global Exception Handling
+            AppDomain.CurrentDomain.UnhandledException += (s, args) =>
             {
-                Icon = System.Drawing.SystemIcons.Application,
-                Visible = true,
-                Text = "Wheel Overlay"
+                Services.LogService.Error($"AppDomain Unhandled Exception", args.ExceptionObject as Exception ?? new Exception("Unknown"));
             };
 
-            // Create context menu
-            var contextMenu = new ContextMenuStrip();
-            contextMenu.Items.Add("Show Overlay", null, (s, args) => ShowOverlay());
-            contextMenu.Items.Add("Hide Overlay", null, (s, args) => HideOverlay());
-            contextMenu.Items.Add("-");
-            
-            _minimizeMenuItem = new ToolStripMenuItem("Minimize to Taskbar");
-            _minimizeMenuItem.CheckOnClick = true;
-            _minimizeMenuItem.Click += (s, args) => ToggleMinimize(_minimizeMenuItem.Checked);
-            contextMenu.Items.Add(_minimizeMenuItem);
-            
-            _configModeMenuItem = new ToolStripMenuItem("Move Overlay...");
-            _configModeMenuItem.CheckOnClick = true;
-            _configModeMenuItem.Click += (s, args) => ToggleConfigMode(_configModeMenuItem.Checked);
-            contextMenu.Items.Add(_configModeMenuItem);
-            contextMenu.Items.Add("-");
-            contextMenu.Items.Add("Settings...", null, (s, args) => OpenSettings());
-            contextMenu.Items.Add("-");
-            contextMenu.Items.Add("Exit", null, (s, args) => Shutdown());
+            DispatcherUnhandledException += (s, args) =>
+            {
+                Services.LogService.Error($"Dispatcher Unhandled Exception", args.Exception);
+                // args.Handled = true; // Optional: prevents crash, but maybe we want crash?
+            };
 
-            _notifyIcon.ContextMenuStrip = contextMenu;
-            _notifyIcon.DoubleClick += (s, args) => ToggleOverlay();
+            TaskScheduler.UnobservedTaskException += (s, args) =>
+            {
+                Services.LogService.Error($"TaskScheduler Unobserved Exception", args.Exception);
+            };
 
-            // Show overlay by default
-            ShowOverlay();
+            try 
+            {
+                Services.LogService.Info("Initializing MainWindow...");
+                // Create main window but don't show it yet
+                _mainWindow = new MainWindow();
+                Services.LogService.Info("MainWindow initialized.");
+
+                // Create system tray icon
+                _notifyIcon = new NotifyIcon
+                {
+                    Icon = System.Drawing.SystemIcons.Application,
+                    Visible = true,
+                    Text = "Wheel Overlay"
+                };
+
+                // Create context menu
+                var contextMenu = new ContextMenuStrip();
+                contextMenu.Items.Add("Show Overlay", null, (s, args) => ShowOverlay());
+                contextMenu.Items.Add("Hide Overlay", null, (s, args) => HideOverlay());
+                contextMenu.Items.Add("-");
+                
+                _minimizeMenuItem = new ToolStripMenuItem("Minimize to Taskbar");
+                _minimizeMenuItem.CheckOnClick = true;
+                _minimizeMenuItem.Click += (s, args) => ToggleMinimize(_minimizeMenuItem.Checked);
+                contextMenu.Items.Add(_minimizeMenuItem);
+                
+                _configModeMenuItem = new ToolStripMenuItem("Move Overlay...");
+                _configModeMenuItem.CheckOnClick = true;
+                _configModeMenuItem.Click += (s, args) => ToggleConfigMode(_configModeMenuItem.Checked);
+                contextMenu.Items.Add(_configModeMenuItem);
+                contextMenu.Items.Add("-");
+                contextMenu.Items.Add("Settings...", null, (s, args) => OpenSettings());
+                contextMenu.Items.Add("-");
+                contextMenu.Items.Add("Exit", null, (s, args) => Shutdown());
+
+                _notifyIcon.ContextMenuStrip = contextMenu;
+                _notifyIcon.DoubleClick += (s, args) => ToggleOverlay();
+
+                // Show overlay by default
+                ShowOverlay();
+                Services.LogService.Info("Startup sequence completed successfully.");
+            }
+            catch (Exception ex)
+            {
+                Services.LogService.Error("Startup crashed!", ex);
+                throw; // Rethrow to let the app die properly after logging
+            }
         }
 
         private void ShowOverlay()
