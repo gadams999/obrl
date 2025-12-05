@@ -5,10 +5,12 @@ on:
     branches: [ "main" ]
     paths:
       - 'wheel_overlay/**'
+      - '.github/workflows/release.yml'
   pull_request:
     branches: [ "main" ]
     paths:
       - 'wheel_overlay/**'
+      - '.github/workflows/release.yml'
   workflow_dispatch:
 
 jobs:
