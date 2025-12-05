@@ -1,0 +1,43 @@
+<Window x:Class="WheelOverlay.SettingsWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Wheel Overlay Settings" Height="550" Width="700"
+        WindowStartupLocation="CenterScreen">
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="200"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+
+        <!-- Left Panel - Categories -->
+        <Border Grid.Column="0" Background="#F5F5F5" BorderBrush="#E0E0E0" BorderThickness="0,0,1,0">
+            <StackPanel Margin="10">
+                <TextBlock Text="Categories" FontSize="16" FontWeight="Bold" Margin="0,0,0,15"/>
+                <ListBox x:Name="CategoryListBox" BorderThickness="0" Background="Transparent" SelectionChanged="CategoryListBox_SelectionChanged">
+                    <ListBoxItem Content="Display" Tag="Display" IsSelected="True"/>
+                    <ListBoxItem Content="Device" Tag="Device"/>
+                    <ListBoxItem Content="Appearance" Tag="Appearance"/>
+                    <ListBoxItem Content="Advanced" Tag="Advanced"/>
+                </ListBox>
+            </StackPanel>
+        </Border>
+
+        <!-- Right Panel - Settings Content -->
+        <Grid Grid.Column="1">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+
+            <ScrollViewer Grid.Row="0" VerticalScrollBarVisibility="Auto">
+                <StackPanel x:Name="SettingsPanel" Margin="20"/>
+            </ScrollViewer>
+
+            <!-- Bottom Buttons -->
+            <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Right" Margin="20,10">
+                <Button Content="Apply" Width="80" Margin="0,0,10,0" Click="ApplyButton_Click"/>
+                <Button Content="Close" Width="80" Click="CloseButton_Click"/>
+            </StackPanel>
+        </Grid>
+    </Grid>
+</Window>

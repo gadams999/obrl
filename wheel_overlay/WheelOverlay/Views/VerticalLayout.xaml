@@ -1,0 +1,84 @@
+<UserControl x:Class="WheelOverlay.Views.VerticalLayout"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:WheelOverlay.ViewModels"
+             mc:Ignorable="d" 
+             d:DataContext="{d:DesignInstance Type=vm:OverlayViewModel}">
+    <Grid>
+        <!-- Show "Not Found" message when device is not connected -->
+        <TextBlock Text="🚨 Not Found! 🚨"
+                   FontSize="{Binding Settings.FontSize}"
+                   FontFamily="{Binding Settings.FontFamily}"
+                   FontWeight="Bold"
+                   Foreground="Red"
+                   HorizontalAlignment="Center"
+                   VerticalAlignment="Center">
+            <TextBlock.Style>
+                <Style TargetType="TextBlock">
+                    <Setter Property="Visibility" Value="Collapsed"/>
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding IsDeviceNotFound}" Value="True">
+                            <Setter Property="Visibility" Value="Visible"/>
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </TextBlock.Style>
+            <TextBlock.Effect>
+                <DropShadowEffect Color="Black" BlurRadius="4" ShadowDepth="2" Opacity="0.8"/>
+            </TextBlock.Effect>
+        </TextBlock>
+
+        <!-- Show items list when device is connected -->
+        <ItemsControl ItemsSource="{Binding DisplayItems}">
+            <ItemsControl.Style>
+                <Style TargetType="ItemsControl">
+                    <Setter Property="Visibility" Value="Visible"/>
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding IsDeviceNotFound}" Value="True">
+                            <Setter Property="Visibility" Value="Collapsed"/>
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </ItemsControl.Style>
+            <ItemsControl.ItemTemplate>
+                <DataTemplate>
+                    <TextBlock Text="{Binding}"
+                               FontSize="{Binding DataContext.Settings.FontSize, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                               FontFamily="{Binding DataContext.Settings.FontFamily, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                               FontWeight="Bold"
+                               HorizontalAlignment="Center">
+                        <TextBlock.Margin>
+                            <Binding Path="DataContext.Settings.ItemSpacing" RelativeSource="{RelativeSource AncestorType=UserControl}" StringFormat="{}0,{0},0,0"/>
+                        </TextBlock.Margin>
+                        <TextBlock.Style>
+                            <Style TargetType="TextBlock">
+                                <Setter Property="Foreground" Value="{Binding DataContext.Settings.NonSelectedTextColor, RelativeSource={RelativeSource AncestorType=UserControl}}"/>
+                                <Style.Triggers>
+                                    <DataTrigger Value="True">
+                                        <DataTrigger.Binding>
+                                            <MultiBinding Converter="{StaticResource IsSelectedConverter}">
+                                                <Binding Path="DataContext.CurrentItem" RelativeSource="{RelativeSource AncestorType=UserControl}"/>
+                                                <Binding Path="."/>
+                                            </MultiBinding>
+                                        </DataTrigger.Binding>
+                                        <Setter Property="Foreground" Value="{Binding DataContext.Settings.SelectedTextColor, RelativeSource={RelativeSource AncestorType=UserControl}}"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </TextBlock.Style>
+                        <TextBlock.Effect>
+                            <DropShadowEffect Color="Black" BlurRadius="2" ShadowDepth="1" Opacity="0.8"/>
+                        </TextBlock.Effect>
+                    </TextBlock>
+                </DataTemplate>
+            </ItemsControl.ItemTemplate>
+            <ItemsControl.ItemsPanel>
+                <ItemsPanelTemplate>
+                    <StackPanel Orientation="Vertical"/>
+                </ItemsPanelTemplate>
+            </ItemsControl.ItemsPanel>
+        </ItemsControl>
+    </Grid>
+</UserControl>

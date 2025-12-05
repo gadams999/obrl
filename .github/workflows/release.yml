@@ -1,0 +1,92 @@
+name: Release Pipeline
+
+on:
+  push:
+    branches: [ "main" ]
+    paths:
+      - 'wheel_overlay/**'
+  pull_request:
+    branches: [ "main" ]
+    paths:
+      - 'wheel_overlay/**'
+  workflow_dispatch:
+
+jobs:
+  build-and-test:
+    runs-on: windows-latest
+    defaults:
+      run:
+        working-directory: ./wheel_overlay
+
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: 8.0.x
+
+    - name: Restore dependencies
+      run: dotnet restore
+
+    - name: Build
+      run: dotnet build --no-restore --configuration Release
+
+    - name: Test
+      run: dotnet test --no-build --verbosity normal --configuration Release
+
+  package-and-release:
+    needs: build-and-test
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: windows-latest
+    defaults:
+      run:
+        working-directory: ./wheel_overlay
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: 8.0.x
+
+    - name: Install WiX Toolset
+      run: dotnet tool install --global wix
+
+    - name: Publish Single File
+      run: dotnet publish WheelOverlay/WheelOverlay.csproj -c Release -r win-x64 --self-contained -p:PublishSingleFile=true -o ./publish
+
+    - name: Build MSI
+      # Run from Package/ so relative paths work
+      run: |
+        cd Package
+        wix build Package.wxs -o ../WheelOverlay.msi -b ../publish
+      # Note: -b ../publish might fail if Package.wxs uses explicit source. 
+      # Since we hardcoded relative path in Package.wxs ("..\WheelOverlay\bin\Release..."), we must invoke it such that path resolves.
+      # If we just force the file to be where Package.wxs expects it, we are good.
+      # "dotnet publish ... -o ./publish" puts it in ./wheel_overlay/publish
+      # Package.wxs expects "..\WheelOverlay\bin\....." 
+      # Let's adjust Strategy:
+      # 1. Publish to default location (bin/Release/...) so Package.wxs stays valid.
+      
+    - name: Publish (Default Location)
+      run: dotnet publish WheelOverlay/WheelOverlay.csproj -c Release -r win-x64 --self-contained -p:PublishSingleFile=true
+
+    - name: Build MSI (Retry)
+      run: |
+        cd Package
+        wix build Package.wxs -o ../WheelOverlay.msi
+
+    - name: Create Release
+      uses: softprops/action-gh-release@v1
+      with:
+        files: wheel_overlay/WheelOverlay.msi
+        tag_name: v${{ github.run_number }}
+        name: Release v${{ github.run_number }}
+        draft: false
+        prerelease: false
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

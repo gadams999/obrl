@@ -18,6 +18,16 @@ Thumbs.db
 *.swo
 *.swn
 .vim/
+.vs/
+*.user
+*.suo
+
+# .NET Build Artifacts
+bin/
+obj/
+*.dll
+*.exe
+*.pdb
 
 # Language-specific
 ## Python
@@ -117,3 +127,7 @@ htmlcov/
 *.tmp
 *.temp
 .cache/
+
+# Release Artifacts
+*.zip
+Publish/

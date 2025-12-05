@@ -1,0 +1,263 @@
+using System;
+using System.Windows;
+using System.Windows.Controls;
+using WheelOverlay.Models;
+
+namespace WheelOverlay
+{
+    public partial class SettingsWindow : Window
+    {
+        private AppSettings _settings;
+        public event EventHandler? SettingsChanged;
+
+        // UI Controls
+        private System.Windows.Controls.ComboBox? _layoutComboBox;
+        private System.Windows.Controls.ComboBox? _deviceComboBox;
+        private Slider? _fontSizeSlider;
+        private System.Windows.Controls.TextBox? _selectedColorTextBox;
+        private System.Windows.Controls.TextBox? _nonSelectedColorTextBox;
+        private Slider? _spacingSlider;
+        private Slider? _opacitySlider;
+        private System.Windows.Controls.TextBox[]? _labelTextBoxes;
+
+        private StackPanel? _settingsPanel;
+
+        public SettingsWindow(AppSettings settings)
+        {
+            InitializeComponent();
+            _settings = settings;
+            Loaded += SettingsWindow_Loaded;
+        }
+
+        private void SettingsWindow_Loaded(object sender, RoutedEventArgs e)
+        {
+            // Find SettingsPanel manually since XAML binding isn't working
+            _settingsPanel = FindName("SettingsPanel") as StackPanel;
+            
+            if (_settingsPanel == null)
+            {
+                System.Windows.MessageBox.Show("Could not find SettingsPanel control!", "Error", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
+                return;
+            }
+
+            ShowDisplaySettings();
+        }
+
+        private void CategoryListBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (CategoryListBox.SelectedItem is System.Windows.Controls.ListBoxItem selectedItem)
+            {
+                // Save current category values before switching
+                SaveCurrentCategoryValues();
+                
+                string category = selectedItem.Tag.ToString()!;
+                switch (category)
+                {
+                    case "Display":
+                        ShowDisplaySettings();
+                        break;
+                    case "Device":
+                        ShowDeviceSettings();
+                        break;
+                    case "Appearance":
+                        ShowAppearanceSettings();
+                        break;
+                    case "Advanced":
+                        ShowAdvancedSettings();
+                        break;
+                }
+            }
+        }
+
+        private void SaveCurrentCategoryValues()
+        {
+            // Save layout
+            if (_layoutComboBox?.SelectedItem is System.Windows.Controls.ComboBoxItem selectedItem)
+            {
+                _settings.Layout = Enum.Parse<DisplayLayout>(selectedItem.Tag.ToString()!);
+            }
+
+            // Save device selection
+            if (_deviceComboBox?.SelectedItem is string selectedDevice)
+            {
+                _settings.SelectedDeviceName = selectedDevice;
+            }
+
+            // Save text labels
+            if (_labelTextBoxes != null)
+            {
+                for (int i = 0; i < 8 && i < _labelTextBoxes.Length; i++)
+                {
+                    if (_labelTextBoxes[i] != null)
+                    {
+                        _settings.TextLabels[i] = _labelTextBoxes[i].Text;
+                    }
+                }
+            }
+
+            // Save other values
+            if (_fontSizeSlider != null) _settings.FontSize = (int)_fontSizeSlider.Value;
+            if (_selectedColorTextBox != null) _settings.SelectedTextColor = _selectedColorTextBox.Text;
+            if (_nonSelectedColorTextBox != null) _settings.NonSelectedTextColor = _nonSelectedColorTextBox.Text;
+            if (_spacingSlider != null) _settings.ItemSpacing = (int)_spacingSlider.Value;
+            if (_opacitySlider != null) _settings.MoveOverlayOpacity = (int)_opacitySlider.Value;
+        }
+
+        private void ShowDisplaySettings()
+        {
+            if (_settingsPanel == null) return;
+            _settingsPanel.Children.Clear();
+
+            // Title
+            var title = new TextBlock { Text = "Display Settings", FontSize = 20, FontWeight = FontWeights.Bold, Margin = new Thickness(0, 0, 0, 20) };
+            _settingsPanel.Children.Add(title);
+
+            // Layout
+            AddLabel("Display Layout");
+            _layoutComboBox = new System.Windows.Controls.ComboBox { Margin = new Thickness(0, 0, 0, 15) };
+            _layoutComboBox.Items.Add(CreateComboBoxItem("Single Text", "Single"));
+            _layoutComboBox.Items.Add(CreateComboBoxItem("Vertical List", "Vertical"));
+            _layoutComboBox.Items.Add(CreateComboBoxItem("Horizontal List", "Horizontal"));
+            _layoutComboBox.Items.Add(CreateComboBoxItem("Grid", "Grid"));
+            foreach (System.Windows.Controls.ComboBoxItem item in _layoutComboBox.Items)
+            {
+                if (item.Tag.ToString() == _settings.Layout.ToString())
+                {
+                    _layoutComboBox.SelectedItem = item;
+                    break;
+                }
+            }
+            _settingsPanel.Children.Add(_layoutComboBox);
+
+            // Font Size
+            AddLabel("Font Size");
+            _fontSizeSlider = AddSlider(20, 100, 10, _settings.FontSize);
+
+            // Item Spacing
+            AddLabel("Item Spacing (pixels)");
+            _spacingSlider = AddSlider(2, 20, 2, _settings.ItemSpacing);
+
+            // Text Labels
+            AddLabel("Text Labels (8 positions)");
+            _labelTextBoxes = new System.Windows.Controls.TextBox[8];
+            for (int i = 0; i < 8; i++)
+            {
+                var panel = new StackPanel { Orientation = System.Windows.Controls.Orientation.Horizontal, Margin = new Thickness(0, 5, 0, 0) };
+                var label = new TextBlock { Text = $"Position {i + 1}:", Width = 80, VerticalAlignment = VerticalAlignment.Center };
+                var textBox = new System.Windows.Controls.TextBox { Width = 150, Text = _settings.TextLabels[i] };
+                _labelTextBoxes[i] = textBox;
+                panel.Children.Add(label);
+                panel.Children.Add(textBox);
+                _settingsPanel?.Children.Add(panel);
+            }
+        }
+
+        private void ShowDeviceSettings()
+        {
+            if (_settingsPanel == null) return;
+            _settingsPanel.Children.Clear();
+
+            var title = new TextBlock { Text = "Device Settings", FontSize = 20, FontWeight = FontWeights.Bold, Margin = new Thickness(0, 0, 0, 20) };
+            _settingsPanel.Children.Add(title);
+
+            AddLabel("Device Selection");
+            _deviceComboBox = new System.Windows.Controls.ComboBox { Margin = new Thickness(0, 0, 0, 15) };
+            foreach (var deviceName in AppSettings.DefaultDeviceNames)
+            {
+                _deviceComboBox.Items.Add(deviceName);
+            }
+            _deviceComboBox.SelectedItem = _settings.SelectedDeviceName;
+            _settingsPanel.Children.Add(_deviceComboBox);
+        }
+
+        private void ShowAppearanceSettings()
+        {
+            if (_settingsPanel == null) return;
+            _settingsPanel.Children.Clear();
+
+            var title = new TextBlock { Text = "Appearance Settings", FontSize = 20, FontWeight = FontWeights.Bold, Margin = new Thickness(0, 0, 0, 20) };
+            _settingsPanel.Children.Add(title);
+
+            AddLabel("Selected Text Color");
+            _selectedColorTextBox = AddColorPicker(_settings.SelectedTextColor);
+
+            AddLabel("Non-Selected Text Color");
+            _nonSelectedColorTextBox = AddColorPicker(_settings.NonSelectedTextColor);
+        }
+
+        private System.Windows.Controls.TextBox AddColorPicker(string initialColor)
+        {
+            var panel = new StackPanel { Orientation = System.Windows.Controls.Orientation.Horizontal, Margin = new Thickness(0, 0, 0, 15) };
+            var textBox = new System.Windows.Controls.TextBox { Text = initialColor, Width = 100, VerticalAlignment = VerticalAlignment.Center };
+            var pickButton = new System.Windows.Controls.Button { Content = "Pick", Width = 50, Margin = new Thickness(10, 0, 0, 0) };
+            
+            pickButton.Click += (s, e) =>
+            {
+                var dialog = new System.Windows.Forms.ColorDialog();
+                if (dialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+                {
+                    var color = dialog.Color;
+                    textBox.Text = $"#{color.R:X2}{color.G:X2}{color.B:X2}";
+                }
+            };
+
+            panel.Children.Add(textBox);
+            panel.Children.Add(pickButton);
+            _settingsPanel?.Children.Add(panel);
+            return textBox;
+        }
+
+        private void ShowAdvancedSettings()
+        {
+            if (_settingsPanel == null) return;
+            _settingsPanel.Children.Clear();
+
+            var title = new TextBlock { Text = "Advanced Settings", FontSize = 20, FontWeight = FontWeights.Bold, Margin = new Thickness(0, 0, 0, 20) };
+            _settingsPanel.Children.Add(title);
+
+            AddLabel("Move Overlay Opacity (%)");
+            _opacitySlider = AddSlider(0, 100, 10, _settings.MoveOverlayOpacity);
+        }
+
+        private void AddLabel(string text)
+        {
+            if (_settingsPanel == null) return;
+            var label = new TextBlock { Text = text, FontWeight = FontWeights.Bold, Margin = new Thickness(0, 0, 0, 5) };
+            _settingsPanel.Children.Add(label);
+        }
+
+        private Slider AddSlider(double min, double max, double tickFreq, double value)
+        {
+            if (_settingsPanel == null) return new Slider();
+            var panel = new StackPanel { Orientation = System.Windows.Controls.Orientation.Horizontal, Margin = new Thickness(0, 0, 0, 15) };
+            var slider = new Slider { Minimum = min, Maximum = max, Width = 200, TickFrequency = tickFreq, IsSnapToTickEnabled = true, Value = value };
+            var valueText = new TextBlock { Margin = new Thickness(10, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center };
+            valueText.SetBinding(TextBlock.TextProperty, new System.Windows.Data.Binding("Value") { Source = slider });
+            panel.Children.Add(slider);
+            panel.Children.Add(valueText);
+            _settingsPanel.Children.Add(panel);
+            return slider;
+        }
+
+        private System.Windows.Controls.ComboBoxItem CreateComboBoxItem(string content, string tag)
+        {
+            return new System.Windows.Controls.ComboBoxItem { Content = content, Tag = tag };
+        }
+
+        private void ApplyButton_Click(object sender, RoutedEventArgs e)
+        {
+            // Save current category values
+            SaveCurrentCategoryValues();
+
+            _settings.Save();
+            
+            // Notify that settings changed
+            SettingsChanged?.Invoke(this, EventArgs.Empty);
+        }
+
+        private void CloseButton_Click(object sender, RoutedEventArgs e)
+        {
+            Close();
+        }
+    }
+}
