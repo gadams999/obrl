@@ -60,7 +60,7 @@ namespace WheelOverlay
                 // Create system tray icon
                 _notifyIcon = new NotifyIcon
                 {
-                    Icon = System.Drawing.SystemIcons.Application,
+                    Icon = System.Drawing.Icon.ExtractAssociatedIcon(System.Windows.Forms.Application.ExecutablePath),
                     Visible = true,
                     Text = "Wheel Overlay"
                 };
