@@ -21,6 +21,12 @@ namespace WheelOverlay
         private ToolStripMenuItem? _configModeMenuItem;
         private ToolStripMenuItem? _minimizeMenuItem;
 
+        public App()
+        {
+            // Explicit constructor prevents hard crash in SingleFile/Release mode
+            Services.LogService.Info("App constructor called.");
+        }
+
         protected override void OnStartup(StartupEventArgs e)
         {
             base.OnStartup(e);

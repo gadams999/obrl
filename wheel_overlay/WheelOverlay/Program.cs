@@ -1,22 +1,34 @@
 using System;
 using WheelOverlay.Services;
 
+using System.Runtime.ExceptionServices;
+using System.Security;
+
 namespace WheelOverlay
 {
     public static class Program
     {
         [STAThread]
+        [HandleProcessCorruptedStateExceptions]
+        [SecurityCritical]
         public static void Main()
         {
             try
             {
                 // Force an early log to verify we are running
-                LogService.Info("Program.Main started. Initializing Windows Forms...");
-                System.Windows.Forms.Application.EnableVisualStyles();
-                System.Windows.Forms.Application.SetCompatibleTextRenderingDefault(false);
+                LogService.Info("Program.Main started.");
 
                 LogService.Info("Creating App instance...");
-                var app = new App();
+                App app = null;
+                try
+                {
+                    app = new App();
+                }
+                catch (Exception ex)
+                {
+                    LogService.Error("CRASH IN APP CONSTRUCTOR", ex);
+                    throw;
+                }
                 
                 LogService.Info("InitializeComponent...");
                 app.InitializeComponent();
