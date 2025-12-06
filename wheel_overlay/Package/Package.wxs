@@ -12,6 +12,9 @@
       <Directory Id="ApplicationProgramsFolder" Name="Wheel Overlay" />
     </StandardDirectory>
 
+    <Icon Id="AppIcon" SourceFile="..\WheelOverlay\app.ico"/>
+    <Property Id="ARPPRODUCTICON" Value="AppIcon" />
+
     <Feature Id="Main">
       <ComponentGroupRef Id="AppComponents" />
       <ComponentRef Id="ApplicationShortcut" />
@@ -34,7 +37,8 @@
                   Name="Wheel Overlay" 
                   Description="Wheel Overlay Tool"
                   Target="[INSTALLFOLDER]WheelOverlay.exe"
-                  WorkingDirectory="INSTALLFOLDER"/>
+                  WorkingDirectory="INSTALLFOLDER"
+                  Icon="AppIcon"/>
         <RemoveFolder Id="CleanUpShortCut" Directory="ApplicationProgramsFolder" On="uninstall"/>
         <RegistryValue Root="HKCU" Key="Software\OBRL\WheelOverlay" Name="installed" Type="integer" Value="1" KeyPath="yes"/>
       </Component>
