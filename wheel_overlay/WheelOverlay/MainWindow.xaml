@@ -42,13 +42,13 @@
                     <Style TargetType="ContentControl">
                         <Setter Property="ContentTemplate" Value="{StaticResource SingleTextTemplate}" />
                         <Style.Triggers>
-                            <DataTrigger Binding="{Binding Settings.Layout}" Value="Vertical">
+                            <DataTrigger Binding="{Binding Settings.ActiveProfile.Layout}" Value="Vertical">
                                 <Setter Property="ContentTemplate" Value="{StaticResource VerticalTemplate}" />
                             </DataTrigger>
-                            <DataTrigger Binding="{Binding Settings.Layout}" Value="Horizontal">
+                            <DataTrigger Binding="{Binding Settings.ActiveProfile.Layout}" Value="Horizontal">
                                 <Setter Property="ContentTemplate" Value="{StaticResource HorizontalTemplate}" />
                             </DataTrigger>
-                            <DataTrigger Binding="{Binding Settings.Layout}" Value="Grid">
+                            <DataTrigger Binding="{Binding Settings.ActiveProfile.Layout}" Value="Grid">
                                 <Setter Property="ContentTemplate" Value="{StaticResource GridTemplate}" />
                             </DataTrigger>
                         </Style.Triggers>

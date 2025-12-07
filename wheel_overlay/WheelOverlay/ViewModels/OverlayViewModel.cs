@@ -1,5 +1,6 @@
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
+using System.Linq;
 using WheelOverlay.Models;
 
 namespace WheelOverlay.ViewModels
@@ -27,7 +28,7 @@ namespace WheelOverlay.ViewModels
             }
         }
 
-        public string[] DisplayItems => _settings.TextLabels;
+        public string[] DisplayItems => _settings.ActiveProfile?.TextLabels?.ToArray() ?? new string[0];
 
         public int CurrentPosition
         {

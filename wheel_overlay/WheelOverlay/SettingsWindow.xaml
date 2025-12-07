@@ -15,7 +15,6 @@
                 <TextBlock Text="Categories" FontSize="16" FontWeight="Bold" Margin="0,0,0,15"/>
                 <ListBox x:Name="CategoryListBox" BorderThickness="0" Background="Transparent" SelectionChanged="CategoryListBox_SelectionChanged">
                     <ListBoxItem Content="Display" Tag="Display" IsSelected="True"/>
-                    <ListBoxItem Content="Device" Tag="Device"/>
                     <ListBoxItem Content="Appearance" Tag="Appearance"/>
                     <ListBoxItem Content="Advanced" Tag="Advanced"/>
                 </ListBox>
