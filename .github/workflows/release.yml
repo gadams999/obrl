@@ -69,12 +69,19 @@ jobs:
         cd Package
         wix build Package.wxs -o ../WheelOverlay.msi -b ../WheelOverlay/bin/Release/net8.0-windows/win-x64/publish
 
+    - name: Get Version
+      id: get_version
+      run: |
+        $xml = [xml](Get-Content WheelOverlay/WheelOverlay.csproj)
+        $version = $xml.Project.PropertyGroup.Version
+        echo "VERSION=$version" >> $env:GITHUB_ENV
+
     - name: Create Release
       uses: softprops/action-gh-release@v1
       with:
         files: wheel_overlay/WheelOverlay.msi
-        tag_name: v${{ github.run_number }}
-        name: Release v${{ github.run_number }}
+        tag_name: v${{ env.VERSION }}
+        name: Release v${{ env.VERSION }}
         draft: false
         prerelease: false
       env:

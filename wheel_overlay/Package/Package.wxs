@@ -1,5 +1,5 @@
 <Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
-  <Package Name="Wheel Overlay" Manufacturer="OBRL" Version="1.0.0.0" UpgradeCode="19d19028-090f-4888-912b-650058e100f7">
+  <Package Name="Wheel Overlay" Manufacturer="OBRL" Version="0.2.0.0" UpgradeCode="19d19028-090f-4888-912b-650058e100f7">
     <MajorUpgrade DowngradeErrorMessage="A newer version of [ProductName] is already installed." />
     
     <MediaTemplate EmbedCab="yes" />
