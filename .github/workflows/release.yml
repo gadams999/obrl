@@ -62,12 +62,29 @@ jobs:
       run: dotnet tool install --global wix
 
     - name: Publish (Default Location)
-      run: dotnet publish WheelOverlay/WheelOverlay.csproj -c Release -r win-x64 --self-contained -p:PublishSingleFile=true
+      run: dotnet publish wheel_overlay/WheelOverlay/WheelOverlay.csproj -c Release -r win-x64 --self-contained -p:PublishSingleFile=true
+      working-directory: ${{ github.workspace }}
 
-    - name: Build MSI
+    - name: Copy LICENSE and icon to publish folder
       run: |
-        cd Package
-        wix build Package.wxs -o ../WheelOverlay.msi -b ../WheelOverlay/bin/Release/net8.0-windows/win-x64/publish
+        Copy-Item wheel_overlay/LICENSE.txt wheel_overlay/WheelOverlay/bin/Release/net8.0-windows/
+        Copy-Item wheel_overlay/WheelOverlay/app.ico wheel_overlay/WheelOverlay/bin/Release/net8.0-windows/
+      working-directory: ${{ github.workspace }}
+      shell: pwsh
+
+    - name: Install WixUI Extension
+      run: |
+        cd wheel_overlay/Package
+        wix extension add WixToolset.UI.wixext/6.0.2
+      working-directory: ${{ github.workspace }}
+      shell: pwsh
+
+    - name: Build MSI with UI Extension
+      run: |
+        cd wheel_overlay/Package
+        wix build -arch x64 Package.wxs -out WheelOverlay.msi -b ../WheelOverlay/bin/Release/net8.0-windows
+      working-directory: ${{ github.workspace }}
+      shell: pwsh
 
     - name: Get Version
       id: get_version

@@ -1,8 +1,15 @@
-<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
-  <Package Name="Wheel Overlay" Manufacturer="OBRL" Version="0.2.0.0" UpgradeCode="19d19028-090f-4888-912b-650058e100f7">
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs"
+     xmlns:ui="http://wixtoolset.org/schemas/v4/wxs/ui">
+  <Package Name="Wheel Overlay" Manufacturer="OBRL" Version="0.2.0.0" UpgradeCode="19d19028-090f-4888-912b-650058e100f7" InstallerVersion="200">
     <MajorUpgrade DowngradeErrorMessage="A newer version of [ProductName] is already installed." />
     
     <MediaTemplate EmbedCab="yes" />
+
+    <!-- Installation directory can be customized by user -->
+    <Property Id="WIXUI_INSTALLDIR" Value="INSTALLFOLDER" />
+    
+    <!-- License agreement -->
+    <WixVariable Id="WixUILicenseRtf" Value="..\LICENSE.rtf" />
 
     <StandardDirectory Id="ProgramFiles64Folder">
       <Directory Id="INSTALLFOLDER" Name="WheelOverlay" />
@@ -11,25 +18,73 @@
     <StandardDirectory Id="ProgramMenuFolder">
       <Directory Id="ApplicationProgramsFolder" Name="Wheel Overlay" />
     </StandardDirectory>
+    
+    <StandardDirectory Id="DesktopFolder" />
 
-    <Icon Id="AppIcon" SourceFile="..\WheelOverlay\app.ico"/>
+    <Icon Id="AppIcon" SourceFile="app.ico"/>
     <Property Id="ARPPRODUCTICON" Value="AppIcon" />
+    
+    <!-- Add/Remove Programs customization -->
+    <Property Id="ARPNOMODIFY" Value="1" />
+    <Property Id="ARPNOREPAIR" Value="1" />
+    
+    <!-- Show license and allow directory choice -->
+    <Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOXTEXT" Value="Launch Wheel Overlay" />
+    <Property Id="WIX_UPGRADE_DETECTED" Secure="yes" />
+    
+    <!-- UI Configuration - Requires WixToolset.UI.wixext extension -->
+    <UI>
+      <UIRef Id="WixUI_InstallDir" />
+      <Property Id="WIXUI_INSTALLDIR" Value="INSTALLFOLDER" />
+    </UI>
 
     <Feature Id="Main">
       <ComponentGroupRef Id="AppComponents" />
       <ComponentRef Id="ApplicationShortcut" />
+      <ComponentRef Id="DesktopShortcut" />
     </Feature>
   </Package>
 
-  <!-- This component group will be populated by the build process or manually defined for the main exe -->
+  <!-- Application Files -->
   <Fragment>
     <ComponentGroup Id="AppComponents" Directory="INSTALLFOLDER">
       <Component Id="MainExecutable">
-        <File Source="WheelOverlay.exe" />
+        <File Source="WheelOverlay.exe" KeyPath="yes" />
+      </Component>
+      <Component Id="MainDll">
+        <File Source="WheelOverlay.dll" />
+      </Component>
+      <Component Id="DepsJson">
+        <File Source="WheelOverlay.deps.json" />
+      </Component>
+      <Component Id="RuntimeConfig">
+        <File Source="WheelOverlay.runtimeconfig.json" />
+      </Component>
+      <Component Id="PdbFile">
+        <File Source="WheelOverlay.pdb" />
+      </Component>
+      <Component Id="LicenseFile">
+        <File Source="LICENSE.txt" />
+      </Component>
+      <Component Id="SharpGenRuntimeCOM">
+        <File Source="SharpGen.Runtime.COM.dll" />
+      </Component>
+      <Component Id="SharpGenRuntime">
+        <File Source="SharpGen.Runtime.dll" />
+      </Component>
+      <Component Id="VorticeDirectInput">
+        <File Source="Vortice.DirectInput.dll" />
+      </Component>
+      <Component Id="VorticeDirectX">
+        <File Source="Vortice.DirectX.dll" />
+      </Component>
+      <Component Id="VorticeMathematics">
+        <File Source="Vortice.Mathematics.dll" />
       </Component>
     </ComponentGroup>
   </Fragment>
 
+  <!-- Start Menu Shortcut -->
   <Fragment>
     <DirectoryRef Id="ApplicationProgramsFolder">
       <Component Id="ApplicationShortcut" Guid="e8369302-3932-491c-8f43-855f93976375">
@@ -41,6 +96,21 @@
                   Icon="AppIcon"/>
         <RemoveFolder Id="CleanUpShortCut" Directory="ApplicationProgramsFolder" On="uninstall"/>
         <RegistryValue Root="HKCU" Key="Software\OBRL\WheelOverlay" Name="installed" Type="integer" Value="1" KeyPath="yes"/>
+      </Component>
+    </DirectoryRef>
+  </Fragment>
+  
+  <!-- Desktop Shortcut (optional) -->
+  <Fragment>
+    <DirectoryRef Id="DesktopFolder">
+      <Component Id="DesktopShortcut" Guid="f8369302-3932-491c-8f43-855f93976376">
+        <Shortcut Id="ApplicationDesktopShortcut"
+                  Name="Wheel Overlay"
+                  Description="Wheel Overlay Tool"
+                  Target="[INSTALLFOLDER]WheelOverlay.exe"
+                  WorkingDirectory="INSTALLFOLDER"
+                  Icon="AppIcon"/>
+        <RegistryValue Root="HKCU" Key="Software\OBRL\WheelOverlay" Name="DesktopShortcut" Type="integer" Value="1" KeyPath="yes"/>
       </Component>
     </DirectoryRef>
   </Fragment>

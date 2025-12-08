@@ -1,0 +1,5 @@
+{
+    "dependencies": {
+        "WixToolset.UI.wixext": "6.0.2"
+    }
+}
