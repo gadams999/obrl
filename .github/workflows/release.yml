@@ -46,7 +46,7 @@ jobs:
 
   package-and-release:
     needs: build-and-test
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/release/v0.2.0')
     runs-on: windows-latest
     defaults:
       run:
