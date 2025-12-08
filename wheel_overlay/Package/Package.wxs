@@ -1,5 +1,4 @@
-<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs"
-     xmlns:ui="http://wixtoolset.org/schemas/v4/wxs/ui">
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
   <Package Name="Wheel Overlay" Manufacturer="OBRL" Version="0.2.0.0" UpgradeCode="19d19028-090f-4888-912b-650058e100f7" InstallerVersion="200">
     <MajorUpgrade DowngradeErrorMessage="A newer version of [ProductName] is already installed." />
     
@@ -35,7 +34,6 @@
     <!-- UI Configuration - Requires WixToolset.UI.wixext extension -->
     <UI>
       <UIRef Id="WixUI_InstallDir" />
-      <Property Id="WIXUI_INSTALLDIR" Value="INSTALLFOLDER" />
     </UI>
 
     <Feature Id="Main">
