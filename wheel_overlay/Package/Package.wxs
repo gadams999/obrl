@@ -1,14 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
 <Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
-  <Package Name="Wheel Overlay" Manufacturer="OBRL" Version="0.2.0.0" UpgradeCode="19d19028-090f-4888-912b-650058e100f7" InstallerVersion="200">
+  <Package Name="Wheel Overlay" 
+           Manufacturer="OBRL" 
+           Version="0.2.0.0" 
+           UpgradeCode="19d19028-090f-4888-912b-650058e100f7"
+           Compressed="yes"
+           InstallerVersion="200"
+           Scope="perMachine">
+    
     <MajorUpgrade DowngradeErrorMessage="A newer version of [ProductName] is already installed." />
     
     <MediaTemplate EmbedCab="yes" />
 
-    <!-- Installation directory can be customized by user -->
+    <!-- Properties -->
     <Property Id="WIXUI_INSTALLDIR" Value="INSTALLFOLDER" />
-    
-    <!-- License agreement -->
-    <WixVariable Id="WixUILicenseRtf" Value="..\LICENSE.rtf" />
+    <Property Id="ARPPRODUCTICON" Value="AppIcon" />
+    <Property Id="ARPNOMODIFY" Value="1" />
+    <Property Id="ARPNOREPAIR" Value="1" />
+
+    <!-- UI Configuration - Custom UI -->
+    <UIRef Id="CustomInstallDir" />
+
+    <Icon Id="AppIcon" SourceFile="app.ico"/>
 
     <StandardDirectory Id="ProgramFiles64Folder">
       <Directory Id="INSTALLFOLDER" Name="WheelOverlay" />
@@ -20,65 +33,21 @@
     
     <StandardDirectory Id="DesktopFolder" />
 
-    <Icon Id="AppIcon" SourceFile="app.ico"/>
-    <Property Id="ARPPRODUCTICON" Value="AppIcon" />
-    
-    <!-- Add/Remove Programs customization -->
-    <Property Id="ARPNOMODIFY" Value="1" />
-    <Property Id="ARPNOREPAIR" Value="1" />
-    
-    <!-- Show license and allow directory choice -->
-    <Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOXTEXT" Value="Launch Wheel Overlay" />
-    <Property Id="WIX_UPGRADE_DETECTED" Secure="yes" />
-    
-    <!-- UI Configuration - Requires WixToolset.UI.wixext extension -->
-    <UI>
-      <UIRef Id="WixUI_InstallDir" />
-    </UI>
-
-    <Feature Id="Main">
+    <Feature Id="Main" Title="Wheel Overlay" Level="1">
       <ComponentGroupRef Id="AppComponents" />
       <ComponentRef Id="ApplicationShortcut" />
       <ComponentRef Id="DesktopShortcut" />
     </Feature>
   </Package>
 
-  <!-- Application Files -->
+  <!-- Application Files - Generated dynamically by build script -->
   <Fragment>
     <ComponentGroup Id="AppComponents" Directory="INSTALLFOLDER">
-      <Component Id="MainExecutable">
+      <!-- APPLICATION_FILES_START -->
+      <Component>
         <File Source="WheelOverlay.exe" KeyPath="yes" />
       </Component>
-      <Component Id="MainDll">
-        <File Source="WheelOverlay.dll" />
-      </Component>
-      <Component Id="DepsJson">
-        <File Source="WheelOverlay.deps.json" />
-      </Component>
-      <Component Id="RuntimeConfig">
-        <File Source="WheelOverlay.runtimeconfig.json" />
-      </Component>
-      <Component Id="PdbFile">
-        <File Source="WheelOverlay.pdb" />
-      </Component>
-      <Component Id="LicenseFile">
-        <File Source="LICENSE.txt" />
-      </Component>
-      <Component Id="SharpGenRuntimeCOM">
-        <File Source="SharpGen.Runtime.COM.dll" />
-      </Component>
-      <Component Id="SharpGenRuntime">
-        <File Source="SharpGen.Runtime.dll" />
-      </Component>
-      <Component Id="VorticeDirectInput">
-        <File Source="Vortice.DirectInput.dll" />
-      </Component>
-      <Component Id="VorticeDirectX">
-        <File Source="Vortice.DirectX.dll" />
-      </Component>
-      <Component Id="VorticeMathematics">
-        <File Source="Vortice.Mathematics.dll" />
-      </Component>
+      <!-- APPLICATION_FILES_END -->
     </ComponentGroup>
   </Fragment>
 
@@ -98,18 +67,16 @@
     </DirectoryRef>
   </Fragment>
   
-  <!-- Desktop Shortcut (optional) -->
+  <!-- Desktop Shortcut -->
   <Fragment>
-    <DirectoryRef Id="DesktopFolder">
-      <Component Id="DesktopShortcut" Guid="f8369302-3932-491c-8f43-855f93976376">
-        <Shortcut Id="ApplicationDesktopShortcut"
-                  Name="Wheel Overlay"
-                  Description="Wheel Overlay Tool"
-                  Target="[INSTALLFOLDER]WheelOverlay.exe"
-                  WorkingDirectory="INSTALLFOLDER"
-                  Icon="AppIcon"/>
-        <RegistryValue Root="HKCU" Key="Software\OBRL\WheelOverlay" Name="DesktopShortcut" Type="integer" Value="1" KeyPath="yes"/>
-      </Component>
-    </DirectoryRef>
+    <Component Id="DesktopShortcut" Directory="DesktopFolder" Guid="f8369302-3932-491c-8f43-855f93976376">
+      <Shortcut Id="ApplicationDesktopShortcut"
+                Name="Wheel Overlay"
+                Description="Wheel Overlay Tool"
+                Target="[INSTALLFOLDER]WheelOverlay.exe"
+                WorkingDirectory="INSTALLFOLDER"
+                Icon="AppIcon"/>
+      <RegistryValue Root="HKCU" Key="Software\OBRL\WheelOverlay" Name="DesktopShortcut" Type="integer" Value="1" KeyPath="yes"/>
+    </Component>
   </Fragment>
 </Wix>
