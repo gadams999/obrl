@@ -48,9 +48,6 @@ jobs:
     needs: build-and-test
     if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/release/v0.2.0')
     runs-on: windows-latest
-    defaults:
-      run:
-        working-directory: ./wheel_overlay
 
     steps:
     - uses: actions/checkout@v4
@@ -60,40 +57,24 @@ jobs:
       with:
         dotnet-version: 8.0.x
 
-    - name: Install WiX Toolset
-      run: dotnet tool install --global wix
+    - name: Install WiX Toolset v4.0.4
+      run: dotnet tool install --global wix --version 4.0.4
 
-    - name: Publish (Default Location)
-      run: dotnet publish wheel_overlay/WheelOverlay/WheelOverlay.csproj -c Release -r win-x64 --self-contained -p:PublishSingleFile=true
-      working-directory: ${{ github.workspace }}
-
-    - name: Copy LICENSE and icon to publish folder
+    - name: Build MSI Installer
       run: |
-        Copy-Item wheel_overlay/LICENSE.txt wheel_overlay/WheelOverlay/bin/Release/net8.0-windows/
-        Copy-Item wheel_overlay/WheelOverlay/app.ico wheel_overlay/WheelOverlay/bin/Release/net8.0-windows/
-      working-directory: ${{ github.workspace }}
-      shell: pwsh
-
-    - name: Install WixUI Extension
-      run: |
-        cd wheel_overlay/Package
-        wix extension add WixToolset.UI.wixext/6.0.2
-      working-directory: ${{ github.workspace }}
-      shell: pwsh
-
-    - name: Build MSI with UI Extension
-      run: |
-        cd wheel_overlay/Package
-        wix build -arch x64 Package.wxs -out WheelOverlay.msi -b ../WheelOverlay/bin/Release/net8.0-windows
+        cd wheel_overlay
+        .\build_msi.ps1
       working-directory: ${{ github.workspace }}
       shell: pwsh
 
     - name: Get Version
       id: get_version
       run: |
-        $xml = [xml](Get-Content WheelOverlay/WheelOverlay.csproj)
+        $xml = [xml](Get-Content wheel_overlay/WheelOverlay/WheelOverlay.csproj)
         $version = $xml.Project.PropertyGroup.Version
         echo "VERSION=$version" >> $env:GITHUB_ENV
+      working-directory: ${{ github.workspace }}
+      shell: pwsh
 
     - name: Upload MSI Artifact
       uses: actions/upload-artifact@v4
@@ -106,7 +87,7 @@ jobs:
       if: github.ref == 'refs/heads/main'
       uses: softprops/action-gh-release@v1
       with:
-        files: wheel_overlay/WheelOverlay.msi
+        files: wheel_overlay/Package/WheelOverlay.msi
         tag_name: v${{ env.VERSION }}
         name: Release v${{ env.VERSION }}
         draft: false
