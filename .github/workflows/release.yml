@@ -2,7 +2,9 @@ name: Release Pipeline
 
 on:
   push:
-    branches: [ "main" ]
+    branches:
+      - "main"
+      - "release/v0.2.0"  # Temporary: for testing before merge
     paths:
       - 'wheel_overlay/**'
       - '.github/workflows/release.yml'
@@ -44,11 +46,8 @@ jobs:
 
   package-and-release:
     needs: build-and-test
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/release/v0.2.0')
     runs-on: windows-latest
-    defaults:
-      run:
-        working-directory: ./wheel_overlay
 
     steps:
     - uses: actions/checkout@v4
@@ -58,23 +57,39 @@ jobs:
       with:
         dotnet-version: 8.0.x
 
-    - name: Install WiX Toolset
-      run: dotnet tool install --global wix
+    - name: Install WiX Toolset v4.0.4
+      run: dotnet tool install --global wix --version 4.0.4
 
-    - name: Publish (Default Location)
-      run: dotnet publish WheelOverlay/WheelOverlay.csproj -c Release -r win-x64 --self-contained -p:PublishSingleFile=true
-
-    - name: Build MSI
+    - name: Build MSI Installer
       run: |
-        cd Package
-        wix build Package.wxs -o ../WheelOverlay.msi -b ../WheelOverlay/bin/Release/net8.0-windows/win-x64/publish
+        cd wheel_overlay
+        .\build_msi.ps1
+      working-directory: ${{ github.workspace }}
+      shell: pwsh
+
+    - name: Get Version
+      id: get_version
+      run: |
+        $xml = [xml](Get-Content wheel_overlay/WheelOverlay/WheelOverlay.csproj)
+        $version = $xml.Project.PropertyGroup.Version
+        echo "VERSION=$version" >> $env:GITHUB_ENV
+      working-directory: ${{ github.workspace }}
+      shell: pwsh
+
+    - name: Upload MSI Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: WheelOverlay-${{ env.VERSION }}-installer
+        path: wheel_overlay/Package/WheelOverlay.msi
+        retention-days: 7
 
     - name: Create Release
+      if: github.ref == 'refs/heads/main'
       uses: softprops/action-gh-release@v1
       with:
-        files: wheel_overlay/WheelOverlay.msi
-        tag_name: v${{ github.run_number }}
-        name: Release v${{ github.run_number }}
+        files: wheel_overlay/Package/WheelOverlay.msi
+        tag_name: v${{ env.VERSION }}
+        name: Release v${{ env.VERSION }}
         draft: false
         prerelease: false
       env:

@@ -1,0 +1,7 @@
+{
+  "$schema": "https://wixtoolset.org/schemas/v4/wix.json",
+  "version": "4.0.5",
+  "extensions": [
+    "WixToolset.UI.wixext/4.0.5"
+  ]
+}

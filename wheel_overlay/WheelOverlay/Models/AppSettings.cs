@@ -1,6 +1,9 @@
 using System;
 using System.IO;
+using System.Collections.Generic;
+using System.Linq;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace WheelOverlay.Models
 {
@@ -41,7 +44,14 @@ namespace WheelOverlay.Models
 
         // Device Selection
         public string SelectedDeviceName { get; set; } = "BavarianSimTec Alpha";
+
+        // Profiles (New in v0.2.0)
+        public List<Profile> Profiles { get; set; } = new List<Profile>();
+        public Guid SelectedProfileId { get; set; } = Guid.Empty;
         
+        [JsonIgnore]
+        public Profile ActiveProfile => Profiles.FirstOrDefault(p => p.Id == SelectedProfileId) ?? Profiles.FirstOrDefault();
+
         public static readonly string[] DefaultDeviceNames = new[]
         {
             "BavarianSimTec Alpha"
@@ -59,11 +69,37 @@ namespace WheelOverlay.Models
                 if (File.Exists(SettingsPath))
                 {
                     var json = File.ReadAllText(SettingsPath);
-                    return JsonSerializer.Deserialize<AppSettings>(json) ?? new AppSettings();
+                    return FromJson(json);
                 }
             }
             catch { }
             return new AppSettings();
+        }
+
+        public static AppSettings FromJson(string json)
+        {
+            var options = new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true,
+                Converters = { new JsonStringEnumConverter() }
+            };
+            var settings = JsonSerializer.Deserialize<AppSettings>(json, options) ?? new AppSettings();
+
+            // Migration Logic: If no profiles exist, migrate legacy settings
+            if (settings.Profiles.Count == 0)
+            {
+                var defaultProfile = new Profile
+                {
+                    Name = "Default",
+                    DeviceName = settings.SelectedDeviceName ?? "BavarianSimTec Alpha",
+                    Layout = settings.Layout,
+                    TextLabels = new List<string>(settings.TextLabels ?? new string[8])
+                };
+                settings.Profiles.Add(defaultProfile);
+                settings.SelectedProfileId = defaultProfile.Id;
+            }
+            
+            return settings;
         }
 
         public void Save()
