@@ -73,7 +73,42 @@ namespace WheelOverlay.Models
                 }
             }
             catch { }
-            return new AppSettings();
+            
+            // First run - no config file exists, use sensible defaults
+            var settings = new AppSettings();
+            settings.SetDefaultWindowPosition();
+            return settings;
+        }
+
+        /// <summary>
+        /// Sets the window position to the center of the primary screen.
+        /// Called on first run when no config file exists.
+        /// </summary>
+        private void SetDefaultWindowPosition()
+        {
+            try
+            {
+                // Get primary screen dimensions
+                var primaryScreen = System.Windows.Forms.Screen.PrimaryScreen;
+                if (primaryScreen != null)
+                {
+                    var workingArea = primaryScreen.WorkingArea;
+                    
+                    // Estimate overlay size (approximate, actual size depends on content)
+                    const double estimatedWidth = 400;
+                    const double estimatedHeight = 100;
+                    
+                    // Center on primary screen
+                    WindowLeft = workingArea.Left + (workingArea.Width - estimatedWidth) / 2;
+                    WindowTop = workingArea.Top + (workingArea.Height - estimatedHeight) / 2;
+                }
+            }
+            catch
+            {
+                // Fallback to original defaults if screen detection fails
+                WindowLeft = 100;
+                WindowTop = 100;
+            }
         }
 
         public static AppSettings FromJson(string json)
