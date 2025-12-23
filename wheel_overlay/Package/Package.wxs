@@ -17,6 +17,10 @@
     <Property Id="ARPPRODUCTICON" Value="AppIcon" />
     <Property Id="ARPNOMODIFY" Value="1" />
     <Property Id="ARPNOREPAIR" Value="1" />
+    
+    <!-- Shortcut selection properties -->
+    <Property Id="INSTALLSTARTMENUSHORTCUT" Value="1" />
+    <Property Id="INSTALLDESKTOPSHORTCUT" Value="1" />
 
     <!-- UI Configuration - Custom UI -->
     <UIRef Id="CustomInstallDir" />
@@ -54,7 +58,7 @@
   <!-- Start Menu Shortcut -->
   <Fragment>
     <DirectoryRef Id="ApplicationProgramsFolder">
-      <Component Id="ApplicationShortcut" Guid="e8369302-3932-491c-8f43-855f93976375">
+      <Component Id="ApplicationShortcut" Guid="e8369302-3932-491c-8f43-855f93976375" Condition="INSTALLSTARTMENUSHORTCUT=&quot;1&quot;">
         <Shortcut Id="ApplicationStartMenuShortcut" 
                   Name="Wheel Overlay" 
                   Description="Wheel Overlay Tool"
@@ -69,7 +73,7 @@
   
   <!-- Desktop Shortcut -->
   <Fragment>
-    <Component Id="DesktopShortcut" Directory="DesktopFolder" Guid="f8369302-3932-491c-8f43-855f93976376">
+    <Component Id="DesktopShortcut" Directory="DesktopFolder" Guid="f8369302-3932-491c-8f43-855f93976376" Condition="INSTALLDESKTOPSHORTCUT=&quot;1&quot;">
       <Shortcut Id="ApplicationDesktopShortcut"
                 Name="Wheel Overlay"
                 Description="Wheel Overlay Tool"
