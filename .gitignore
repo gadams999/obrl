@@ -21,8 +21,6 @@ Thumbs.db
 .vs/
 *.user
 *.suo
-**/.kiro/
-!**/.kiro/steering/
 
 # .NET Build Artifacts
 bin/
