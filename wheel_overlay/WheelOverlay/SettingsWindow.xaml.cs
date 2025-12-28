@@ -56,6 +56,8 @@ namespace WheelOverlay
 
         private List<Profile> GetProfilesForCurrentDevice()
         {
+            if (_settings == null) return new List<Profile>();
+            
             return _settings.Profiles
                 .Where(p => p.DeviceName == _settings.SelectedDeviceName)
                 .ToList();
@@ -63,6 +65,8 @@ namespace WheelOverlay
 
         private Profile CreateNewProfile(string name, string deviceName)
         {
+            if (_settings == null) throw new InvalidOperationException("Settings not initialized");
+            
             var wheelDef = WheelDefinition.SupportedWheels.FirstOrDefault(w => w.DeviceName == deviceName) 
                            ?? WheelDefinition.SupportedWheels[0];
 
@@ -101,7 +105,7 @@ namespace WheelOverlay
 
         private void CategoryListBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            if (CategoryListBox.SelectedItem is System.Windows.Controls.ListBoxItem selectedItem)
+            if (CategoryListBox.SelectedItem is System.Windows.Controls.ListBoxItem selectedItem && selectedItem.Tag != null)
             {
                 // Save current category values before switching
                 SaveCurrentCategoryValues();
@@ -130,7 +134,7 @@ namespace WheelOverlay
             if (profile == null) return;
 
             // Save layout
-            if (_layoutComboBox?.SelectedItem is System.Windows.Controls.ComboBoxItem selectedItem)
+            if (_layoutComboBox?.SelectedItem is System.Windows.Controls.ComboBoxItem selectedItem && selectedItem.Tag != null)
             {
                 profile.Layout = Enum.Parse<DisplayLayout>(selectedItem.Tag.ToString()!);
             }

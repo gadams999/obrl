@@ -2,7 +2,7 @@ namespace WheelOverlay.Models
 {
     public class WheelDefinition
     {
-        public string DeviceName { get; set; }
+        public required string DeviceName { get; set; }
         public int TextFieldCount { get; set; }
         
         // Could expand this later with button mappings, rotary logic types, etc.
