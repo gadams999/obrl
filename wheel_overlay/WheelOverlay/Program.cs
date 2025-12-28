@@ -1,16 +1,11 @@
 using System;
 using WheelOverlay.Services;
 
-using System.Runtime.ExceptionServices;
-using System.Security;
-
 namespace WheelOverlay
 {
     public static class Program
     {
         [STAThread]
-        [HandleProcessCorruptedStateExceptions]
-        [SecurityCritical]
         public static void Main()
         {
             try
@@ -19,7 +14,7 @@ namespace WheelOverlay
                 LogService.Info("Program.Main started.");
 
                 LogService.Info("Creating App instance...");
-                App app = null;
+                App? app = null;
                 try
                 {
                     app = new App();

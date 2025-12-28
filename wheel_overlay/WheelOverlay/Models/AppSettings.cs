@@ -50,7 +50,7 @@ namespace WheelOverlay.Models
         public Guid SelectedProfileId { get; set; } = Guid.Empty;
         
         [JsonIgnore]
-        public Profile ActiveProfile => Profiles.FirstOrDefault(p => p.Id == SelectedProfileId) ?? Profiles.FirstOrDefault();
+        public Profile? ActiveProfile => Profiles.FirstOrDefault(p => p.Id == SelectedProfileId) ?? Profiles.FirstOrDefault();
 
         public static readonly string[] DefaultDeviceNames = new[]
         {

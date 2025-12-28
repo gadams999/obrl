@@ -44,6 +44,7 @@ namespace WheelOverlay.Tests
             Assert.Equal("A", profile.TextLabels[0]);
             
             Assert.Equal(profile.Id, settings.SelectedProfileId);
+            Assert.NotNull(settings.ActiveProfile);
             Assert.Equal(profile.Id, settings.ActiveProfile.Id);
         }
 
@@ -60,6 +61,7 @@ namespace WheelOverlay.Tests
             settings.Profiles.Add(p1);
             settings.SelectedProfileId = p1.Id;
 
+            Assert.NotNull(settings.ActiveProfile);
             Assert.Equal("P1", settings.ActiveProfile.Name);
         }
     }
