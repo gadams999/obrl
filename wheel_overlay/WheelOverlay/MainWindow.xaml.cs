@@ -147,7 +147,9 @@ namespace WheelOverlay
             {
                 var hwnd = new WindowInteropHelper(this).Handle;
                 int extendedStyle = GetWindowLong(hwnd, GWL_EXSTYLE);
-                SetWindowLong(hwnd, GWL_EXSTYLE, extendedStyle | WS_EX_TRANSPARENT | WS_EX_TOOLWINDOW);
+                // Only use WS_EX_TRANSPARENT for click-through, not WS_EX_TOOLWINDOW
+                // WS_EX_TOOLWINDOW prevents window capture tools like OpenKneeboard from detecting the window
+                SetWindowLong(hwnd, GWL_EXSTYLE, extendedStyle | WS_EX_TRANSPARENT);
             }
         }
 
@@ -201,7 +203,6 @@ namespace WheelOverlay
 
         private const int GWL_EXSTYLE = -20;
         private const int WS_EX_TRANSPARENT = 0x00000020;
-        private const int WS_EX_TOOLWINDOW = 0x00000080; // Hides from Alt-Tab
 
         [System.Runtime.InteropServices.DllImport("user32.dll")]
         private static extern int GetWindowLong(IntPtr hwnd, int index);
