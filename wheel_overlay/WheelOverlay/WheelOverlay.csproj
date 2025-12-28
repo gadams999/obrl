@@ -9,7 +9,7 @@
     <UseWindowsForms>true</UseWindowsForms>
     <Version>0.3.1</Version>
     <AssemblyVersion>0.3.1.0</AssemblyVersion>
-    <parameter name="FileVersion">0.3.1.0</FileVersion>
+    <FileVersion>0.3.1.0</FileVersion>
     <StartupObject>WheelOverlay.Program</StartupObject>
     <!-- Fix for SingleFile crash (likely DirectInput native DLLs) -->
     <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
