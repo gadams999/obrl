@@ -64,5 +64,40 @@ namespace WheelOverlay.Tests
             Assert.NotNull(settings.ActiveProfile);
             Assert.Equal("P1", settings.ActiveProfile.Name);
         }
+
+        [Fact]
+        public void FirstRun_CreatesDefaultProfileWithTextLabels()
+        {
+            // This test simulates first run behavior
+            // Note: We can't easily test AppSettings.Load() without file system access
+            // but we can verify the logic by creating settings and checking defaults
+            
+            var settings = new AppSettings();
+            
+            // Simulate what Load() does on first run
+            var defaultProfile = new Profile
+            {
+                Name = "Default",
+                DeviceName = settings.SelectedDeviceName,
+                Layout = settings.Layout,
+                TextLabels = new System.Collections.Generic.List<string>(settings.TextLabels)
+            };
+            settings.Profiles.Add(defaultProfile);
+            settings.SelectedProfileId = defaultProfile.Id;
+
+            // Assert
+            Assert.Single(settings.Profiles);
+            Assert.NotNull(settings.ActiveProfile);
+            Assert.Equal("Default", settings.ActiveProfile.Name);
+            Assert.Equal(8, settings.ActiveProfile.TextLabels.Count);
+            Assert.Equal("DASH", settings.ActiveProfile.TextLabels[0]);
+            Assert.Equal("TC2", settings.ActiveProfile.TextLabels[1]);
+            Assert.Equal("MAP", settings.ActiveProfile.TextLabels[2]);
+            Assert.Equal("FUEL", settings.ActiveProfile.TextLabels[3]);
+            Assert.Equal("BRGT", settings.ActiveProfile.TextLabels[4]);
+            Assert.Equal("VOL", settings.ActiveProfile.TextLabels[5]);
+            Assert.Equal("BOX", settings.ActiveProfile.TextLabels[6]);
+            Assert.Equal("DIFF", settings.ActiveProfile.TextLabels[7]);
+        }
     }
 }

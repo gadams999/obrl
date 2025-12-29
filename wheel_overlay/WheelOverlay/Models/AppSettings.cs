@@ -77,6 +77,18 @@ namespace WheelOverlay.Models
             // First run - no config file exists, use sensible defaults
             var settings = new AppSettings();
             settings.SetDefaultWindowPosition();
+            
+            // Create default profile with default text labels
+            var defaultProfile = new Profile
+            {
+                Name = "Default",
+                DeviceName = settings.SelectedDeviceName,
+                Layout = settings.Layout,
+                TextLabels = new List<string>(settings.TextLabels)
+            };
+            settings.Profiles.Add(defaultProfile);
+            settings.SelectedProfileId = defaultProfile.Id;
+            
             return settings;
         }
 

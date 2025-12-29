@@ -19,6 +19,7 @@
     <Window.Resources>
         <ResourceDictionary>
             <vm:OverlayViewModel x:Key="DesignViewModel" />
+            <BooleanToVisibilityConverter x:Key="BoolToVisibilityConverter" />
             
             <DataTemplate x:Key="SingleTextTemplate">
                 <v:SingleTextLayout />
@@ -36,25 +37,41 @@
     </Window.Resources>
 
     <Grid>
-        <Border x:Name="ConfigBorder" BorderThickness="0" BorderBrush="Red" CornerRadius="5">
-            <ContentControl Content="{Binding}">
-                <ContentControl.Style>
-                    <Style TargetType="ContentControl">
-                        <Setter Property="ContentTemplate" Value="{StaticResource SingleTextTemplate}" />
-                        <Style.Triggers>
-                            <DataTrigger Binding="{Binding Settings.ActiveProfile.Layout}" Value="Vertical">
-                                <Setter Property="ContentTemplate" Value="{StaticResource VerticalTemplate}" />
-                            </DataTrigger>
-                            <DataTrigger Binding="{Binding Settings.ActiveProfile.Layout}" Value="Horizontal">
-                                <Setter Property="ContentTemplate" Value="{StaticResource HorizontalTemplate}" />
-                            </DataTrigger>
-                            <DataTrigger Binding="{Binding Settings.ActiveProfile.Layout}" Value="Grid">
-                                <Setter Property="ContentTemplate" Value="{StaticResource GridTemplate}" />
-                            </DataTrigger>
-                        </Style.Triggers>
-                    </Style>
-                </ContentControl.Style>
-            </ContentControl>
+        <!-- Test Mode Border Wrapper -->
+        <Border x:Name="TestModeBorder"
+                BorderBrush="#FFFF00"
+                CornerRadius="5">
+            <Border.Style>
+                <Style TargetType="Border">
+                    <Setter Property="BorderThickness" Value="0" />
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding IsTestMode}" Value="True">
+                            <Setter Property="BorderThickness" Value="3" />
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </Border.Style>
+            
+            <Border x:Name="ConfigBorder" BorderThickness="0" BorderBrush="Red" CornerRadius="5">
+                <ContentControl Content="{Binding}">
+                    <ContentControl.Style>
+                        <Style TargetType="ContentControl">
+                            <Setter Property="ContentTemplate" Value="{StaticResource SingleTextTemplate}" />
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding Settings.ActiveProfile.Layout}" Value="Vertical">
+                                    <Setter Property="ContentTemplate" Value="{StaticResource VerticalTemplate}" />
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding Settings.ActiveProfile.Layout}" Value="Horizontal">
+                                    <Setter Property="ContentTemplate" Value="{StaticResource HorizontalTemplate}" />
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding Settings.ActiveProfile.Layout}" Value="Grid">
+                                    <Setter Property="ContentTemplate" Value="{StaticResource GridTemplate}" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </ContentControl.Style>
+                </ContentControl>
+            </Border>
         </Border>
     </Grid>
 </Window>

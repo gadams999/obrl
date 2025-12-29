@@ -20,9 +20,39 @@ namespace WheelOverlay.Services
         private string _targetDeviceName = "BavarianSimTec Alpha";
         private bool _deviceNotFoundEmitted = false;
 
+        // Test mode properties
+        private bool _testMode;
+        private int _testModePosition = 0;
+        private const int TEST_MODE_MAX_POSITION = 7; // 0-indexed, 8 positions
+
         public event EventHandler<int>? RotaryPositionChanged;
         public event EventHandler<string>? DeviceNotFound;
         public event EventHandler? DeviceConnected;
+
+        public bool TestMode
+        {
+            get => _testMode;
+            set
+            {
+                _testMode = value;
+                if (_testMode)
+                {
+                    EnableKeyboardInput();
+                }
+                else
+                {
+                    DisableKeyboardInput();
+                }
+            }
+        }
+
+        public void ReattachKeyboardHandler()
+        {
+            if (_testMode)
+            {
+                EnableKeyboardInput();
+            }
+        }
 
         public InputService()
         {
@@ -33,6 +63,17 @@ namespace WheelOverlay.Services
         {
             _targetDeviceName = deviceName;
             _deviceNotFoundEmitted = false;
+
+            // Check for test mode flag
+            var args = Environment.GetCommandLineArgs();
+            if (args.Contains("--test-mode") || args.Contains("/test"))
+            {
+                TestMode = true;
+                LogService.Info("Test mode enabled - using keyboard input");
+                DeviceConnected?.Invoke(this, EventArgs.Empty);
+                return;
+            }
+
             _cancellationTokenSource = new CancellationTokenSource();
             _pollingTask = Task.Run(() => PollLoop(_cancellationTokenSource.Token));
         }
@@ -131,6 +172,60 @@ namespace WheelOverlay.Services
                 DeviceNotFound?.Invoke(this, _targetDeviceName);
                 _deviceNotFoundEmitted = true;
             }
+        }
+
+        private void EnableKeyboardInput()
+        {
+            // Register keyboard event handler on the main window
+            if (System.Windows.Application.Current?.MainWindow != null)
+            {
+                // Remove handler first to avoid duplicate registration
+                System.Windows.Application.Current.MainWindow.KeyDown -= OnTestModeKeyDown;
+                System.Windows.Application.Current.MainWindow.KeyDown += OnTestModeKeyDown;
+                
+                // Ensure the window can receive keyboard input
+                System.Windows.Application.Current.MainWindow.Focusable = true;
+                System.Windows.Application.Current.MainWindow.Focus();
+            }
+        }
+
+        private void DisableKeyboardInput()
+        {
+            // Unregister keyboard event handler
+            if (System.Windows.Application.Current?.MainWindow != null)
+            {
+                System.Windows.Application.Current.MainWindow.KeyDown -= OnTestModeKeyDown;
+            }
+        }
+
+        private void OnTestModeKeyDown(object sender, System.Windows.Input.KeyEventArgs e)
+        {
+            if (!_testMode) return;
+
+            switch (e.Key)
+            {
+                case System.Windows.Input.Key.Left:
+                    _testModePosition--;
+                    if (_testModePosition < 0)
+                        _testModePosition = TEST_MODE_MAX_POSITION;
+                    RaiseRotaryPositionChanged(_testModePosition);
+                    e.Handled = true;
+                    break;
+
+                case System.Windows.Input.Key.Right:
+                    _testModePosition++;
+                    if (_testModePosition > TEST_MODE_MAX_POSITION)
+                        _testModePosition = 0;
+                    RaiseRotaryPositionChanged(_testModePosition);
+                    e.Handled = true;
+                    break;
+            }
+        }
+
+        private void RaiseRotaryPositionChanged(int position)
+        {
+            Debug.WriteLine($"[InputService] Test mode position changed to {position}");
+            RotaryPositionChanged?.Invoke(this, position);
         }
 
         public void Dispose()
