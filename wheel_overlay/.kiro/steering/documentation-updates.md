@@ -6,13 +6,21 @@ inclusion: always
 
 ## When to Update Documentation
 
-You MUST update the README.md file in the following situations:
+You MUST update documentation files in the following situations:
 
 1. **After Completing a Spec**: When all tasks in a spec are marked as complete
 2. **Before Pushing to Remote**: When preparing to push changes to a branch
 3. **After Adding New Features**: When new functionality is implemented
 4. **After Bug Fixes**: When significant bugs are fixed that affect usage
 5. **After Version Changes**: When the version number is updated
+
+### Files to Update
+
+When making changes, update these files as appropriate:
+
+- **README.md** - User-facing documentation and getting started guide
+- **CHANGELOG.md** - Historical record of all changes (see changelog-maintenance.md steering)
+- Both files serve different purposes and should be kept in sync
 
 ## What to Update in README.md
 
@@ -91,6 +99,9 @@ Before pushing changes to a branch, verify:
 - [ ] All code examples and commands are tested and accurate
 - [ ] Links to external resources are valid
 - [ ] Formatting is consistent throughout the document
+- [ ] CHANGELOG.md is updated with all changes (see changelog-maintenance.md)
+- [ ] CHANGELOG version and date are finalized before merging
+- [ ] Both README and CHANGELOG tell a consistent story
 
 ## Example Version History Entry
 
