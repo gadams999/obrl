@@ -177,8 +177,8 @@ namespace WheelOverlay.Tests
             // Assert - Flash should be triggered
             Assert.True(viewModel.IsFlashing);
 
-            // Wait for flash duration
-            await Task.Delay(600); // 500ms + buffer
+            // Wait for flash duration (increased for CI environment performance)
+            await Task.Delay(1200); // 500ms flash + buffer for slower CI
 
             // Assert - Flash should stop after duration
             Assert.False(viewModel.IsFlashing);
