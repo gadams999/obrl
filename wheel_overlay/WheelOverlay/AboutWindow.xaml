@@ -2,8 +2,8 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="About Wheel Overlay"
-        Width="400"
-        Height="350"
+        Width="450"
+        Height="450"
         WindowStyle="ToolWindow"
         ResizeMode="NoResize"
         WindowStartupLocation="CenterScreen"
@@ -29,9 +29,9 @@
 
         <!-- App Icon -->
         <Image Grid.Row="0" 
-               Source="app.ico" 
-               Width="64" 
-               Height="64" 
+               Source="about_icon.png" 
+               Width="80" 
+               Height="80" 
                Margin="0,0,0,15"
                HorizontalAlignment="Center"/>
 
@@ -54,7 +54,7 @@
                    TextWrapping="Wrap"
                    VerticalAlignment="Top"
                    Margin="0,0,0,15">
-            <Run Text="A customizable overlay application for sim racing wheels with rotary encoders."/>
+            <Run Text="A customizable overlay application for sim racing wheels."/>
             <LineBreak/>
             <LineBreak/>
             <Run Text="Display text labels for different rotary encoder positions on your screen during races."/>
