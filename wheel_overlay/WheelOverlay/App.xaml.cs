@@ -83,6 +83,8 @@ namespace WheelOverlay
                 contextMenu.Items.Add("-");
                 contextMenu.Items.Add("Settings...", null, (s, args) => OpenSettings());
                 contextMenu.Items.Add("-");
+                contextMenu.Items.Add("About Wheel Overlay", null, (s, args) => ShowAboutDialog());
+                contextMenu.Items.Add("-");
                 contextMenu.Items.Add("Exit", null, (s, args) => Shutdown());
 
                 _notifyIcon.ContextMenuStrip = contextMenu;
@@ -130,6 +132,15 @@ namespace WheelOverlay
                 }
             };
             settingsWindow.Show();
+        }
+
+        private void ShowAboutDialog()
+        {
+            var aboutWindow = new AboutWindow
+            {
+                Owner = _mainWindow
+            };
+            aboutWindow.ShowDialog();
         }
 
         private void ToggleMinimize(bool enabled)
