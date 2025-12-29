@@ -42,8 +42,8 @@ namespace WheelOverlay.Tests
                     
                     // Verify the window has the expected properties (which confirms it's properly configured)
                     Assert.Equal("About Wheel Overlay", aboutWindow.Title);
-                    Assert.Equal(400, aboutWindow.Width);
-                    Assert.Equal(350, aboutWindow.Height);
+                    Assert.Equal(450, aboutWindow.Width);
+                    Assert.Equal(450, aboutWindow.Height);
                 }
                 catch (Exception ex)
                 {
@@ -205,8 +205,8 @@ namespace WheelOverlay.Tests
                     Assert.Equal(ResizeMode.NoResize, aboutWindow.ResizeMode);
                     Assert.Equal(WindowStartupLocation.CenterScreen, aboutWindow.WindowStartupLocation);
                     Assert.False(aboutWindow.ShowInTaskbar);
-                    Assert.Equal(400, aboutWindow.Width);
-                    Assert.Equal(350, aboutWindow.Height);
+                    Assert.Equal(450, aboutWindow.Width);
+                    Assert.Equal(450, aboutWindow.Height);
                 }
                 catch (Exception ex)
                 {
