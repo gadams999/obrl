@@ -6,23 +6,51 @@
              xmlns:vm="clr-namespace:WheelOverlay.ViewModels"
              mc:Ignorable="d" 
              d:DataContext="{d:DesignInstance Type=vm:OverlayViewModel}">
+    <UserControl.Resources>
+        <Style x:Key="FlashingTextStyle" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="{Binding Settings.SelectedTextColor}"/>
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding IsDeviceNotFound}" Value="True">
+                    <Setter Property="Foreground" Value="Red"/>
+                </DataTrigger>
+                <DataTrigger Binding="{Binding IsDisplayingEmptyPosition}" Value="True">
+                    <Setter Property="Foreground" Value="{Binding Settings.NonSelectedTextColor}"/>
+                </DataTrigger>
+                <DataTrigger Binding="{Binding IsFlashing}" Value="True">
+                    <DataTrigger.EnterActions>
+                        <BeginStoryboard>
+                            <Storyboard RepeatBehavior="Forever">
+                                <DoubleAnimation 
+                                    Storyboard.TargetProperty="Opacity"
+                                    From="1.0"
+                                    To="0.3"
+                                    Duration="0:0:0.125"
+                                    AutoReverse="True"/>
+                            </Storyboard>
+                        </BeginStoryboard>
+                    </DataTrigger.EnterActions>
+                    <DataTrigger.ExitActions>
+                        <BeginStoryboard>
+                            <Storyboard>
+                                <DoubleAnimation 
+                                    Storyboard.TargetProperty="Opacity"
+                                    To="1.0"
+                                    Duration="0:0:0.05"/>
+                            </Storyboard>
+                        </BeginStoryboard>
+                    </DataTrigger.ExitActions>
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+    </UserControl.Resources>
     <Grid>
-        <TextBlock Text="{Binding DisplayMessage}"
+        <TextBlock Text="{Binding DisplayedText}"
                    FontSize="{Binding Settings.FontSize}"
                    FontFamily="{Binding Settings.FontFamily}"
                    FontWeight="Bold"
                    HorizontalAlignment="Center"
-                   VerticalAlignment="Center">
-            <TextBlock.Style>
-                <Style TargetType="TextBlock">
-                    <Setter Property="Foreground" Value="{Binding Settings.SelectedTextColor}"/>
-                    <Style.Triggers>
-                        <DataTrigger Binding="{Binding IsDeviceNotFound}" Value="True">
-                            <Setter Property="Foreground" Value="Red"/>
-                        </DataTrigger>
-                    </Style.Triggers>
-                </Style>
-            </TextBlock.Style>
+                   VerticalAlignment="Center"
+                   Style="{StaticResource FlashingTextStyle}">
             <TextBlock.Effect>
                 <DropShadowEffect Color="Black" BlurRadius="4" ShadowDepth="2" Opacity="0.8"/>
             </TextBlock.Effect>

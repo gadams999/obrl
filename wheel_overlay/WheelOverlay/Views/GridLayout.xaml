@@ -31,7 +31,7 @@
         </TextBlock>
 
         <!-- Show items grid when device is connected -->
-        <ItemsControl ItemsSource="{Binding DisplayItems}">
+        <ItemsControl ItemsSource="{Binding PopulatedPositionLabels}">
             <ItemsControl.Style>
                 <Style TargetType="ItemsControl">
                     <Setter Property="Visibility" Value="Visible"/>
@@ -63,6 +63,31 @@
                                             </MultiBinding>
                                         </DataTrigger.Binding>
                                         <Setter Property="Foreground" Value="{Binding DataContext.Settings.SelectedTextColor, RelativeSource={RelativeSource AncestorType=UserControl}}"/>
+                                    </DataTrigger>
+                                    <!-- Flash animation trigger -->
+                                    <DataTrigger Binding="{Binding DataContext.IsFlashing, RelativeSource={RelativeSource AncestorType=UserControl}}" Value="True">
+                                        <DataTrigger.EnterActions>
+                                            <BeginStoryboard Name="FlashStoryboard">
+                                                <Storyboard RepeatBehavior="Forever">
+                                                    <DoubleAnimation 
+                                                        Storyboard.TargetProperty="Opacity"
+                                                        From="1.0"
+                                                        To="0.3"
+                                                        Duration="0:0:0.125"
+                                                        AutoReverse="True"/>
+                                                </Storyboard>
+                                            </BeginStoryboard>
+                                        </DataTrigger.EnterActions>
+                                        <DataTrigger.ExitActions>
+                                            <BeginStoryboard>
+                                                <Storyboard>
+                                                    <DoubleAnimation 
+                                                        Storyboard.TargetProperty="Opacity"
+                                                        To="1.0"
+                                                        Duration="0:0:0.05"/>
+                                                </Storyboard>
+                                            </BeginStoryboard>
+                                        </DataTrigger.ExitActions>
                                     </DataTrigger>
                                 </Style.Triggers>
                             </Style>

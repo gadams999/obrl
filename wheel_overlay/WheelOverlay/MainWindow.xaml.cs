@@ -119,6 +119,9 @@ namespace WheelOverlay
             var settings = AppSettings.Load();
             _inputService.Start(settings.SelectedDeviceName);
             
+            // Set test mode indicator on ViewModel
+            _viewModel.IsTestMode = _inputService.TestMode;
+            
             MakeWindowTransparent();
         }
 
@@ -137,6 +140,9 @@ namespace WheelOverlay
                 Background = new System.Windows.Media.SolidColorBrush(
                     System.Windows.Media.Color.FromArgb(alpha, 128, 128, 128));
             }
+
+            // Re-attach keyboard handler in case it was lost (for test mode)
+            _inputService.ReattachKeyboardHandler();
         }
 
 
