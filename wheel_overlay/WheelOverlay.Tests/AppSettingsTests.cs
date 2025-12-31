@@ -10,7 +10,7 @@ namespace WheelOverlay.Tests
         public void DefaultValues_AreCorrect()
         {
             var settings = new AppSettings();
-            Assert.Equal(DisplayLayout.Single, settings.Layout);
+            Assert.Equal(DisplayLayout.Grid, settings.Layout);
             Assert.Equal(8, settings.TextLabels.Length);
             Assert.Equal("#FFFFFF", settings.SelectedTextColor);
         }

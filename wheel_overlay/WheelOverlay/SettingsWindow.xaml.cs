@@ -43,6 +43,15 @@ namespace WheelOverlay
             Loaded += SettingsWindow_Loaded;
         }
 
+        private void ScrollViewer_PreviewMouseWheel(object sender, System.Windows.Input.MouseWheelEventArgs e)
+        {
+            if (sender is ScrollViewer scrollViewer)
+            {
+                scrollViewer.ScrollToVerticalOffset(scrollViewer.VerticalOffset - e.Delta / 3.0);
+                e.Handled = true;
+            }
+        }
+
         private Profile? GetCurrentProfile()
         {
             if (_settings == null) return null;
@@ -514,10 +523,10 @@ namespace WheelOverlay
 
             // --- 5. Font Size & Spacing ---
             AddLabel("Font Size");
-            _fontSizeSlider = AddSlider(20, 100, 10, _settings.FontSize);
+            _fontSizeSlider = AddSlider(10, 80, 1, _settings.FontSize);
 
             AddLabel("Item Spacing (pixels)");
-            _spacingSlider = AddSlider(2, 20, 2, _settings.ItemSpacing);
+            _spacingSlider = AddSlider(0, 20, 1, _settings.ItemSpacing);
         }
 
         private void ShowAppearanceSettings()

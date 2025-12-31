@@ -8,7 +8,7 @@ namespace WheelOverlay.Models
         public Guid Id { get; set; } = Guid.NewGuid();
         public string Name { get; set; } = "Default";
         public string DeviceName { get; set; } = "BavarianSimTec Alpha";
-        public DisplayLayout Layout { get; set; } = DisplayLayout.Single;
+        public DisplayLayout Layout { get; set; } = DisplayLayout.Grid;
         public List<string> TextLabels { get; set; } = new List<string>();
         
         // v0.5.0 additions

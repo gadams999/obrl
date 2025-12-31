@@ -18,7 +18,7 @@ namespace WheelOverlay.Models
     public class AppSettings
     {
         // Display Layout
-        public DisplayLayout Layout { get; set; } = DisplayLayout.Single;
+        public DisplayLayout Layout { get; set; } = DisplayLayout.Grid;
 
         // Text Labels
         public string[] TextLabels { get; set; } = { "DASH", "TC2", "MAP", "FUEL", "BRGT", "VOL", "BOX", "DIFF" };
@@ -26,7 +26,7 @@ namespace WheelOverlay.Models
         // Text Appearance
         public string SelectedTextColor { get; set; } = "#FFFFFF"; // White
         public string NonSelectedTextColor { get; set; } = "#808080"; // Gray
-        public int FontSize { get; set; } = 48;
+        public int FontSize { get; set; } = 20;
         public string FontFamily { get; set; } = "Segoe UI";
 
         // Move Overlay Appearance
@@ -34,7 +34,7 @@ namespace WheelOverlay.Models
         public int MoveOverlayOpacity { get; set; } = 80; // Percentage
 
         // Layout Spacing
-        public int ItemSpacing { get; set; } = 10;
+        public int ItemSpacing { get; set; } = 0;
         public int ItemPadding { get; set; } = 5;
 
         // Window Behavior
