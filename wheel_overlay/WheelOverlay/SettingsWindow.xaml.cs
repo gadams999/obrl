@@ -4,6 +4,7 @@ using System.Windows.Controls;
 using System.Collections.Generic;
 using System.Linq;
 using WheelOverlay.Models;
+using WheelOverlay.ViewModels;
 
 namespace WheelOverlay
 {
@@ -22,13 +23,23 @@ namespace WheelOverlay
         private Slider? _spacingSlider;
         private Slider? _opacitySlider;
         private System.Windows.Controls.TextBox[]? _labelTextBoxes;
+        
+        // New v0.5.0 controls
+        private System.Windows.Controls.ComboBox? _positionCountComboBox;
+        private System.Windows.Controls.ComboBox? _gridRowsComboBox;
+        private System.Windows.Controls.ComboBox? _gridColumnsComboBox;
+        private ItemsControl? _gridPreviewControl;
+        private TextBlock? _gridCapacityText;
+        private ItemsControl? _suggestedDimensionsControl;
 
         private StackPanel? _settingsPanel;
+        private SettingsViewModel? _viewModel;
 
         public SettingsWindow(AppSettings settings)
         {
             InitializeComponent();
             _settings = settings;
+            _viewModel = new SettingsViewModel();
             Loaded += SettingsWindow_Loaded;
         }
 
@@ -143,6 +154,22 @@ namespace WheelOverlay
             if (_deviceComboBox?.SelectedItem is string selectedDevice)
             {
                 _settings.SelectedDeviceName = selectedDevice;
+            }
+
+            // Save position count
+            if (_positionCountComboBox?.SelectedItem is int positionCount)
+            {
+                profile.PositionCount = positionCount;
+            }
+
+            // Save grid dimensions
+            if (_gridRowsComboBox?.SelectedItem is int gridRows)
+            {
+                profile.GridRows = gridRows;
+            }
+            if (_gridColumnsComboBox?.SelectedItem is int gridColumns)
+            {
+                profile.GridColumns = gridColumns;
             }
 
             // Save text labels
@@ -307,25 +334,165 @@ namespace WheelOverlay
             profilePanel.Children.Add(delBtn);
             _settingsPanel.Children.Add(profilePanel);
 
-            // --- 3. Dynamic Text Labels ---
-            AddLabel($"Text Labels ({wheelDef.TextFieldCount} positions for {wheelDef.DeviceName})");
+            // Set ViewModel's selected profile (currentProfile is guaranteed non-null due to early return above)
+            _viewModel!.SelectedProfile = currentProfile!;
             
-            // Ensure lists are synced
-            while (currentProfile.TextLabels.Count < wheelDef.TextFieldCount) currentProfile.TextLabels.Add("");
-            // If we have too many (switched from big wheel to small), we just ignore the extras in UI
+            // --- NEW v0.5.0: Position Count Configuration ---
+            AddLabel("Number of Positions");
+            _positionCountComboBox = new System.Windows.Controls.ComboBox { Margin = new Thickness(0, 0, 0, 5) };
+            foreach (int count in _viewModel.AvailablePositionCounts)
+            {
+                _positionCountComboBox.Items.Add(count);
+            }
+            _positionCountComboBox.SelectedItem = _viewModel.SelectedProfile.PositionCount;
+            _positionCountComboBox.SelectionChanged += PositionCount_Changed;
+            _settingsPanel.Children.Add(_positionCountComboBox);
+            
+            var positionCountHelp = new TextBlock 
+            { 
+                Text = "Configure how many positions your wheel has (2-20)", 
+                FontSize = 10, 
+                Foreground = System.Windows.Media.Brushes.Gray, 
+                Margin = new Thickness(0, 2, 0, 10) 
+            };
+            _settingsPanel.Children.Add(positionCountHelp);
 
-            _labelTextBoxes = new System.Windows.Controls.TextBox[wheelDef.TextFieldCount];
-            for (int i = 0; i < wheelDef.TextFieldCount; i++)
+            // --- NEW v0.5.0: Grid Dimensions Configuration ---
+            AddLabel("Grid Layout Dimensions");
+            var gridDimensionsPanel = new StackPanel { Orientation = System.Windows.Controls.Orientation.Horizontal, Margin = new Thickness(0, 5, 0, 5) };
+            
+            var rowsLabel = new TextBlock { Text = "Rows:", Width = 50, VerticalAlignment = VerticalAlignment.Center };
+            _gridRowsComboBox = new System.Windows.Controls.ComboBox { Width = 60, Margin = new Thickness(0, 0, 10, 0) };
+            foreach (int row in _viewModel.AvailableRows)
+            {
+                _gridRowsComboBox.Items.Add(row);
+            }
+            _gridRowsComboBox.SelectedItem = _viewModel.SelectedProfile.GridRows;
+            _gridRowsComboBox.SelectionChanged += GridDimensions_Changed;
+            
+            var timesLabel = new TextBlock { Text = "×", Margin = new Thickness(0, 0, 10, 0), VerticalAlignment = VerticalAlignment.Center };
+            
+            var columnsLabel = new TextBlock { Text = "Columns:", Width = 70, VerticalAlignment = VerticalAlignment.Center };
+            _gridColumnsComboBox = new System.Windows.Controls.ComboBox { Width = 60 };
+            foreach (int col in _viewModel.AvailableColumns)
+            {
+                _gridColumnsComboBox.Items.Add(col);
+            }
+            _gridColumnsComboBox.SelectedItem = _viewModel.SelectedProfile.GridColumns;
+            _gridColumnsComboBox.SelectionChanged += GridDimensions_Changed;
+            
+            gridDimensionsPanel.Children.Add(rowsLabel);
+            gridDimensionsPanel.Children.Add(_gridRowsComboBox);
+            gridDimensionsPanel.Children.Add(timesLabel);
+            gridDimensionsPanel.Children.Add(columnsLabel);
+            gridDimensionsPanel.Children.Add(_gridColumnsComboBox);
+            _settingsPanel.Children.Add(gridDimensionsPanel);
+
+            // --- NEW v0.5.0: Grid Preview ---
+            var gridPreviewBorder = new Border 
+            { 
+                BorderBrush = System.Windows.Media.Brushes.Gray, 
+                BorderThickness = new Thickness(1), 
+                Padding = new Thickness(10), 
+                Margin = new Thickness(0, 5, 0, 10) 
+            };
+            
+            var gridPreviewPanel = new StackPanel();
+            
+            _gridCapacityText = new TextBlock 
+            { 
+                Text = _viewModel.GridCapacityDisplay, 
+                FontSize = 11, 
+                Margin = new Thickness(0, 0, 0, 5) 
+            };
+            gridPreviewPanel.Children.Add(_gridCapacityText);
+            
+            _gridPreviewControl = new ItemsControl { Margin = new Thickness(0, 5, 0, 0) };
+            _gridPreviewControl.ItemsSource = _viewModel.GridPreviewCells;
+            
+            var gridPreviewTemplate = new ItemsPanelTemplate();
+            var uniformGridFactory = new FrameworkElementFactory(typeof(System.Windows.Controls.Primitives.UniformGrid));
+            uniformGridFactory.SetValue(System.Windows.Controls.Primitives.UniformGrid.RowsProperty, _viewModel.SelectedProfile.GridRows);
+            uniformGridFactory.SetValue(System.Windows.Controls.Primitives.UniformGrid.ColumnsProperty, _viewModel.SelectedProfile.GridColumns);
+            gridPreviewTemplate.VisualTree = uniformGridFactory;
+            _gridPreviewControl.ItemsPanel = gridPreviewTemplate;
+            
+            var cellTemplate = new DataTemplate();
+            var borderFactory = new FrameworkElementFactory(typeof(Border));
+            borderFactory.SetValue(Border.BorderBrushProperty, System.Windows.Media.Brushes.LightGray);
+            borderFactory.SetValue(Border.BorderThicknessProperty, new Thickness(1));
+            borderFactory.SetValue(Border.WidthProperty, 30.0);
+            borderFactory.SetValue(Border.HeightProperty, 30.0);
+            borderFactory.SetValue(Border.MarginProperty, new Thickness(2));
+            
+            var textBlockFactory = new FrameworkElementFactory(typeof(TextBlock));
+            textBlockFactory.SetBinding(TextBlock.TextProperty, new System.Windows.Data.Binding());
+            textBlockFactory.SetValue(TextBlock.HorizontalAlignmentProperty, System.Windows.HorizontalAlignment.Center);
+            textBlockFactory.SetValue(TextBlock.VerticalAlignmentProperty, VerticalAlignment.Center);
+            textBlockFactory.SetValue(TextBlock.FontSizeProperty, 10.0);
+            
+            borderFactory.AppendChild(textBlockFactory);
+            cellTemplate.VisualTree = borderFactory;
+            _gridPreviewControl.ItemTemplate = cellTemplate;
+            
+            gridPreviewPanel.Children.Add(_gridPreviewControl);
+            gridPreviewBorder.Child = gridPreviewPanel;
+            _settingsPanel.Children.Add(gridPreviewBorder);
+
+            // --- NEW v0.5.0: Suggested Dimensions ---
+            AddLabel("Suggested Dimensions");
+            _suggestedDimensionsControl = new ItemsControl { Margin = new Thickness(0, 5, 0, 15) };
+            _suggestedDimensionsControl.ItemsSource = _viewModel.SuggestedDimensions;
+            
+            var wrapPanelTemplate = new ItemsPanelTemplate();
+            var wrapPanelFactory = new FrameworkElementFactory(typeof(WrapPanel));
+            wrapPanelTemplate.VisualTree = wrapPanelFactory;
+            _suggestedDimensionsControl.ItemsPanel = wrapPanelTemplate;
+            
+            var buttonTemplate = new DataTemplate();
+            var buttonFactory = new FrameworkElementFactory(typeof(System.Windows.Controls.Button));
+            buttonFactory.SetBinding(System.Windows.Controls.Button.ContentProperty, new System.Windows.Data.Binding("DisplayText"));
+            buttonFactory.SetValue(System.Windows.Controls.Button.MarginProperty, new Thickness(2));
+            buttonFactory.AddHandler(System.Windows.Controls.Button.ClickEvent, new RoutedEventHandler(SuggestedDimension_Click));
+            buttonTemplate.VisualTree = buttonFactory;
+            _suggestedDimensionsControl.ItemTemplate = buttonTemplate;
+            
+            _settingsPanel.Children.Add(_suggestedDimensionsControl);
+
+            // --- 3. Dynamic Text Labels ---
+            AddLabel($"Position Labels");
+            
+            // Ensure lists are synced with PositionCount
+            while (currentProfile.TextLabels.Count < currentProfile.PositionCount) currentProfile.TextLabels.Add("");
+            if (currentProfile.TextLabels.Count > currentProfile.PositionCount)
+            {
+                currentProfile.TextLabels.RemoveRange(currentProfile.PositionCount, currentProfile.TextLabels.Count - currentProfile.PositionCount);
+            }
+
+            // Add ScrollViewer for text labels
+            var scrollViewer = new ScrollViewer 
+            { 
+                MaxHeight = 300, 
+                VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
+                Margin = new Thickness(0, 5, 0, 15)
+            };
+            
+            var labelsPanel = new StackPanel();
+            _labelTextBoxes = new System.Windows.Controls.TextBox[currentProfile.PositionCount];
+            for (int i = 0; i < currentProfile.PositionCount; i++)
             {
                 var panel = new StackPanel { Orientation = System.Windows.Controls.Orientation.Horizontal, Margin = new Thickness(0, 5, 0, 0) };
                 var label = new TextBlock { Text = $"Position {i + 1}:", Width = 80, VerticalAlignment = VerticalAlignment.Center };
                 var val = (i < currentProfile.TextLabels.Count) ? currentProfile.TextLabels[i] : "";
-                var textBox = new System.Windows.Controls.TextBox { Width = 150, Text = val };
+                var textBox = new System.Windows.Controls.TextBox { Width = 200, Text = val };
                 _labelTextBoxes[i] = textBox;
                 panel.Children.Add(label);
                 panel.Children.Add(textBox);
-                _settingsPanel.Children.Add(panel);
+                labelsPanel.Children.Add(panel);
             }
+            
+            scrollViewer.Content = labelsPanel;
+            _settingsPanel.Children.Add(scrollViewer);
 
             // --- 4. Layout Section ---
             AddLabel("Display Layout");
@@ -438,6 +605,154 @@ namespace WheelOverlay
             
             // Notify that settings changed
             SettingsChanged?.Invoke(this, EventArgs.Empty);
+        }
+
+        private void PositionCount_Changed(object sender, SelectionChangedEventArgs e)
+        {
+            if (_positionCountComboBox == null || _viewModel?.SelectedProfile == null) return;
+            
+            int newCount = (int)_positionCountComboBox.SelectedItem;
+            int oldCount = _viewModel.SelectedProfile.TextLabels.Count;
+            
+            if (newCount < oldCount)
+            {
+                // Check if any positions being removed have text
+                bool hasPopulatedPositions = _viewModel.SelectedProfile.TextLabels
+                    .Skip(newCount)
+                    .Any(label => !string.IsNullOrWhiteSpace(label));
+                
+                if (hasPopulatedPositions)
+                {
+                    var result = System.Windows.MessageBox.Show(
+                        $"Reducing position count will remove labels for positions {newCount + 1}-{oldCount}. Continue?",
+                        "Confirm Position Count Change",
+                        System.Windows.MessageBoxButton.YesNo,
+                        System.Windows.MessageBoxImage.Warning);
+                    
+                    if (result == System.Windows.MessageBoxResult.No)
+                    {
+                        _positionCountComboBox.SelectedItem = oldCount;
+                        return;
+                    }
+                }
+            }
+            
+            _viewModel.UpdatePositionCount(newCount);
+            ValidateAndAdjustGridDimensions();
+            
+            // Refresh the display to show updated text label inputs
+            ShowDisplaySettings();
+        }
+
+        private void GridDimensions_Changed(object sender, SelectionChangedEventArgs e)
+        {
+            if (_gridRowsComboBox == null || _gridColumnsComboBox == null || _viewModel?.SelectedProfile == null) return;
+            
+            // Update profile with new dimensions
+            _viewModel.SelectedProfile.GridRows = (int)_gridRowsComboBox.SelectedItem;
+            _viewModel.SelectedProfile.GridColumns = (int)_gridColumnsComboBox.SelectedItem;
+            
+            ValidateGridDimensions();
+        }
+
+        private void ValidateAndAdjustGridDimensions()
+        {
+            var profile = _viewModel?.SelectedProfile;
+            if (profile == null) return;
+            
+            if (!profile.IsValidGridConfiguration())
+            {
+                profile.AdjustGridToDefault();
+                _viewModel?.RefreshGridPreview();
+                
+                // Update the combo boxes
+                if (_gridRowsComboBox != null)
+                    _gridRowsComboBox.SelectedItem = profile.GridRows;
+                if (_gridColumnsComboBox != null)
+                    _gridColumnsComboBox.SelectedItem = profile.GridColumns;
+                
+                System.Windows.MessageBox.Show(
+                    $"Grid dimensions adjusted to {profile.GridRows}×{profile.GridColumns} to accommodate {profile.PositionCount} positions.",
+                    "Grid Adjusted",
+                    System.Windows.MessageBoxButton.OK,
+                    System.Windows.MessageBoxImage.Information);
+            }
+        }
+
+        private void ValidateGridDimensions()
+        {
+            var profile = _viewModel?.SelectedProfile;
+            if (profile == null) return;
+            
+            var result = ProfileValidator.ValidateGridDimensions(profile);
+            
+            if (!result.IsValid)
+            {
+                System.Windows.MessageBox.Show(result.Message, "Invalid Grid Configuration", 
+                          System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
+                profile.AdjustGridToDefault();
+                
+                // Update the combo boxes
+                if (_gridRowsComboBox != null)
+                    _gridRowsComboBox.SelectedItem = profile.GridRows;
+                if (_gridColumnsComboBox != null)
+                    _gridColumnsComboBox.SelectedItem = profile.GridColumns;
+            }
+            
+            _viewModel?.RefreshGridPreview();
+            
+            // Update grid preview panel
+            if (_gridPreviewControl != null)
+            {
+                var gridPreviewTemplate = new ItemsPanelTemplate();
+                var uniformGridFactory = new FrameworkElementFactory(typeof(System.Windows.Controls.Primitives.UniformGrid));
+                uniformGridFactory.SetValue(System.Windows.Controls.Primitives.UniformGrid.RowsProperty, profile.GridRows);
+                uniformGridFactory.SetValue(System.Windows.Controls.Primitives.UniformGrid.ColumnsProperty, profile.GridColumns);
+                gridPreviewTemplate.VisualTree = uniformGridFactory;
+                _gridPreviewControl.ItemsPanel = gridPreviewTemplate;
+            }
+            
+            // Update capacity display
+            if (_gridCapacityText != null && _viewModel != null)
+            {
+                _gridCapacityText.Text = _viewModel.GridCapacityDisplay;
+            }
+        }
+
+        private void SuggestedDimension_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is System.Windows.Controls.Button button && button.DataContext is SuggestedDimension dimension)
+            {
+                if (_viewModel?.SelectedProfile == null) return;
+                
+                _viewModel.SelectedProfile.GridRows = dimension.Rows;
+                _viewModel.SelectedProfile.GridColumns = dimension.Columns;
+                
+                // Update the combo boxes
+                if (_gridRowsComboBox != null)
+                    _gridRowsComboBox.SelectedItem = dimension.Rows;
+                if (_gridColumnsComboBox != null)
+                    _gridColumnsComboBox.SelectedItem = dimension.Columns;
+                
+                _viewModel.RefreshGridPreview();
+                
+                // Update grid preview panel
+                if (_gridPreviewControl != null)
+                {
+                    var gridPreviewTemplate = new ItemsPanelTemplate();
+                    var uniformGridFactory = new FrameworkElementFactory(typeof(System.Windows.Controls.Primitives.UniformGrid));
+                    uniformGridFactory.SetValue(System.Windows.Controls.Primitives.UniformGrid.RowsProperty, dimension.Rows);
+                    uniformGridFactory.SetValue(System.Windows.Controls.Primitives.UniformGrid.ColumnsProperty, dimension.Columns);
+                    gridPreviewTemplate.VisualTree = uniformGridFactory;
+                    _gridPreviewControl.ItemsPanel = gridPreviewTemplate;
+                }
+                
+                // Update capacity display
+                if (_gridCapacityText != null)
+                {
+                    _gridCapacityText.Text = _viewModel.GridCapacityDisplay;
+                }
+            }
         }
 
         private void CloseButton_Click(object sender, RoutedEventArgs e)

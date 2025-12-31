@@ -45,6 +45,9 @@ namespace WheelOverlay.Models
         // Device Selection
         public string SelectedDeviceName { get; set; } = "BavarianSimTec Alpha";
 
+        // Animation Settings (New in v0.5.0)
+        public bool EnableAnimations { get; set; } = true;
+
         // Profiles (New in v0.2.0)
         public List<Profile> Profiles { get; set; } = new List<Profile>();
         public Guid SelectedProfileId { get; set; } = Guid.Empty;
@@ -146,6 +149,18 @@ namespace WheelOverlay.Models
                 settings.SelectedProfileId = defaultProfile.Id;
             }
             
+            // Normalize all profiles on load
+            foreach (var profile in settings.Profiles)
+            {
+                profile.NormalizeTextLabels();
+                
+                // Validate and auto-correct grid configurations
+                if (!profile.IsValidGridConfiguration())
+                {
+                    profile.AdjustGridToDefault();
+                }
+            }
+            
             return settings;
         }
 
@@ -157,6 +172,12 @@ namespace WheelOverlay.Models
                 if (directory != null && !Directory.Exists(directory))
                 {
                     Directory.CreateDirectory(directory);
+                }
+
+                // Normalize profiles before saving
+                foreach (var profile in Profiles)
+                {
+                    profile.NormalizeTextLabels();
                 }
 
                 var json = JsonSerializer.Serialize(this, new JsonSerializerOptions { WriteIndented = true });

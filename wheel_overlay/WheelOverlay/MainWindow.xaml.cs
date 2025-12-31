@@ -1,9 +1,11 @@
 ﻿using System;
 using System.Windows;
 using System.Windows.Interop;
+using System.Windows.Media;
 using WheelOverlay.Services;
 using WheelOverlay.Models;
 using WheelOverlay.ViewModels;
+using WheelOverlay.Views;
 
 namespace WheelOverlay
 {
@@ -15,6 +17,7 @@ namespace WheelOverlay
 
         private double _originalLeft;
         private double _originalTop;
+        private int _previousPosition = -1;
 
         public bool ConfigMode
         {
@@ -228,8 +231,53 @@ namespace WheelOverlay
             Dispatcher.Invoke(() =>
             {
                 _viewModel.IsDeviceNotFound = false; // Device is connected
+                
+                // Detect layout type and trigger animation for Single layout
+                if (_viewModel.Settings?.ActiveProfile?.Layout == DisplayLayout.Single)
+                {
+                    // Find the SingleTextLayout control
+                    var singleTextLayout = FindVisualChild<SingleTextLayout>(this);
+                    if (singleTextLayout != null)
+                    {
+                        int positionCount = _viewModel.Settings.ActiveProfile.PositionCount;
+                        singleTextLayout.OnPositionChanged(position, _previousPosition, positionCount);
+                    }
+                }
+                
+                _previousPosition = position;
                 _viewModel.CurrentPosition = position;
             });
+        }
+        
+        /// <summary>
+        /// Finds a child control of a specific type in the visual tree.
+        /// </summary>
+        /// <typeparam name="T">The type of child to find.</typeparam>
+        /// <param name="parent">The parent element to search from.</param>
+        /// <returns>The first child of the specified type, or null if not found.</returns>
+        private T? FindVisualChild<T>(DependencyObject parent) where T : DependencyObject
+        {
+            if (parent == null)
+                return null;
+
+            int childCount = VisualTreeHelper.GetChildrenCount(parent);
+            for (int i = 0; i < childCount; i++)
+            {
+                var child = VisualTreeHelper.GetChild(parent, i);
+                
+                if (child is T typedChild)
+                {
+                    return typedChild;
+                }
+                
+                var childOfChild = FindVisualChild<T>(child);
+                if (childOfChild != null)
+                {
+                    return childOfChild;
+                }
+            }
+            
+            return null;
         }
     }
 }

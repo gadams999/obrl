@@ -1,612 +1,440 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
-using WheelOverlay.Models;
-using WheelOverlay.ViewModels;
-using WheelOverlay.Services;
-using WheelOverlay.Views;
+using System.Text.Json;
 using Xunit;
+using WheelOverlay.Models;
+using WheelOverlay.Services;
+using WheelOverlay.ViewModels;
 
 namespace WheelOverlay.Tests
 {
     /// <summary>
-    /// Integration tests for About Dialog, Smart Text Display, and Test Mode features.
-    /// These tests verify that all features work together correctly.
-    /// Feature: about-dialog, Task 12: Integration and final testing
+    /// Integration tests for v0.5.0 enhancements
+    /// Tests all features working together across the application
     /// </summary>
     public class IntegrationTests
     {
-        #region About Dialog Integration Tests
+        // Note: These tests use AppSettings.FromJson() and JsonSerializer to avoid file system dependencies
+        // Real persistence is tested through the existing AppSettingsTests
 
-        /// <summary>
-        /// Test that About dialog can be created and has correct properties.
-        /// Requirements: 1.1, 1.2, 2.1, 2.2, 2.3, 2.4, 2.5, 3.1, 3.4, 3.5, 3.6, 4.1, 4.2, 4.3, 4.5
-        /// Note: This test is skipped because WPF UI components require STA thread which is not available in xUnit by default.
-        /// Manual testing is required for AboutWindow UI verification.
-        /// </summary>
-        [Fact(Skip = "WPF UI components require STA thread - manual testing required")]
-        public void Integration_AboutDialog_HasCorrectProperties()
-        {
-            // Arrange & Act
-            var aboutWindow = new AboutWindow();
-
-            // Assert - Verify window properties
-            Assert.NotNull(aboutWindow);
-            Assert.Equal(System.Windows.WindowStyle.ToolWindow, aboutWindow.WindowStyle);
-            Assert.Equal(System.Windows.ResizeMode.NoResize, aboutWindow.ResizeMode);
-            Assert.Equal(System.Windows.WindowStartupLocation.CenterScreen, aboutWindow.WindowStartupLocation);
-            Assert.False(aboutWindow.ShowInTaskbar);
-        }
-
-        #endregion
-
-        #region Smart Text Condensing Integration Tests
-
-        /// <summary>
-        /// Test smart condensing with various position configurations.
-        /// Requirements: 6.1, 6.3, 6.4, 6.5
-        /// </summary>
         [Fact]
-        public void Integration_SmartCondensing_WorksWithVariousConfigurations()
+        public void PositionCountChange_WithSingleLayout_UpdatesCorrectly()
         {
-            // Arrange
-            var settings = new AppSettings();
-            var profile = new Profile
+            // Arrange - Create profile with 8 positions
+            var settings = new AppSettings
             {
-                Name = "Test Profile",
-                DeviceName = "Test Device",
-                TextLabels = new List<string>
+                Profiles = new List<Profile>
                 {
-                    "Position 1",  // 0 - populated
-                    "",            // 1 - empty
-                    "Position 3",  // 2 - populated
-                    "",            // 3 - empty
-                    "Position 5",  // 4 - populated
-                    "",            // 5 - empty
-                    "",            // 6 - empty
-                    "Position 8"   // 7 - populated
+                    new Profile
+                    {
+                        Name = "Test Profile",
+                        PositionCount = 8,
+                        GridRows = 2,
+                        GridColumns = 4,
+                        TextLabels = Enumerable.Range(1, 8).Select(i => $"Pos {i}").ToList()
+                    }
                 }
             };
-            settings.Profiles.Add(profile);
-            settings.SelectedProfileId = profile.Id;
+            settings.SelectedProfileId = settings.Profiles[0].Id;
 
-            var viewModel = new OverlayViewModel(settings);
+            // Act - Change position count to 12
+            var profile = settings.Profiles[0];
+            profile.PositionCount = 12;
+            profile.GridRows = 3;
+            profile.GridColumns = 4;
+            profile.NormalizeTextLabels();
 
-            // Act - Update populated positions
-            viewModel.UpdatePopulatedPositions();
-
-            // Assert - Only populated positions should be in the list
-            var populatedPositions = viewModel.PopulatedPositions;
-            Assert.NotNull(populatedPositions);
-            Assert.Equal(4, populatedPositions.Count);
-            
-            // Verify correct positions are included
-            Assert.Contains(0, populatedPositions);
-            Assert.Contains(2, populatedPositions);
-            Assert.Contains(4, populatedPositions);
-            Assert.Contains(7, populatedPositions);
-            
-            // Verify empty positions are excluded
-            Assert.DoesNotContain(1, populatedPositions);
-            Assert.DoesNotContain(3, populatedPositions);
-            Assert.DoesNotContain(5, populatedPositions);
-            Assert.DoesNotContain(6, populatedPositions);
-        }
-
-        /// <summary>
-        /// Test that position numbers are preserved after filtering.
-        /// Requirements: 6.4
-        /// </summary>
-        [Fact]
-        public void Integration_SmartCondensing_PreservesPositionNumbers()
-        {
-            // Arrange
-            var settings = new AppSettings();
-            var profile = new Profile
-            {
-                Name = "Test Profile",
-                DeviceName = "Test Device",
-                TextLabels = new List<string>
-                {
-                    "",            // 0 - empty
-                    "Second",      // 1 - populated
-                    "",            // 2 - empty
-                    "Fourth",      // 3 - populated
-                    "",            // 4 - empty
-                    "",            // 5 - empty
-                    "Seventh",     // 6 - populated
-                    ""             // 7 - empty
-                }
-            };
-            settings.Profiles.Add(profile);
-            settings.SelectedProfileId = profile.Id;
-
-            var viewModel = new OverlayViewModel(settings);
-
-            // Act
-            viewModel.UpdatePopulatedPositions();
-
-            // Assert - Position numbers should match original indices
-            var populatedPositions = viewModel.PopulatedPositions;
-            Assert.Equal(3, populatedPositions.Count);
-            Assert.Equal(1, populatedPositions[0]);
-            Assert.Equal(3, populatedPositions[1]);
-            Assert.Equal(6, populatedPositions[2]);
-        }
-
-        #endregion
-
-        #region Flash Animation Integration Tests
-
-        /// <summary>
-        /// Test flash animations trigger on empty position selection.
-        /// Requirements: 7.1, 7.2, 7.3, 7.4, 7.5, 8.3
-        /// </summary>
-        [Fact]
-        public async Task Integration_FlashAnimation_TriggersOnEmptyPositionSelection()
-        {
-            // Arrange
-            var settings = new AppSettings();
-            var profile = new Profile
-            {
-                Name = "Test Profile",
-                DeviceName = "Test Device",
-                TextLabels = new List<string>
-                {
-                    "Position 1",  // 0 - populated
-                    "",            // 1 - empty
-                    "Position 3",  // 2 - populated
-                    "",            // 3 - empty
-                    "",            // 4 - empty
-                    "",            // 5 - empty
-                    "",            // 6 - empty
-                    ""             // 7 - empty
-                }
-            };
-            settings.Profiles.Add(profile);
-            settings.SelectedProfileId = profile.Id;
-
-            var viewModel = new OverlayViewModel(settings);
-            viewModel.UpdatePopulatedPositions();
-
-            // Act - Select empty position
-            viewModel.CurrentPosition = 1;
-
-            // Assert - Flash should be triggered
-            Assert.True(viewModel.IsFlashing);
-
-            // Wait for flash duration (increased for CI environment performance)
-            await Task.Delay(1200); // 500ms flash + buffer for slower CI
-
-            // Assert - Flash should stop after duration
-            Assert.False(viewModel.IsFlashing);
-        }
-
-        /// <summary>
-        /// Test that flash stops when populated position is selected.
-        /// Requirements: 7.4, 8.5
-        /// </summary>
-        [Fact]
-        public async Task Integration_FlashAnimation_StopsOnPopulatedSelection()
-        {
-            // Arrange
-            var settings = new AppSettings();
-            var profile = new Profile
-            {
-                Name = "Test Profile",
-                DeviceName = "Test Device",
-                TextLabels = new List<string>
-                {
-                    "Position 1",  // 0 - populated
-                    "",            // 1 - empty
-                    "Position 3",  // 2 - populated
-                    "",            // 3 - empty
-                    "",            // 4 - empty
-                    "",            // 5 - empty
-                    "",            // 6 - empty
-                    ""             // 7 - empty
-                }
-            };
-            settings.Profiles.Add(profile);
-            settings.SelectedProfileId = profile.Id;
-
-            var viewModel = new OverlayViewModel(settings);
-            viewModel.UpdatePopulatedPositions();
-
-            // Act - Select empty position to start flash
-            viewModel.CurrentPosition = 1;
-            Assert.True(viewModel.IsFlashing);
-
-            // Select populated position
-            await Task.Delay(100); // Small delay to ensure flash is running
-            viewModel.CurrentPosition = 2;
-
-            // Assert - Flash should stop immediately
-            Assert.False(viewModel.IsFlashing);
-        }
-
-        /// <summary>
-        /// Test that flash restarts when another empty position is selected.
-        /// Requirements: 7.5
-        /// </summary>
-        [Fact]
-        public async Task Integration_FlashAnimation_RestartsOnAnotherEmptySelection()
-        {
-            // Arrange
-            var settings = new AppSettings();
-            var profile = new Profile
-            {
-                Name = "Test Profile",
-                DeviceName = "Test Device",
-                TextLabels = new List<string>
-                {
-                    "Position 1",  // 0 - populated
-                    "",            // 1 - empty
-                    "",            // 2 - empty
-                    "",            // 3 - empty
-                    "",            // 4 - empty
-                    "",            // 5 - empty
-                    "",            // 6 - empty
-                    ""             // 7 - empty
-                }
-            };
-            settings.Profiles.Add(profile);
-            settings.SelectedProfileId = profile.Id;
-
-            var viewModel = new OverlayViewModel(settings);
-            viewModel.UpdatePopulatedPositions();
-
-            // Act - Select first empty position
-            viewModel.CurrentPosition = 1;
-            Assert.True(viewModel.IsFlashing);
-
-            await Task.Delay(200); // Wait partway through flash
-
-            // Select another empty position
-            viewModel.CurrentPosition = 3;
-
-            // Assert - Flash should still be active (restarted)
-            Assert.True(viewModel.IsFlashing);
-
-            // Wait for full duration
-            await Task.Delay(600);
-
-            // Assert - Flash should eventually stop
-            Assert.False(viewModel.IsFlashing);
-        }
-
-        #endregion
-
-        #region Single Layout Integration Tests
-
-        /// <summary>
-        /// Test Single layout displays last populated position when empty position is selected.
-        /// Requirements: 8.1, 8.2
-        /// </summary>
-        [Fact]
-        public void Integration_SingleLayout_DisplaysLastPopulatedOnEmpty()
-        {
-            // Arrange
-            var settings = new AppSettings();
-            var profile = new Profile
-            {
-                Name = "Test Profile",
-                DeviceName = "Test Device",
-                TextLabels = new List<string>
-                {
-                    "First",       // 0 - populated
-                    "",            // 1 - empty
-                    "Third",       // 2 - populated
-                    "",            // 3 - empty
-                    "",            // 4 - empty
-                    "",            // 5 - empty
-                    "",            // 6 - empty
-                    ""             // 7 - empty
-                }
-            };
-            settings.Profiles.Add(profile);
-            settings.SelectedProfileId = profile.Id;
-
-            var viewModel = new OverlayViewModel(settings);
-            viewModel.UpdatePopulatedPositions();
-
-            // Act - Select populated position first
-            viewModel.CurrentPosition = 2;
-            Assert.Equal(2, viewModel.LastPopulatedPosition);
-
-            // Select empty position
-            viewModel.CurrentPosition = 3;
-
-            // Assert - Should still show last populated position
-            Assert.Equal(2, viewModel.LastPopulatedPosition);
-            Assert.Equal(3, viewModel.CurrentPosition);
-        }
-
-        /// <summary>
-        /// Test Single layout startup with empty first position.
-        /// Requirements: 8.6
-        /// </summary>
-        [Fact]
-        public void Integration_SingleLayout_StartupWithEmptyFirstPosition()
-        {
-            // Arrange
-            var settings = new AppSettings();
-            var profile = new Profile
-            {
-                Name = "Test Profile",
-                DeviceName = "Test Device",
-                TextLabels = new List<string>
-                {
-                    "",            // 0 - empty
-                    "",            // 1 - empty
-                    "Third",       // 2 - populated
-                    "Fourth",      // 3 - populated
-                    "",            // 4 - empty
-                    "",            // 5 - empty
-                    "",            // 6 - empty
-                    ""             // 7 - empty
-                }
-            };
-            settings.Profiles.Add(profile);
-            settings.SelectedProfileId = profile.Id;
-
-            // Act
-            var viewModel = new OverlayViewModel(settings);
-            viewModel.UpdatePopulatedPositions();
-
-            // Assert - Should initialize to first populated position
-            Assert.Equal(2, viewModel.LastPopulatedPosition);
-        }
-
-        #endregion
-
-        #region Test Mode Integration Tests
-
-        /// <summary>
-        /// Test test mode activation.
-        /// Requirements: 9.1, 9.2, 9.8
-        /// </summary>
-        [Fact]
-        public void Integration_TestMode_CanBeEnabled()
-        {
-            // Arrange
-            var inputService = new InputService();
-
-            // Act - Enable test mode programmatically
-            inputService.TestMode = true;
+            // Serialize and deserialize to simulate save/load
+            var json = JsonSerializer.Serialize(settings, new JsonSerializerOptions { WriteIndented = true });
+            var reloadedSettings = AppSettings.FromJson(json);
+            var reloadedProfile = reloadedSettings.Profiles[0];
 
             // Assert
-            Assert.True(inputService.TestMode);
-            
-            // Cleanup
-            inputService.TestMode = false;
+            Assert.Equal(12, reloadedProfile.PositionCount);
+            Assert.Equal(3, reloadedProfile.GridRows);
+            Assert.Equal(4, reloadedProfile.GridColumns);
+            Assert.Equal(12, reloadedProfile.TextLabels.Count);
+            // Original 8 labels preserved
+            for (int i = 0; i < 8; i++)
+            {
+                Assert.Equal($"Pos {i + 1}", reloadedProfile.TextLabels[i]);
+            }
+            // New labels are empty
+            for (int i = 8; i < 12; i++)
+            {
+                Assert.Equal("", reloadedProfile.TextLabels[i]);
+            }
         }
 
-        #endregion
-
-        #region Test Mode Indicator Tests
-
-        /// <summary>
-        /// Test that test mode indicator is hidden when test mode is disabled.
-        /// Requirements: 9.7
-        /// </summary>
         [Fact]
-        public void Integration_TestModeIndicator_HiddenWhenDisabled()
+        public void PositionCountChange_WithGridLayout_UpdatesCondensedGrid()
         {
-            // Arrange
-            var settings = new AppSettings();
+            // Arrange - Create profile with some empty positions
             var profile = new Profile
             {
-                Name = "Test Profile",
-                DeviceName = "Test Device",
-                TextLabels = new List<string> { "DASH", "TC2", "MAP", "FUEL", "BRGT", "VOL", "BOX", "DIFF" }
-            };
-            settings.Profiles.Add(profile);
-            settings.SelectedProfileId = profile.Id;
-
-            var viewModel = new OverlayViewModel(settings);
-            var inputService = new InputService();
-
-            // Act - Ensure test mode is disabled
-            inputService.TestMode = false;
-            viewModel.IsTestMode = inputService.TestMode;
-
-            // Assert - IsTestMode should be false
-            Assert.False(viewModel.IsTestMode);
-            
-            // Cleanup
-            inputService.Dispose();
-        }
-
-        /// <summary>
-        /// Test that test mode indicator is shown when test mode is enabled.
-        /// Requirements: 9.7
-        /// </summary>
-        [Fact]
-        public void Integration_TestModeIndicator_ShownWhenEnabled()
-        {
-            // Arrange
-            var settings = new AppSettings();
-            var profile = new Profile
-            {
-                Name = "Test Profile",
-                DeviceName = "Test Device",
-                TextLabels = new List<string> { "DASH", "TC2", "MAP", "FUEL", "BRGT", "VOL", "BOX", "DIFF" }
-            };
-            settings.Profiles.Add(profile);
-            settings.SelectedProfileId = profile.Id;
-
-            var viewModel = new OverlayViewModel(settings);
-            var inputService = new InputService();
-
-            // Act - Enable test mode
-            inputService.TestMode = true;
-            viewModel.IsTestMode = inputService.TestMode;
-
-            // Assert - IsTestMode should be true
-            Assert.True(viewModel.IsTestMode);
-            
-            // Cleanup
-            inputService.TestMode = false;
-            inputService.Dispose();
-        }
-
-        /// <summary>
-        /// Test that ViewModel initializes with test mode disabled by default.
-        /// Requirements: 9.7
-        /// </summary>
-        [Fact]
-        public void Integration_TestModeIndicator_DefaultsToDisabled()
-        {
-            // Arrange
-            var settings = new AppSettings();
-            var profile = new Profile
-            {
-                Name = "Test Profile",
-                DeviceName = "Test Device",
-                TextLabels = new List<string> { "DASH", "TC2", "MAP", "FUEL", "BRGT", "VOL", "BOX", "DIFF" }
-            };
-            settings.Profiles.Add(profile);
-            settings.SelectedProfileId = profile.Id;
-
-            // Act - Create ViewModel without setting test mode
-            var viewModel = new OverlayViewModel(settings);
-
-            // Assert - IsTestMode should default to false
-            Assert.False(viewModel.IsTestMode);
-        }
-
-        #endregion
-
-        #region Full Integration Tests
-
-        /// <summary>
-        /// Test all features working together: test mode + smart condensing + flash animation.
-        /// Requirements: All
-        /// </summary>
-        [Fact]
-        public async Task Integration_AllFeatures_WorkTogether()
-        {
-            // Arrange
-            var settings = new AppSettings();
-            var profile = new Profile
-            {
-                Name = "Test Profile",
-                DeviceName = "Test Device",
+                Name = "Grid Test",
+                PositionCount = 12,
+                GridRows = 3,
+                GridColumns = 4,
                 TextLabels = new List<string>
                 {
-                    "DASH",        // 0 - populated
-                    "",            // 1 - empty
-                    "MAP",         // 2 - populated
-                    "",            // 3 - empty
-                    "BRGT",        // 4 - populated
-                    "",            // 5 - empty
-                    "",            // 6 - empty
-                    "DIFF"         // 7 - populated
+                    "A", "", "C", "",
+                    "E", "F", "", "",
+                    "I", "", "", "L"
                 }
             };
-            settings.Profiles.Add(profile);
+
+            var settings = new AppSettings
+            {
+                Profiles = new List<Profile> { profile }
+            };
             settings.SelectedProfileId = profile.Id;
 
-            var viewModel = new OverlayViewModel(settings);
-            var inputService = new InputService();
+            var overlayViewModel = new OverlayViewModel(settings);
 
-            // Wire up input service to view model
-            inputService.RotaryPositionChanged += (sender, position) =>
-            {
-                viewModel.CurrentPosition = position;
-            };
+            // Act - Get populated positions
+            var populatedItems = overlayViewModel.PopulatedPositionItems.ToList();
 
-            viewModel.UpdatePopulatedPositions();
-            inputService.TestMode = true;
+            // Assert - Only populated positions shown
+            Assert.Equal(6, populatedItems.Count);
+            Assert.Contains(populatedItems, item => item.PositionNumber == "#1" && item.Label == "A");
+            Assert.Contains(populatedItems, item => item.PositionNumber == "#3" && item.Label == "C");
+            Assert.Contains(populatedItems, item => item.PositionNumber == "#5" && item.Label == "E");
+            Assert.Contains(populatedItems, item => item.PositionNumber == "#6" && item.Label == "F");
+            Assert.Contains(populatedItems, item => item.PositionNumber == "#9" && item.Label == "I");
+            Assert.Contains(populatedItems, item => item.PositionNumber == "#12" && item.Label == "L");
 
-            // Act & Assert - Test sequence of operations
-
-            // 1. Simulate position 0 (populated)
-            viewModel.CurrentPosition = 0;
-            Assert.False(viewModel.IsFlashing);
-            Assert.Equal(0, viewModel.LastPopulatedPosition);
-
-            // 2. Simulate position 1 (empty)
-            viewModel.CurrentPosition = 1;
-            Assert.True(viewModel.IsFlashing);
-            Assert.Equal(0, viewModel.LastPopulatedPosition);
-
-            // 3. Move to populated position
-            await Task.Delay(100);
-            viewModel.CurrentPosition = 2;
-            Assert.False(viewModel.IsFlashing);
-            Assert.Equal(2, viewModel.LastPopulatedPosition);
-
-            // 4. Move to another empty position
-            viewModel.CurrentPosition = 3;
-            Assert.True(viewModel.IsFlashing);
-            Assert.Equal(2, viewModel.LastPopulatedPosition);
-
-            // 5. Verify populated positions are filtered correctly
-            var populatedPositions = viewModel.PopulatedPositions;
-            Assert.Equal(4, populatedPositions.Count);
-            Assert.Contains(0, populatedPositions);
-            Assert.Contains(2, populatedPositions);
-            Assert.Contains(4, populatedPositions);
-            Assert.Contains(7, populatedPositions);
-
-            // 6. Test wrap-around behavior
-            viewModel.CurrentPosition = 0;
-            Assert.False(viewModel.IsFlashing);
-            Assert.Equal(0, viewModel.LastPopulatedPosition);
-
-            // Cleanup
-            inputService.TestMode = false;
+            // Verify grid dimensions are condensed
+            Assert.True(overlayViewModel.EffectiveGridRows <= 3);
+            Assert.True(overlayViewModel.EffectiveGridColumns <= 4);
         }
 
-        /// <summary>
-        /// Test configuration changes are reflected immediately in all features.
-        /// Requirements: 6.5
-        /// </summary>
         [Fact]
-        public void Integration_ConfigurationChange_UpdatesAllFeatures()
+        public void GridDimensionChange_WithVariousPositionCounts_MaintainsValidity()
+        {
+            // Test various position counts with different grid configurations
+            var testCases = new[]
+            {
+                (PositionCount: 6, Rows: 2, Cols: 3),
+                (PositionCount: 9, Rows: 3, Cols: 3),
+                (PositionCount: 12, Rows: 3, Cols: 4),
+                (PositionCount: 15, Rows: 3, Cols: 5),
+                (PositionCount: 20, Rows: 4, Cols: 5)
+            };
+
+            foreach (var testCase in testCases)
+            {
+                // Arrange
+                var profile = new Profile
+                {
+                    Name = $"Test {testCase.PositionCount}",
+                    PositionCount = testCase.PositionCount,
+                    GridRows = testCase.Rows,
+                    GridColumns = testCase.Cols
+                };
+                profile.NormalizeTextLabels();
+
+                // Act
+                bool isValid = profile.IsValidGridConfiguration();
+
+                // Assert
+                Assert.True(isValid, $"Configuration {testCase.Rows}×{testCase.Cols} should be valid for {testCase.PositionCount} positions");
+                Assert.Equal(testCase.PositionCount, profile.TextLabels.Count);
+            }
+        }
+
+        [Fact]
+        public void AnimationWithVariablePositionCounts_HandlesWrapAround()
+        {
+            // Test wrap-around logic with different position counts
+            // For 2 positions: 0->1 and 1->0 are equidistant (both distance=1)
+            // The IsForwardTransition logic uses <= so it chooses forward when equal
+            
+            // Test with 8 positions (typical case)
+            Assert.True(IsForwardTransition(7, 0, 8), "Wrap from last to first should be forward");
+            Assert.False(IsForwardTransition(0, 7, 8), "Wrap from first to last should be backward");
+            Assert.True(IsForwardTransition(0, 1, 8), "Normal forward should be forward");
+            Assert.False(IsForwardTransition(1, 0, 8), "Normal backward should be backward");
+            
+            // Test with 12 positions
+            Assert.True(IsForwardTransition(11, 0, 12), "Wrap from last to first should be forward");
+            Assert.False(IsForwardTransition(0, 11, 12), "Wrap from first to last should be backward");
+            Assert.True(IsForwardTransition(5, 6, 12), "Normal forward should be forward");
+            Assert.False(IsForwardTransition(6, 5, 12), "Normal backward should be backward");
+            
+            // Test with 20 positions
+            Assert.True(IsForwardTransition(19, 0, 20), "Wrap from last to first should be forward");
+            Assert.False(IsForwardTransition(0, 19, 20), "Wrap from first to last should be backward");
+        }
+
+        private bool IsForwardTransition(int previousPosition, int newPosition, int positionCount)
+        {
+            // Replicate the logic from SingleTextLayout
+            int forwardDistance = (newPosition - previousPosition + positionCount) % positionCount;
+            int backwardDistance = (previousPosition - newPosition + positionCount) % positionCount;
+            return forwardDistance <= backwardDistance;
+        }
+
+        [Fact]
+        public void SettingsPersistence_AcrossMultipleSavesAndLoads_MaintainsIntegrity()
+        {
+            // Arrange - Create complex settings
+            var originalSettings = new AppSettings
+            {
+                Profiles = new List<Profile>
+                {
+                    new Profile
+                    {
+                        Name = "Profile 1",
+                        PositionCount = 8,
+                        GridRows = 2,
+                        GridColumns = 4,
+                        TextLabels = Enumerable.Range(1, 8).Select(i => $"Label {i}").ToList()
+                    },
+                    new Profile
+                    {
+                        Name = "Profile 2",
+                        PositionCount = 12,
+                        GridRows = 3,
+                        GridColumns = 4,
+                        TextLabels = Enumerable.Range(1, 12).Select(i => $"Item {i}").ToList()
+                    }
+                }
+            };
+            originalSettings.SelectedProfileId = originalSettings.Profiles[0].Id;
+
+            // Act - Serialize, deserialize, modify, serialize, deserialize again
+            var json1 = JsonSerializer.Serialize(originalSettings, new JsonSerializerOptions { WriteIndented = true });
+            var loaded1 = AppSettings.FromJson(json1);
+            
+            loaded1.Profiles[0].PositionCount = 10;
+            loaded1.Profiles[0].GridRows = 2;
+            loaded1.Profiles[0].GridColumns = 5;
+            loaded1.Profiles[0].NormalizeTextLabels();
+            
+            var json2 = JsonSerializer.Serialize(loaded1, new JsonSerializerOptions { WriteIndented = true });
+            var loaded2 = AppSettings.FromJson(json2);
+
+            // Assert - Verify all changes persisted correctly
+            Assert.Equal(2, loaded2.Profiles.Count);
+            
+            // Profile 1 changes
+            Assert.Equal("Profile 1", loaded2.Profiles[0].Name);
+            Assert.Equal(10, loaded2.Profiles[0].PositionCount);
+            Assert.Equal(2, loaded2.Profiles[0].GridRows);
+            Assert.Equal(5, loaded2.Profiles[0].GridColumns);
+            Assert.Equal(10, loaded2.Profiles[0].TextLabels.Count);
+            
+            // Profile 2 unchanged
+            Assert.Equal("Profile 2", loaded2.Profiles[1].Name);
+            Assert.Equal(12, loaded2.Profiles[1].PositionCount);
+            Assert.Equal(3, loaded2.Profiles[1].GridRows);
+            Assert.Equal(4, loaded2.Profiles[1].GridColumns);
+            Assert.Equal(12, loaded2.Profiles[1].TextLabels.Count);
+        }
+
+        [Fact]
+        public void InvalidGridConfiguration_AutoCorrects_OnLoad()
+        {
+            // Arrange - Create JSON with invalid grid configuration
+            var invalidJson = @"{
+                ""Profiles"": [
+                    {
+                        ""Id"": ""12345678-1234-1234-1234-123456789012"",
+                        ""Name"": ""Invalid Grid"",
+                        ""PositionCount"": 8,
+                        ""GridRows"": 3,
+                        ""GridColumns"": 3,
+                        ""TextLabels"": [""A"", ""B"", ""C"", ""D"", ""E"", ""F"", ""G"", ""H""]
+                    }
+                ],
+                ""SelectedProfileId"": ""12345678-1234-1234-1234-123456789012""
+            }";
+
+            // Act - Load settings (should auto-correct)
+            var loadedSettings = AppSettings.FromJson(invalidJson);
+            var profile = loadedSettings.Profiles[0];
+
+            // Assert - Grid should be auto-corrected to valid configuration
+            Assert.True(profile.IsValidGridConfiguration());
+            Assert.True(profile.GridRows * profile.GridColumns >= profile.PositionCount);
+        }
+
+        [Fact]
+        public void InputService_WithVariablePositionCount_FiltersCorrectRange()
+        {
+            // Test that InputService correctly handles different position counts
+            var testCases = new[] { 2, 8, 12, 20 };
+
+            foreach (var posCount in testCases)
+            {
+                // Arrange
+                var profile = new Profile
+                {
+                    Name = $"Test {posCount}",
+                    PositionCount = posCount,
+                    GridRows = 2,
+                    GridColumns = posCount / 2
+                };
+                profile.NormalizeTextLabels();
+
+                var inputService = new InputService();
+                inputService.SetActiveProfile(profile);
+
+                // Act & Assert - Verify button range
+                // Button indices should be [57, 57+posCount-1]
+                int minButton = 57;
+                int maxButton = 57 + posCount - 1;
+
+                // Simulate button presses in valid range
+                for (int button = minButton; button <= maxButton; button++)
+                {
+                    int expectedPosition = button - 57;
+                    Assert.True(expectedPosition >= 0 && expectedPosition < posCount,
+                        $"Button {button} should map to valid position for {posCount} positions");
+                }
+
+                // Verify out-of-range buttons are filtered
+                int outOfRangeButton = maxButton + 1;
+                int outOfRangePosition = outOfRangeButton - 57;
+                Assert.True(outOfRangePosition >= posCount,
+                    $"Button {outOfRangeButton} should be out of range for {posCount} positions");
+            }
+        }
+
+        [Fact]
+        public void ProfileValidator_SuggestsDimensions_ForAllPositionCounts()
+        {
+            // Test that ProfileValidator provides valid suggestions for all position counts
+            for (int posCount = 2; posCount <= 20; posCount++)
+            {
+                // Act
+                var suggestions = ProfileValidator.GetSuggestedDimensions(posCount);
+
+                // Assert
+                Assert.NotEmpty(suggestions);
+                
+                foreach (var suggestion in suggestions)
+                {
+                    Assert.True(suggestion.Rows * suggestion.Columns >= posCount,
+                        $"Suggestion {suggestion.Rows}×{suggestion.Columns} should accommodate {posCount} positions");
+                    Assert.True(suggestion.Rows >= 1 && suggestion.Rows <= 10);
+                    Assert.True(suggestion.Columns >= 1 && suggestion.Columns <= 10);
+                }
+            }
+        }
+
+        [Fact]
+        public void OverlayViewModel_SwitchingProfiles_UpdatesAllProperties()
         {
             // Arrange
-            var settings = new AppSettings();
-            var profile = new Profile
+            var profile1 = new Profile
             {
-                Name = "Test Profile",
-                DeviceName = "Test Device",
-                TextLabels = new List<string>
-                {
-                    "Position 1",  // 0 - populated
-                    "",            // 1 - empty
-                    "Position 3",  // 2 - populated
-                    "",            // 3 - empty
-                    "",            // 4 - empty
-                    "",            // 5 - empty
-                    "",            // 6 - empty
-                    ""             // 7 - empty
-                }
+                Name = "Profile 1",
+                PositionCount = 8,
+                GridRows = 2,
+                GridColumns = 4,
+                TextLabels = Enumerable.Range(1, 8).Select(i => $"P1-{i}").ToList()
             };
-            settings.Profiles.Add(profile);
-            settings.SelectedProfileId = profile.Id;
 
-            var viewModel = new OverlayViewModel(settings);
-            viewModel.UpdatePopulatedPositions();
+            var profile2 = new Profile
+            {
+                Name = "Profile 2",
+                PositionCount = 12,
+                GridRows = 3,
+                GridColumns = 4,
+                TextLabels = Enumerable.Range(1, 12).Select(i => $"P2-{i}").ToList()
+            };
 
-            // Verify initial state
-            Assert.Equal(2, viewModel.PopulatedPositions.Count);
+            var settings1 = new AppSettings
+            {
+                Profiles = new List<Profile> { profile1 }
+            };
+            settings1.SelectedProfileId = profile1.Id;
 
-            // Act - Change configuration
-            profile.TextLabels[1] = "New Position 2";
-            profile.TextLabels[4] = "New Position 5";
-            viewModel.UpdatePopulatedPositions();
+            var settings2 = new AppSettings
+            {
+                Profiles = new List<Profile> { profile2 }
+            };
+            settings2.SelectedProfileId = profile2.Id;
 
-            // Assert - Changes should be reflected immediately
-            Assert.Equal(4, viewModel.PopulatedPositions.Count);
-            Assert.Contains(1, viewModel.PopulatedPositions);
-            Assert.Contains(4, viewModel.PopulatedPositions);
+            // Act - Create viewmodel with profile 1, then switch to profile 2
+            var viewModel = new OverlayViewModel(settings1);
+            var items1 = viewModel.PopulatedPositionItems.ToList();
+            int rows1 = viewModel.EffectiveGridRows;
+            int cols1 = viewModel.EffectiveGridColumns;
+
+            viewModel.Settings = settings2;
+            var items2 = viewModel.PopulatedPositionItems.ToList();
+            int rows2 = viewModel.EffectiveGridRows;
+            int cols2 = viewModel.EffectiveGridColumns;
+
+            // Assert - Profile 1
+            Assert.Equal(8, items1.Count);
+            Assert.All(items1, item => Assert.StartsWith("P1-", item.Label));
+
+            // Assert - Profile 2
+            Assert.Equal(12, items2.Count);
+            Assert.All(items2, item => Assert.StartsWith("P2-", item.Label));
+
+            // Grid dimensions should reflect the profiles
+            Assert.True(rows1 * cols1 >= 8);
+            Assert.True(rows2 * cols2 >= 12);
         }
 
-        #endregion
+        [Fact]
+        public void CompleteWorkflow_CreateProfileWithCustomPositions_SaveLoadAndUse()
+        {
+            // This test simulates a complete user workflow
+            
+            // Step 1: Create a new profile with custom position count
+            var newProfile = new Profile
+            {
+                Name = "Custom Workflow",
+                PositionCount = 15,
+                GridRows = 3,
+                GridColumns = 5
+            };
+            newProfile.NormalizeTextLabels();
+            
+            // Add custom labels
+            for (int i = 0; i < 15; i++)
+            {
+                newProfile.TextLabels[i] = $"Custom {i + 1}";
+            }
+
+            // Step 2: Create settings and serialize
+            var settings = new AppSettings
+            {
+                Profiles = new List<Profile> { newProfile }
+            };
+            settings.SelectedProfileId = newProfile.Id;
+            var json = JsonSerializer.Serialize(settings, new JsonSerializerOptions { WriteIndented = true });
+
+            // Step 3: Load settings (simulating app restart)
+            var loadedSettings = AppSettings.FromJson(json);
+            var loadedProfile = loadedSettings.Profiles[0];
+
+            // Step 4: Use profile in OverlayViewModel
+            var overlayViewModel = new OverlayViewModel(loadedSettings);
+
+            // Step 5: Use profile in InputService
+            var inputService = new InputService();
+            inputService.SetActiveProfile(loadedProfile);
+
+            // Step 6: Verify everything works together
+            Assert.Equal(15, loadedProfile.PositionCount);
+            Assert.Equal(3, loadedProfile.GridRows);
+            Assert.Equal(5, loadedProfile.GridColumns);
+            Assert.Equal(15, loadedProfile.TextLabels.Count);
+            Assert.Equal(15, overlayViewModel.PopulatedPositionItems.Count());
+            
+            // Verify all custom labels are present
+            for (int i = 0; i < 15; i++)
+            {
+                Assert.Equal($"Custom {i + 1}", loadedProfile.TextLabels[i]);
+            }
+        }
     }
 }

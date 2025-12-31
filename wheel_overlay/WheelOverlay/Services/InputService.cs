@@ -15,15 +15,15 @@ namespace WheelOverlay.Services
         private Task? _pollingTask;
 
         // 1-indexed buttons 58-65 map to 0-indexed 57-64
-        private const int ButtonStart = 57; 
-        private const int ButtonEnd = 64;
+        private const int BASE_BUTTON_INDEX = 57; 
+        private int _maxButtonIndex = 64; // Default for 8 positions (57-64)
         private string _targetDeviceName = "BavarianSimTec Alpha";
         private bool _deviceNotFoundEmitted = false;
 
         // Test mode properties
         private bool _testMode;
         private int _testModePosition = 0;
-        private const int TEST_MODE_MAX_POSITION = 7; // 0-indexed, 8 positions
+        private int _testModeMaxPosition = 7; // 0-indexed, default 8 positions
 
         public event EventHandler<int>? RotaryPositionChanged;
         public event EventHandler<string>? DeviceNotFound;
@@ -57,6 +57,25 @@ namespace WheelOverlay.Services
         public InputService()
         {
             _directInput = DInput.DirectInput8Create();
+        }
+
+        /// <summary>
+        /// Sets the active profile and configures the input button range based on PositionCount.
+        /// </summary>
+        /// <param name="profile">The profile to activate</param>
+        public void SetActiveProfile(Models.Profile profile)
+        {
+            if (profile == null)
+            {
+                LogService.Error("SetActiveProfile called with null profile");
+                return;
+            }
+
+            _maxButtonIndex = BASE_BUTTON_INDEX + profile.PositionCount - 1;
+            _testModeMaxPosition = profile.PositionCount - 1;
+            
+            LogService.Info($"InputService configured for {profile.PositionCount} positions " +
+                           $"(buttons {BASE_BUTTON_INDEX}-{_maxButtonIndex})");
         }
 
         public void Start(string deviceName)
@@ -101,7 +120,7 @@ namespace WheelOverlay.Services
                     _device.Poll();
                     var state = _device.GetCurrentJoystickState();
 
-                    // Check buttons 58-65 (indices 57-64)
+                    // Check buttons in the configured range [BASE_BUTTON_INDEX, _maxButtonIndex]
                     bool[] buttons = state.Buttons;
                     
                     // Debug: Log any pressed button to verify mapping
@@ -113,13 +132,13 @@ namespace WheelOverlay.Services
                         }
                     }
 
-                    for (int i = ButtonStart; i <= ButtonEnd; i++)
+                    for (int i = BASE_BUTTON_INDEX; i <= _maxButtonIndex; i++)
                     {
                         if (i < buttons.Length && buttons[i])
                         {
                             // Found the pressed button
                             // Map index 57 -> 0, 58 -> 1, etc.
-                            int position = i - ButtonStart;
+                            int position = i - BASE_BUTTON_INDEX;
                             Debug.WriteLine($"[InputService] Rotary Match! Button {i} -> Position {position}");
                             RotaryPositionChanged?.Invoke(this, position);
                             break; 
@@ -207,14 +226,14 @@ namespace WheelOverlay.Services
                 case System.Windows.Input.Key.Left:
                     _testModePosition--;
                     if (_testModePosition < 0)
-                        _testModePosition = TEST_MODE_MAX_POSITION;
+                        _testModePosition = _testModeMaxPosition;
                     RaiseRotaryPositionChanged(_testModePosition);
                     e.Handled = true;
                     break;
 
                 case System.Windows.Input.Key.Right:
                     _testModePosition++;
-                    if (_testModePosition > TEST_MODE_MAX_POSITION)
+                    if (_testModePosition > _testModeMaxPosition)
                         _testModePosition = 0;
                     RaiseRotaryPositionChanged(_testModePosition);
                     e.Handled = true;

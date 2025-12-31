@@ -99,5 +99,135 @@ namespace WheelOverlay.Tests
             Assert.Equal("BOX", settings.ActiveProfile.TextLabels[6]);
             Assert.Equal("DIFF", settings.ActiveProfile.TextLabels[7]);
         }
+
+        [Fact]
+        public void ProfileWithMissingV050Fields_LoadsWithDefaults()
+        {
+            // Arrange - JSON without v0.5.0 fields (PositionCount, GridRows, GridColumns)
+            var jsonWithoutV050Fields = @"{
+                ""Profiles"": [
+                    {
+                        ""Id"": ""12345678-1234-1234-1234-123456789012"",
+                        ""Name"": ""TestProfile"",
+                        ""DeviceName"": ""BavarianSimTec Alpha"",
+                        ""Layout"": ""Grid"",
+                        ""TextLabels"": [""A"", ""B"", ""C"", ""D"", ""E"", ""F"", ""G"", ""H""]
+                    }
+                ],
+                ""SelectedProfileId"": ""12345678-1234-1234-1234-123456789012""
+            }";
+
+            // Act
+            var settings = AppSettings.FromJson(jsonWithoutV050Fields);
+            var profile = settings.Profiles[0];
+
+            // Assert - Should have default v0.5.0 values
+            Assert.Equal(8, profile.PositionCount);
+            Assert.Equal(2, profile.GridRows);
+            Assert.Equal(4, profile.GridColumns);
+            Assert.Equal("TestProfile", profile.Name);
+            Assert.Equal(8, profile.TextLabels.Count);
+        }
+
+        [Fact]
+        public void ProfileWithInvalidGridDimensions_IsAutoCorrectedOnLoad()
+        {
+            // Arrange - Profile with grid that's too small for position count
+            var jsonWithInvalidGrid = @"{
+                ""Profiles"": [
+                    {
+                        ""Id"": ""12345678-1234-1234-1234-123456789012"",
+                        ""Name"": ""TestProfile"",
+                        ""DeviceName"": ""BavarianSimTec Alpha"",
+                        ""Layout"": ""Grid"",
+                        ""TextLabels"": [""A"", ""B"", ""C"", ""D"", ""E"", ""F"", ""G"", ""H"", ""I"", ""J""],
+                        ""PositionCount"": 10,
+                        ""GridRows"": 2,
+                        ""GridColumns"": 3
+                    }
+                ],
+                ""SelectedProfileId"": ""12345678-1234-1234-1234-123456789012""
+            }";
+
+            // Act
+            var settings = AppSettings.FromJson(jsonWithInvalidGrid);
+            var profile = settings.Profiles[0];
+
+            // Assert - Grid should be auto-corrected to 2×5 (default for 10 positions)
+            Assert.Equal(10, profile.PositionCount);
+            Assert.Equal(2, profile.GridRows);
+            Assert.Equal(5, profile.GridColumns);
+            Assert.True(profile.IsValidGridConfiguration());
+        }
+
+        [Fact]
+        public void ProfileWithFewerTextLabelsThanPositionCount_IsNormalizedOnLoad()
+        {
+            // Arrange - Profile with only 5 text labels but PositionCount of 8
+            var jsonWithFewerLabels = @"{
+                ""Profiles"": [
+                    {
+                        ""Id"": ""12345678-1234-1234-1234-123456789012"",
+                        ""Name"": ""TestProfile"",
+                        ""DeviceName"": ""BavarianSimTec Alpha"",
+                        ""Layout"": ""Single"",
+                        ""TextLabels"": [""A"", ""B"", ""C"", ""D"", ""E""],
+                        ""PositionCount"": 8,
+                        ""GridRows"": 2,
+                        ""GridColumns"": 4
+                    }
+                ],
+                ""SelectedProfileId"": ""12345678-1234-1234-1234-123456789012""
+            }";
+
+            // Act
+            var settings = AppSettings.FromJson(jsonWithFewerLabels);
+            var profile = settings.Profiles[0];
+
+            // Assert - Should have 8 labels (5 original + 3 empty)
+            Assert.Equal(8, profile.TextLabels.Count);
+            Assert.Equal("A", profile.TextLabels[0]);
+            Assert.Equal("B", profile.TextLabels[1]);
+            Assert.Equal("C", profile.TextLabels[2]);
+            Assert.Equal("D", profile.TextLabels[3]);
+            Assert.Equal("E", profile.TextLabels[4]);
+            Assert.Equal("", profile.TextLabels[5]);
+            Assert.Equal("", profile.TextLabels[6]);
+            Assert.Equal("", profile.TextLabels[7]);
+        }
+
+        [Fact]
+        public void ProfileWithMoreTextLabelsThanPositionCount_IsTruncatedOnLoad()
+        {
+            // Arrange - Profile with 10 text labels but PositionCount of 6
+            var jsonWithExtraLabels = @"{
+                ""Profiles"": [
+                    {
+                        ""Id"": ""12345678-1234-1234-1234-123456789012"",
+                        ""Name"": ""TestProfile"",
+                        ""DeviceName"": ""BavarianSimTec Alpha"",
+                        ""Layout"": ""Single"",
+                        ""TextLabels"": [""A"", ""B"", ""C"", ""D"", ""E"", ""F"", ""G"", ""H"", ""I"", ""J""],
+                        ""PositionCount"": 6,
+                        ""GridRows"": 2,
+                        ""GridColumns"": 3
+                    }
+                ],
+                ""SelectedProfileId"": ""12345678-1234-1234-1234-123456789012""
+            }";
+
+            // Act
+            var settings = AppSettings.FromJson(jsonWithExtraLabels);
+            var profile = settings.Profiles[0];
+
+            // Assert - Should have only 6 labels (truncated)
+            Assert.Equal(6, profile.TextLabels.Count);
+            Assert.Equal("A", profile.TextLabels[0]);
+            Assert.Equal("B", profile.TextLabels[1]);
+            Assert.Equal("C", profile.TextLabels[2]);
+            Assert.Equal("D", profile.TextLabels[3]);
+            Assert.Equal("E", profile.TextLabels[4]);
+            Assert.Equal("F", profile.TextLabels[5]);
+        }
     }
 }

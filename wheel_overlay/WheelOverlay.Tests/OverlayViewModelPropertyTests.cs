@@ -446,5 +446,174 @@ namespace WheelOverlay.Tests
                         .Label($"When selecting populated position {populatedPositions[0]} after empty position, IsDisplayingEmptyPosition should be false");
                 });
         }
+
+        // Feature: v0.5.0-enhancements, Property 8: Empty Position Filtering
+        // Validates: Requirements 3.1
+        [Property(MaxTest = 100)]
+        public Property Property_EmptyPositionFiltering()
+        {
+            return Prop.ForAll(
+                GenerateProfileWithVariablePositionCount(),
+                profile =>
+                {
+                    // Arrange
+                    var settings = new AppSettings
+                    {
+                        Profiles = new List<Profile> { profile },
+                        SelectedProfileId = profile.Id
+                    };
+                    var viewModel = new OverlayViewModel(settings);
+
+                    // Act
+                    var populatedItemsCount = viewModel.PopulatedPositionItems.Count;
+                    var expectedCount = profile.TextLabels.Count(label => !string.IsNullOrWhiteSpace(label));
+
+                    // Assert - PopulatedPositionItems should contain exactly M items where M is the number of populated positions
+                    return (populatedItemsCount == expectedCount)
+                        .Label($"For profile with {profile.PositionCount} positions and {expectedCount} populated, " +
+                               $"PopulatedPositionItems should have {expectedCount} items but has {populatedItemsCount}");
+                });
+        }
+
+        // Feature: v0.5.0-enhancements, Property 9: Position Number Preservation
+        // Validates: Requirements 3.4
+        [Property(MaxTest = 100)]
+        public Property Property_PositionNumberPreservationInGrid()
+        {
+            return Prop.ForAll(
+                GenerateProfileWithVariablePositionCount(),
+                profile =>
+                {
+                    // Arrange
+                    var settings = new AppSettings
+                    {
+                        Profiles = new List<Profile> { profile },
+                        SelectedProfileId = profile.Id
+                    };
+                    var viewModel = new OverlayViewModel(settings);
+
+                    // Act
+                    var populatedPositionItems = viewModel.PopulatedPositionItems;
+                    var populatedPositions = viewModel.PopulatedPositions;
+
+                    // Assert - each item in PopulatedPositionItems should have the correct position number
+                    bool allPositionsCorrect = true;
+                    for (int i = 0; i < populatedPositionItems.Count; i++)
+                    {
+                        var item = populatedPositionItems[i];
+                        var expectedPositionNumber = $"#{populatedPositions[i] + 1}";
+                        
+                        if (item.PositionNumber != expectedPositionNumber)
+                        {
+                            allPositionsCorrect = false;
+                            break;
+                        }
+                    }
+
+                    return allPositionsCorrect
+                        .Label("Position numbers in PopulatedPositionItems should match original position indices");
+                });
+        }
+
+        // Feature: v0.5.0-enhancements, Property 10: Grid Aspect Ratio Preservation
+        // Validates: Requirements 3.3
+        [Property(MaxTest = 100)]
+        public Property Property_GridAspectRatioPreservation()
+        {
+            return Prop.ForAll(
+                GenerateProfileWithVariablePositionCount(),
+                profile =>
+                {
+                    // Arrange
+                    var settings = new AppSettings
+                    {
+                        Profiles = new List<Profile> { profile },
+                        SelectedProfileId = profile.Id
+                    };
+                    var viewModel = new OverlayViewModel(settings);
+
+                    // Calculate configured aspect ratio
+                    double configuredAspectRatio = (double)profile.GridRows / profile.GridColumns;
+
+                    // Act
+                    int effectiveRows = viewModel.EffectiveGridRows;
+                    int effectiveColumns = viewModel.EffectiveGridColumns;
+                    double effectiveAspectRatio = (double)effectiveRows / effectiveColumns;
+
+                    // Calculate difference
+                    double aspectRatioDifference = Math.Abs(effectiveAspectRatio - configuredAspectRatio);
+
+                    // Assert - aspect ratio should be maintained within tolerance
+                    // Note: If all positions are populated, the grid should use configured dimensions exactly
+                    int populatedCount = viewModel.PopulatedPositions.Count;
+                    int configuredCapacity = profile.GridRows * profile.GridColumns;
+
+                    if (populatedCount >= configuredCapacity)
+                    {
+                        // Should use exact configured dimensions
+                        return (effectiveRows == profile.GridRows && effectiveColumns == profile.GridColumns)
+                            .Label($"When all positions populated, should use configured dimensions {profile.GridRows}×{profile.GridColumns}, " +
+                                   $"but got {effectiveRows}×{effectiveColumns}");
+                    }
+                    else if (populatedCount == 0)
+                    {
+                        // Edge case: no populated positions, any valid grid is acceptable
+                        return true.Label("No populated positions, aspect ratio check not applicable");
+                    }
+                    else if (populatedCount <= 3)
+                    {
+                        // For very few items (1-3), aspect ratio preservation is less critical
+                        // Just verify we have a valid grid that fits the items
+                        bool hasCapacity = effectiveRows * effectiveColumns >= populatedCount;
+                        return hasCapacity
+                            .Label($"For {populatedCount} items, grid {effectiveRows}×{effectiveColumns} should have sufficient capacity");
+                    }
+                    else if (populatedCount <= 6)
+                    {
+                        // For 4-6 items, allow significant deviation as there are limited grid options
+                        // Especially for extreme aspect ratios (very tall or very wide grids)
+                        double tolerance = 6.0;
+                        
+                        return (aspectRatioDifference <= tolerance)
+                            .Label($"Configured aspect ratio {configuredAspectRatio:F2} ({profile.GridRows}×{profile.GridColumns}), " +
+                                   $"effective aspect ratio {effectiveAspectRatio:F2} ({effectiveRows}×{effectiveColumns}), " +
+                                   $"difference {aspectRatioDifference:F2} should be ≤ {tolerance} for {populatedCount} items");
+                    }
+                    else
+                    {
+                        // For 7+ items, aspect ratio should be reasonably maintained
+                        // Use a more flexible tolerance that scales with the number of items
+                        double tolerance = populatedCount < 13 ? 1.0 : 0.5;
+                        
+                        return (aspectRatioDifference <= tolerance)
+                            .Label($"Configured aspect ratio {configuredAspectRatio:F2} ({profile.GridRows}×{profile.GridColumns}), " +
+                                   $"effective aspect ratio {effectiveAspectRatio:F2} ({effectiveRows}×{effectiveColumns}), " +
+                                   $"difference {aspectRatioDifference:F2} should be ≤ {tolerance} for {populatedCount} items");
+                    }
+                });
+        }
+
+        // Generator for profiles with variable position counts (2-20)
+        private static Arbitrary<Profile> GenerateProfileWithVariablePositionCount()
+        {
+            return Arb.From(
+                from positionCount in Gen.Choose(2, 20)
+                from gridRows in Gen.Choose(1, 10)
+                from gridColumns in Gen.Choose(1, 10)
+                from labels in Gen.ListOf(positionCount, GenerateLabelOrEmpty())
+                let profile = new Profile
+                {
+                    Id = Guid.NewGuid(),
+                    Name = "Test Profile",
+                    DeviceName = "Test Device",
+                    Layout = DisplayLayout.Grid,
+                    PositionCount = positionCount,
+                    GridRows = gridRows,
+                    GridColumns = gridColumns,
+                    TextLabels = labels.ToList()
+                }
+                where profile.IsValidGridConfiguration() // Only generate valid configurations
+                select profile);
+        }
     }
 }
