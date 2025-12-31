@@ -4,7 +4,13 @@ A transparent overlay application for sim racing wheels (e.g., BavarianSimTec Al
 
 ## Features
 
-### v0.4.0 New Features
+### v0.5.0 New Features
+*   **Animated Transitions**: Smooth fade-in/fade-out animations when switching between wheel positions (configurable 0-2000ms, default 300ms).
+*   **Configurable Grid Layout**: Customize grid dimensions from 1-4 rows and 1-4 columns (defaults to 2x4 for 8 positions).
+*   **Variable Position Support**: Configure wheels with different position counts (4, 8, 12, 16, etc.) - UI adapts dynamically.
+*   **Improved UI**: Better default window size and spacing in settings dialog.
+
+### v0.4.0 Features
 *   **About Dialog**: Access application information, version, and GitHub repository from the system tray menu.
 *   **Smart Text Condensing**: Empty positions are automatically hidden from multi-position layouts (Vertical, Horizontal, Grid).
 *   **Empty Position Feedback**: Visual flash animation when selecting an empty position to confirm input detection.
@@ -77,12 +83,40 @@ Profiles allow you to save different configurations for different cars or racing
 
 Choose the layout that best matches your wheel's physical display:
 
-- **Single**: Shows only the currently selected position (large text)
+- **Single**: Shows only the currently selected position (large text) with smooth fade transitions (v0.5.0+)
 - **Vertical**: Stacked list of all populated positions
 - **Horizontal**: Side-by-side list of all populated positions
-- **Grid**: 2D grid arrangement of all populated positions
+- **Grid**: 2D grid arrangement with configurable rows and columns (v0.5.0+)
 
 **Note**: In v0.4.0+, empty positions are automatically hidden in Vertical, Horizontal, and Grid layouts.
+
+### Animation Settings (v0.5.0+)
+
+Control how the overlay transitions between positions:
+
+1.  **Enable/Disable Animations**: Settings → Display → Check/uncheck "Enable Animations"
+2.  **Animation Duration**: Adjust slider from 0ms (instant) to 2000ms (slow fade)
+3.  **Default**: 300ms provides smooth transitions without lag
+
+**Note**: Animations automatically skip during rapid wheel rotation to prevent lag.
+
+### Grid Configuration (v0.5.0+)
+
+Customize the grid layout dimensions:
+
+1.  **Settings → Display → Grid Layout**
+2.  **Rows**: Select 1-4 rows
+3.  **Columns**: Select 1-4 columns
+4.  **Default**: 2 rows × 4 columns (optimal for 8 positions)
+
+### Position Count (v0.5.0+)
+
+Configure wheels with different position counts:
+
+1.  **Settings → Display → Position Count**
+2.  **Select Count**: Choose 4, 8, 12, 16, or custom
+3.  **Dynamic UI**: Text input fields adjust automatically
+4.  **Default**: 8 positions (standard for most wheels)
 
 ### Smart Text Condensing (v0.4.0+)
 
@@ -195,7 +229,14 @@ Contributions are welcome! Please:
 
 ## Version History
 
-### v0.4.0 (Current)
+### v0.5.0 (Current)
+- Animated transitions with configurable duration
+- Configurable grid layout dimensions (1-4 rows/columns)
+- Variable position support for different wheel configurations
+- Improved UI defaults and spacing
+- Build system enhancements with warnings-as-errors
+
+### v0.4.0
 - Added About Wheel Overlay dialog
 - Smart text condensing with empty position feedback
 - Test mode for development without hardware

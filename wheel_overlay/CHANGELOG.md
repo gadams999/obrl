@@ -5,6 +5,53 @@ All notable changes to Wheel Overlay will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.0](https://github.com/gadams999/obrl/compare/v0.4.0...v0.5.0) (2024-12-31)
+
+> Enhancement release adding animated transitions, configurable grid layouts, and variable position support for different wheel configurations.
+
+### Upgrade Steps
+* No action required - all changes are backward compatible
+* Existing profiles will use default animation settings (300ms fade)
+* Grid layouts will default to 2x4 configuration
+
+### Breaking Changes
+* None
+
+### New Features
+* **Animated Transitions**: Smooth fade-in/fade-out animations when switching positions
+  - Configurable animation duration (0-2000ms, default 300ms)
+  - Option to disable animations entirely for instant switching
+  - Works across all layout modes (Single, Vertical, Horizontal, Grid)
+  - Smart animation skipping during rapid wheel rotation
+* **Configurable Grid Dimensions**: Customize grid layout rows and columns
+  - Support for 1-4 rows and 1-4 columns
+  - Defaults to 2x4 for optimal 8-position display
+  - Automatically adapts to different wheel configurations
+  - Smart text condensing works with custom grid sizes
+* **Variable Position Support**: Support for wheels with different position counts
+  - Configurable position count per profile (4, 8, 12, 16, etc.)
+  - UI dynamically shows/hides position fields based on count
+  - Maintains backward compatibility with existing 8-position profiles
+* **Improved UI Defaults**: Better default window size (800x600) and spacing in settings dialog
+
+### Bug Fixes
+* **Single Text Animation**: Fixed animation state management bugs
+  - Corrected display states during position transitions
+  - Improved animation queue handling
+* **Application Shutdown**: Enhanced shutdown handling to prevent hanging
+* **Nullable Reference Warnings**: Fixed all compiler warnings for cleaner builds
+
+### Performance Improvements
+* None
+
+### Other Changes
+* **Build System**: Added TreatWarningsAsErrors to CI/CD and build scripts
+  - Ensures code quality by failing builds on warnings
+  - Applied to GitHub Actions, MSI build, and release build scripts
+* **Repository Cleanup**: Added .NET build artifacts to .gitignore
+  - Removed tracked bin, obj, and .vs folders
+  - Cleaner repository structure
+
 ## [0.4.0](https://github.com/gadams999/obrl/compare/v0.2.0...v0.4.0) (2024-12-29)
 
 > Major feature release adding About dialog, smart text condensing, empty position feedback, enhanced single layout, test mode, and comprehensive test suite. Includes fixes for test mode indicator and first-run text labels.
