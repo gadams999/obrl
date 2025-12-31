@@ -13,6 +13,13 @@ For the `wheel_overlay` project, update the version in:
   - `<AssemblyVersion>X.Y.Z.0</AssemblyVersion>`
   - `<FileVersion>X.Y.Z.0</FileVersion>`
 
+**Note**: The `AssemblyVersion` property is automatically read by the About box dialog (`AboutWindow.xaml.cs`) to display the version to users. Updating this property ensures the About box shows the correct version.
+
+**Important**: The version is embedded into the assembly at **build time**. After updating the .csproj file, you must rebuild the project for the About box to show the new version:
+- `dotnet build` - Rebuilds with new version
+- `dotnet run` - Automatically rebuilds before running
+- The version change takes effect immediately after rebuild
+
 ### When to Update
 
 - **Feature branches** (`feature/*`): Update version when ready to merge to main
@@ -47,6 +54,9 @@ git checkout -b fix/0.3.1-some-fix
 
 # 3. Update version in WheelOverlay.csproj
 # Change Version from 0.3.0 to 0.3.1
+# Change AssemblyVersion from 0.3.0.0 to 0.3.1.0
+# Change FileVersion from 0.3.0.0 to 0.3.1.0
+# This will automatically update the About box to show "Version 0.3.1"
 
 # 4. Commit version update with changes
 git add wheel_overlay/WheelOverlay/WheelOverlay.csproj
@@ -57,3 +67,11 @@ git push -u origin fix/0.3.1-some-fix
 
 # 6. After PR is merged to main, the release workflow runs automatically
 ```
+
+### Verification
+
+After updating the version:
+1. Build the project
+2. Run the application
+3. Open the About box (System Tray → About Wheel Overlay)
+4. Verify the version displayed matches your update

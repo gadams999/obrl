@@ -52,26 +52,39 @@
                 </Style>
             </Border.Style>
             
-            <Border x:Name="ConfigBorder" BorderThickness="0" BorderBrush="Red" CornerRadius="5">
-                <ContentControl Content="{Binding}">
-                    <ContentControl.Style>
-                        <Style TargetType="ContentControl">
-                            <Setter Property="ContentTemplate" Value="{StaticResource SingleTextTemplate}" />
-                            <Style.Triggers>
-                                <DataTrigger Binding="{Binding Settings.ActiveProfile.Layout}" Value="Vertical">
-                                    <Setter Property="ContentTemplate" Value="{StaticResource VerticalTemplate}" />
-                                </DataTrigger>
-                                <DataTrigger Binding="{Binding Settings.ActiveProfile.Layout}" Value="Horizontal">
-                                    <Setter Property="ContentTemplate" Value="{StaticResource HorizontalTemplate}" />
-                                </DataTrigger>
-                                <DataTrigger Binding="{Binding Settings.ActiveProfile.Layout}" Value="Grid">
-                                    <Setter Property="ContentTemplate" Value="{StaticResource GridTemplate}" />
-                                </DataTrigger>
-                            </Style.Triggers>
-                        </Style>
-                    </ContentControl.Style>
-                </ContentControl>
-            </Border>
+            <Grid>
+                <Border x:Name="ConfigBorder" BorderThickness="0" BorderBrush="Red" CornerRadius="5">
+                    <ContentControl Content="{Binding}">
+                        <ContentControl.Style>
+                            <Style TargetType="ContentControl">
+                                <Setter Property="ContentTemplate" Value="{StaticResource SingleTextTemplate}" />
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding Settings.ActiveProfile.Layout}" Value="Vertical">
+                                        <Setter Property="ContentTemplate" Value="{StaticResource VerticalTemplate}" />
+                                    </DataTrigger>
+                                    <DataTrigger Binding="{Binding Settings.ActiveProfile.Layout}" Value="Horizontal">
+                                        <Setter Property="ContentTemplate" Value="{StaticResource HorizontalTemplate}" />
+                                    </DataTrigger>
+                                    <DataTrigger Binding="{Binding Settings.ActiveProfile.Layout}" Value="Grid">
+                                        <Setter Property="ContentTemplate" Value="{StaticResource GridTemplate}" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </ContentControl.Style>
+                    </ContentControl>
+                </Border>
+                
+                <!-- Test Mode Indicator Text -->
+                <TextBlock x:Name="TestModeIndicator"
+                           Text="{Binding TestModeIndicatorText}"
+                           Foreground="#FFFF00"
+                           FontSize="14"
+                           FontWeight="Bold"
+                           HorizontalAlignment="Center"
+                           VerticalAlignment="Top"
+                           Margin="0,5,0,0"
+                           Visibility="{Binding IsTestMode, Converter={StaticResource BoolToVisibilityConverter}}" />
+            </Grid>
         </Border>
     </Grid>
 </Window>

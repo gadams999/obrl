@@ -92,5 +92,115 @@ namespace WheelOverlay.Tests
             // IsDisplayingEmptyPosition should be true
             Assert.True(viewModel.IsDisplayingEmptyPosition);
         }
+
+        // Test GetTextForPosition returns correct text for populated positions
+        // Requirements: 2.4, 2.5
+        [Fact]
+        public void GetTextForPosition_PopulatedPosition_ReturnsCorrectText()
+        {
+            // Arrange
+            var profile = new Profile
+            {
+                Id = Guid.NewGuid(),
+                Name = "Test Profile",
+                DeviceName = "Test Device",
+                Layout = DisplayLayout.Single,
+                PositionCount = 5,
+                TextLabels = new List<string> { "DASH", "TC2", "MAP", "FUEL", "BRAKE" }
+            };
+
+            var settings = new AppSettings
+            {
+                Profiles = new List<Profile> { profile },
+                SelectedProfileId = profile.Id
+            };
+
+            var viewModel = new OverlayViewModel(settings);
+
+            // Act & Assert
+            Assert.Equal("DASH", viewModel.GetTextForPosition(0));
+            Assert.Equal("TC2", viewModel.GetTextForPosition(1));
+            Assert.Equal("MAP", viewModel.GetTextForPosition(2));
+            Assert.Equal("FUEL", viewModel.GetTextForPosition(3));
+            Assert.Equal("BRAKE", viewModel.GetTextForPosition(4));
+        }
+
+        // Test GetTextForPosition returns position number for empty positions
+        // Requirements: 2.4, 2.5
+        [Fact]
+        public void GetTextForPosition_EmptyPosition_ReturnsPositionNumber()
+        {
+            // Arrange
+            var profile = new Profile
+            {
+                Id = Guid.NewGuid(),
+                Name = "Test Profile",
+                DeviceName = "Test Device",
+                Layout = DisplayLayout.Single,
+                PositionCount = 5,
+                TextLabels = new List<string> { "DASH", "", "MAP", "   ", "BRAKE" }
+            };
+
+            var settings = new AppSettings
+            {
+                Profiles = new List<Profile> { profile },
+                SelectedProfileId = profile.Id
+            };
+
+            var viewModel = new OverlayViewModel(settings);
+
+            // Act & Assert
+            Assert.Equal("2", viewModel.GetTextForPosition(1)); // Empty string at position 1
+            Assert.Equal("4", viewModel.GetTextForPosition(3)); // Whitespace at position 3
+        }
+
+        // Test GetTextForPosition returns empty string for out-of-range positions
+        // Requirements: 2.4, 2.5
+        [Fact]
+        public void GetTextForPosition_OutOfRange_ReturnsEmptyString()
+        {
+            // Arrange
+            var profile = new Profile
+            {
+                Id = Guid.NewGuid(),
+                Name = "Test Profile",
+                DeviceName = "Test Device",
+                Layout = DisplayLayout.Single,
+                PositionCount = 5,
+                TextLabels = new List<string> { "DASH", "TC2", "MAP", "FUEL", "BRAKE" }
+            };
+
+            var settings = new AppSettings
+            {
+                Profiles = new List<Profile> { profile },
+                SelectedProfileId = profile.Id
+            };
+
+            var viewModel = new OverlayViewModel(settings);
+
+            // Act & Assert
+            Assert.Equal("", viewModel.GetTextForPosition(-1)); // Negative position
+            Assert.Equal("", viewModel.GetTextForPosition(5));  // Position >= PositionCount
+            Assert.Equal("", viewModel.GetTextForPosition(10)); // Far out of range
+        }
+
+        // Test GetTextForPosition handles null profile gracefully
+        // Requirements: 2.4, 2.5
+        [Fact]
+        public void GetTextForPosition_NullProfile_ReturnsEmptyString()
+        {
+            // Arrange - create settings with no active profile
+            var settings = new AppSettings
+            {
+                Profiles = new List<Profile>()
+            };
+
+            var viewModel = new OverlayViewModel(settings);
+
+            // Act & Assert
+            Assert.Equal("", viewModel.GetTextForPosition(0));
+            Assert.Equal("", viewModel.GetTextForPosition(1));
+            Assert.Equal("", viewModel.GetTextForPosition(-1));
+        }
     }
 }

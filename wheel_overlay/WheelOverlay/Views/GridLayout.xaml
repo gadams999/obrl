@@ -31,7 +31,7 @@
         </TextBlock>
 
         <!-- Show items grid when device is connected -->
-        <ItemsControl ItemsSource="{Binding PopulatedPositionLabels}">
+        <ItemsControl ItemsSource="{Binding PopulatedPositionItems}">
             <ItemsControl.Style>
                 <Style TargetType="ItemsControl">
                     <Setter Property="Visibility" Value="Visible"/>
@@ -44,7 +44,7 @@
             </ItemsControl.Style>
             <ItemsControl.ItemTemplate>
                 <DataTemplate>
-                    <TextBlock Text="{Binding}"
+                    <TextBlock Text="{Binding Label}"
                                FontSize="{Binding DataContext.Settings.FontSize, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                FontFamily="{Binding DataContext.Settings.FontFamily, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                FontWeight="Bold"
@@ -55,13 +55,7 @@
                             <Style TargetType="TextBlock">
                                 <Setter Property="Foreground" Value="{Binding DataContext.Settings.NonSelectedTextColor, RelativeSource={RelativeSource AncestorType=UserControl}}"/>
                                 <Style.Triggers>
-                                    <DataTrigger Value="True">
-                                        <DataTrigger.Binding>
-                                            <MultiBinding Converter="{StaticResource IsSelectedConverter}">
-                                                <Binding Path="DataContext.CurrentItem" RelativeSource="{RelativeSource AncestorType=UserControl}"/>
-                                                <Binding Path="."/>
-                                            </MultiBinding>
-                                        </DataTrigger.Binding>
+                                    <DataTrigger Binding="{Binding IsSelected}" Value="True">
                                         <Setter Property="Foreground" Value="{Binding DataContext.Settings.SelectedTextColor, RelativeSource={RelativeSource AncestorType=UserControl}}"/>
                                     </DataTrigger>
                                     <!-- Flash animation trigger -->
@@ -100,7 +94,8 @@
             </ItemsControl.ItemTemplate>
             <ItemsControl.ItemsPanel>
                 <ItemsPanelTemplate>
-                    <UniformGrid Columns="4"/>
+                    <UniformGrid Rows="{Binding EffectiveGridRows}"
+                                 Columns="{Binding EffectiveGridColumns}"/>
                 </ItemsPanelTemplate>
             </ItemsControl.ItemsPanel>
         </ItemsControl>

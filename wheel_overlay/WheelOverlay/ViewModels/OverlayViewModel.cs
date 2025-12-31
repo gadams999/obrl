@@ -4,6 +4,7 @@ using System.Linq;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Collections.ObjectModel;
 using WheelOverlay.Models;
 
 namespace WheelOverlay.ViewModels
@@ -18,16 +19,19 @@ namespace WheelOverlay.ViewModels
         private CancellationTokenSource? _flashCancellationTokenSource;
         private int _lastPopulatedPosition;
         private bool _isTestMode;
+        private ObservableCollection<GridPositionItem> _populatedPositionItems;
 
         public OverlayViewModel(AppSettings settings)
         {
             _settings = settings;
             _populatedPositions = new List<int>();
+            _populatedPositionItems = new ObservableCollection<GridPositionItem>();
             _isFlashing = false;
             _lastPopulatedPosition = 0;
             _isTestMode = false; // Explicitly initialize to false
             UpdatePopulatedPositions();
             InitializeLastPopulatedPosition();
+            UpdatePopulatedPositionItems();
         }
 
         private void InitializeLastPopulatedPosition()
@@ -50,6 +54,9 @@ namespace WheelOverlay.ViewModels
                 OnPropertyChanged(nameof(DisplayItems));
                 OnPropertyChanged(nameof(CurrentItem));
                 OnPropertyChanged(nameof(PopulatedPositionLabels));
+                OnPropertyChanged(nameof(EffectiveGridRows));
+                OnPropertyChanged(nameof(EffectiveGridColumns));
+                UpdatePopulatedPositionItems();
             }
         }
 
@@ -99,7 +106,19 @@ namespace WheelOverlay.ViewModels
                 {
                     _isTestMode = value;
                     OnPropertyChanged();
+                    OnPropertyChanged(nameof(TestModeIndicatorText));
                 }
+            }
+        }
+
+        public string TestModeIndicatorText
+        {
+            get
+            {
+                if (!IsTestMode)
+                    return string.Empty;
+                
+                return $"TEST MODE - Position {CurrentPosition + 1}";
             }
         }
 
@@ -138,6 +157,7 @@ namespace WheelOverlay.ViewModels
                 }
             }
             PopulatedPositions = populated;
+            UpdatePopulatedPositionItems();
         }
 
         public int CurrentPosition
@@ -153,6 +173,8 @@ namespace WheelOverlay.ViewModels
                     OnPropertyChanged(nameof(CurrentItem));
                     OnPropertyChanged(nameof(DisplayedText));
                     OnPropertyChanged(nameof(IsDisplayingEmptyPosition));
+                    OnPropertyChanged(nameof(TestModeIndicatorText));
+                    UpdatePopulatedPositionItems();
                 }
             }
         }
@@ -269,6 +291,187 @@ namespace WheelOverlay.ViewModels
         {
             _flashCancellationTokenSource?.Cancel();
             IsFlashing = false;
+        }
+
+        // Grid Layout Properties and Methods
+
+        /// <summary>
+        /// Gets the effective number of rows for the grid layout after condensing.
+        /// </summary>
+        public int EffectiveGridRows
+        {
+            get
+            {
+                if (Settings?.ActiveProfile == null) return 2;
+
+                int populatedCount = PopulatedPositions.Count;
+                if (populatedCount == 0) return 1;
+
+                var profile = Settings.ActiveProfile;
+                int configuredCapacity = profile.GridRows * profile.GridColumns;
+
+                // If all positions are populated, use configured dimensions
+                if (populatedCount >= configuredCapacity)
+                    return profile.GridRows;
+
+                // Calculate condensed dimensions maintaining aspect ratio
+                return CalculateCondensedRows(populatedCount, profile.GridRows, profile.GridColumns);
+            }
+        }
+
+        /// <summary>
+        /// Gets the effective number of columns for the grid layout after condensing.
+        /// </summary>
+        public int EffectiveGridColumns
+        {
+            get
+            {
+                if (Settings?.ActiveProfile == null) return 4;
+
+                int populatedCount = PopulatedPositions.Count;
+                if (populatedCount == 0) return 1;
+
+                var profile = Settings.ActiveProfile;
+                int configuredCapacity = profile.GridRows * profile.GridColumns;
+
+                // If all positions are populated, use configured dimensions
+                if (populatedCount >= configuredCapacity)
+                    return profile.GridColumns;
+
+                return CalculateCondensedColumns(populatedCount, profile.GridRows, profile.GridColumns);
+            }
+        }
+
+        /// <summary>
+        /// Gets the collection of populated position items for grid display.
+        /// </summary>
+        public ObservableCollection<GridPositionItem> PopulatedPositionItems
+        {
+            get => _populatedPositionItems;
+            private set
+            {
+                _populatedPositionItems = value;
+                OnPropertyChanged();
+            }
+        }
+
+        /// <summary>
+        /// Calculates the condensed number of rows while maintaining aspect ratio.
+        /// </summary>
+        private int CalculateCondensedRows(int itemCount, int configuredRows, int configuredColumns)
+        {
+            if (itemCount == 0) return 1;
+            
+            // Maintain aspect ratio while condensing
+            double aspectRatio = (double)configuredRows / configuredColumns;
+
+            // Try different row counts and pick the one that:
+            // 1. Has sufficient capacity (rows * columns >= itemCount)
+            // 2. Maintains aspect ratio closest to configured
+            // 3. Doesn't exceed configured dimensions
+            
+            int bestRows = 1;
+            double bestAspectRatioDiff = double.MaxValue;
+            
+            for (int rows = 1; rows <= System.Math.Min(configuredRows, itemCount); rows++)
+            {
+                int columns = (int)System.Math.Ceiling((double)itemCount / rows);
+                
+                // Skip if columns exceed configured limit
+                if (columns > configuredColumns)
+                    continue;
+                
+                // Calculate aspect ratio for this configuration
+                double testAspectRatio = (double)rows / columns;
+                double diff = System.Math.Abs(testAspectRatio - aspectRatio);
+                
+                // If this is closer to the target aspect ratio, use it
+                if (diff < bestAspectRatioDiff)
+                {
+                    bestAspectRatioDiff = diff;
+                    bestRows = rows;
+                }
+            }
+
+            return bestRows;
+        }
+
+        /// <summary>
+        /// Calculates the condensed number of columns based on item count and rows.
+        /// </summary>
+        private int CalculateCondensedColumns(int itemCount, int configuredRows, int configuredColumns)
+        {
+            if (itemCount == 0) return 1;
+            
+            int rows = CalculateCondensedRows(itemCount, configuredRows, configuredColumns);
+            int columns = (int)System.Math.Ceiling((double)itemCount / rows);
+            
+            // Ensure we don't exceed configured dimensions
+            columns = System.Math.Min(columns, configuredColumns);
+            
+            return columns;
+        }
+
+        /// <summary>
+        /// Updates the PopulatedPositionItems collection based on current state.
+        /// </summary>
+        private void UpdatePopulatedPositionItems()
+        {
+            var items = new ObservableCollection<GridPositionItem>();
+
+            if (Settings?.ActiveProfile == null)
+            {
+                PopulatedPositionItems = items;
+                return;
+            }
+
+            var profile = Settings.ActiveProfile;
+
+            foreach (int position in PopulatedPositions)
+            {
+                bool isSelected = position == CurrentPosition;
+
+                items.Add(new GridPositionItem
+                {
+                    PositionNumber = $"#{position + 1}",
+                    Label = profile.TextLabels[position],
+                    IsSelected = isSelected
+                });
+            }
+
+            PopulatedPositionItems = items;
+        }
+
+        /// <summary>
+        /// Gets the text for a specific position number.
+        /// Returns the text label if populated, otherwise returns the position number.
+        /// Returns empty string for out-of-range positions.
+        /// </summary>
+        /// <param name="position">The position number (0-based)</param>
+        /// <returns>The text to display for this position</returns>
+        public string GetTextForPosition(int position)
+        {
+            if (Settings?.ActiveProfile == null)
+                return "";
+
+            var profile = Settings.ActiveProfile;
+
+            // Validate position is within range
+            if (position < 0 || position >= profile.PositionCount)
+                return "";
+
+            // Get text label for this position
+            if (position < profile.TextLabels.Count)
+            {
+                string label = profile.TextLabels[position];
+
+                // Return label if populated, otherwise return position number
+                if (!string.IsNullOrWhiteSpace(label))
+                    return label;
+            }
+
+            // Return position number as fallback (1-based for display)
+            return (position + 1).ToString();
         }
 
         public event PropertyChangedEventHandler? PropertyChanged;

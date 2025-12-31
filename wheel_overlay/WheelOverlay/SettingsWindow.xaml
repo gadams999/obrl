@@ -28,7 +28,9 @@
                 <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
 
-            <ScrollViewer Grid.Row="0" VerticalScrollBarVisibility="Auto">
+            <ScrollViewer Grid.Row="0" 
+                          VerticalScrollBarVisibility="Auto"
+                          PreviewMouseWheel="ScrollViewer_PreviewMouseWheel">
                 <StackPanel x:Name="SettingsPanel" Margin="20"/>
             </ScrollViewer>
 

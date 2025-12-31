@@ -43,17 +43,48 @@
             </Style.Triggers>
         </Style>
     </UserControl.Resources>
-    <Grid>
-        <TextBlock Text="{Binding DisplayedText}"
+    <Grid x:Name="AnimationContainer">
+        <!-- Current Text (animating out) -->
+        <TextBlock x:Name="CurrentText"
+                   Text="{Binding DisplayedText}"
                    FontSize="{Binding Settings.FontSize}"
                    FontFamily="{Binding Settings.FontFamily}"
                    FontWeight="Bold"
                    HorizontalAlignment="Center"
                    VerticalAlignment="Center"
-                   Style="{StaticResource FlashingTextStyle}">
+                   Style="{StaticResource FlashingTextStyle}"
+                   RenderTransformOrigin="0.5,0.5">
             <TextBlock.Effect>
                 <DropShadowEffect Color="Black" BlurRadius="4" ShadowDepth="2" Opacity="0.8"/>
             </TextBlock.Effect>
+            <TextBlock.RenderTransform>
+                <TransformGroup>
+                    <RotateTransform x:Name="CurrentRotate"/>
+                    <TranslateTransform x:Name="CurrentTranslate"/>
+                </TransformGroup>
+            </TextBlock.RenderTransform>
+        </TextBlock>
+        
+        <!-- Next Text (animating in) -->
+        <TextBlock x:Name="NextText"
+                   Text=""
+                   FontSize="{Binding Settings.FontSize}"
+                   FontFamily="{Binding Settings.FontFamily}"
+                   FontWeight="Bold"
+                   HorizontalAlignment="Center"
+                   VerticalAlignment="Center"
+                   Style="{StaticResource FlashingTextStyle}"
+                   Opacity="0"
+                   RenderTransformOrigin="0.5,0.5">
+            <TextBlock.Effect>
+                <DropShadowEffect Color="Black" BlurRadius="4" ShadowDepth="2" Opacity="0.8"/>
+            </TextBlock.Effect>
+            <TextBlock.RenderTransform>
+                <TransformGroup>
+                    <RotateTransform x:Name="NextRotate"/>
+                    <TranslateTransform x:Name="NextTranslate"/>
+                </TransformGroup>
+            </TextBlock.RenderTransform>
         </TextBlock>
     </Grid>
 </UserControl>

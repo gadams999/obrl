@@ -18,7 +18,7 @@ namespace WheelOverlay.Models
     public class AppSettings
     {
         // Display Layout
-        public DisplayLayout Layout { get; set; } = DisplayLayout.Single;
+        public DisplayLayout Layout { get; set; } = DisplayLayout.Grid;
 
         // Text Labels
         public string[] TextLabels { get; set; } = { "DASH", "TC2", "MAP", "FUEL", "BRGT", "VOL", "BOX", "DIFF" };
@@ -26,7 +26,7 @@ namespace WheelOverlay.Models
         // Text Appearance
         public string SelectedTextColor { get; set; } = "#FFFFFF"; // White
         public string NonSelectedTextColor { get; set; } = "#808080"; // Gray
-        public int FontSize { get; set; } = 48;
+        public int FontSize { get; set; } = 20;
         public string FontFamily { get; set; } = "Segoe UI";
 
         // Move Overlay Appearance
@@ -34,7 +34,7 @@ namespace WheelOverlay.Models
         public int MoveOverlayOpacity { get; set; } = 80; // Percentage
 
         // Layout Spacing
-        public int ItemSpacing { get; set; } = 10;
+        public int ItemSpacing { get; set; } = 0;
         public int ItemPadding { get; set; } = 5;
 
         // Window Behavior
@@ -44,6 +44,9 @@ namespace WheelOverlay.Models
 
         // Device Selection
         public string SelectedDeviceName { get; set; } = "BavarianSimTec Alpha";
+
+        // Animation Settings (New in v0.5.0)
+        public bool EnableAnimations { get; set; } = true;
 
         // Profiles (New in v0.2.0)
         public List<Profile> Profiles { get; set; } = new List<Profile>();
@@ -146,6 +149,18 @@ namespace WheelOverlay.Models
                 settings.SelectedProfileId = defaultProfile.Id;
             }
             
+            // Normalize all profiles on load
+            foreach (var profile in settings.Profiles)
+            {
+                profile.NormalizeTextLabels();
+                
+                // Validate and auto-correct grid configurations
+                if (!profile.IsValidGridConfiguration())
+                {
+                    profile.AdjustGridToDefault();
+                }
+            }
+            
             return settings;
         }
 
@@ -157,6 +172,12 @@ namespace WheelOverlay.Models
                 if (directory != null && !Directory.Exists(directory))
                 {
                     Directory.CreateDirectory(directory);
+                }
+
+                // Normalize profiles before saving
+                foreach (var profile in Profiles)
+                {
+                    profile.NormalizeTextLabels();
                 }
 
                 var json = JsonSerializer.Serialize(this, new JsonSerializerOptions { WriteIndented = true });
