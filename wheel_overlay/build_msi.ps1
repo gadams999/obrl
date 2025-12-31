@@ -14,7 +14,7 @@ if (Test-Path $publishDir) {
     Remove-Item $publishDir -Recurse -Force
 }
 
-dotnet publish $projectPath -c Release -r win-x64 --self-contained true -p:PublishSingleFile=false -o $publishDir
+dotnet publish $projectPath -c Release -r win-x64 --self-contained true -p:PublishSingleFile=false -p:TreatWarningsAsErrors=true -o $publishDir
 
 if ($LASTEXITCODE -ne 0) {
     Write-Host "Build Failed!" -ForegroundColor Red
