@@ -29,7 +29,7 @@ namespace WheelOverlay.Views
         {
             public int NewPosition { get; set; }
             public int OldPosition { get; set; }
-            public OverlayViewModel ViewModel { get; set; }
+            public OverlayViewModel? ViewModel { get; set; }
             public DateTime Timestamp { get; set; }
         }
         
@@ -50,15 +50,18 @@ namespace WheelOverlay.Views
             }
         }
         
-        public void OnPositionChanged(int newPosition, OverlayViewModel viewModel)
+        public void OnPositionChanged(int newPosition, OverlayViewModel? viewModel)
         {
             // Validate viewModel and settings
             if (viewModel?.Settings?.ActiveProfile == null)
                 return;
             
+            // At this point, viewModel is guaranteed to be non-null
+            var vm = viewModel;
+            
             // Use _currentPosition as oldPosition (not external parameter)
             int oldPosition = _currentPosition;
-            int positionCount = viewModel.Settings.ActiveProfile.PositionCount;
+            int positionCount = vm.Settings.ActiveProfile.PositionCount;
             
             // If this is the first call (_currentPosition == -1), initialize from ViewModel
             // This handles the case where the ViewModel already has a position set before the first change
@@ -66,19 +69,19 @@ namespace WheelOverlay.Views
             {
                 // Check if the ViewModel already has a position set (not the default 0)
                 // If newPosition matches ViewModel's current position, this is just initialization
-                if (newPosition == viewModel.CurrentPosition)
+                if (newPosition == vm.CurrentPosition)
                 {
                     // This is the initial sync - just set the position without animation
                     _currentPosition = newPosition;
                     _targetPosition = newPosition;
-                    CurrentText.Text = viewModel.GetTextForPosition(newPosition);
+                    CurrentText.Text = vm.GetTextForPosition(newPosition);
                     return;
                 }
                 else
                 {
                     // This is the first actual position change
                     // Initialize oldPosition from ViewModel's current position
-                    oldPosition = viewModel.CurrentPosition;
+                    oldPosition = vm.CurrentPosition;
                     _currentPosition = oldPosition;
                     // Don't return - continue to animate from oldPosition to newPosition
                 }
@@ -98,12 +101,12 @@ namespace WheelOverlay.Views
             }
             
             // Check if animations are disabled
-            if (viewModel?.Settings?.EnableAnimations == false)
+            if (vm.Settings?.EnableAnimations == false)
             {
                 // Skip animation, just update the text immediately
                 _currentPosition = newPosition;
                 _targetPosition = newPosition;
-                CurrentText.Text = viewModel.DisplayedText;
+                CurrentText.Text = vm.DisplayedText;
                 return;
             }
             
@@ -133,7 +136,7 @@ namespace WheelOverlay.Views
                 
                 // Jump directly to the new position
                 _currentPosition = newPosition;
-                CurrentText.Text = viewModel.GetTextForPosition(newPosition);
+                CurrentText.Text = vm.GetTextForPosition(newPosition);
                 return;
             }
             
@@ -142,7 +145,7 @@ namespace WheelOverlay.Views
             {
                 NewPosition = newPosition,
                 OldPosition = oldPosition,
-                ViewModel = viewModel,
+                ViewModel = vm,
                 Timestamp = DateTime.Now
             });
             
@@ -166,8 +169,12 @@ namespace WheelOverlay.Views
             
             var change = _animationQueue.Dequeue();
             
+            // Skip if ViewModel is null
+            if (change.ViewModel == null)
+                return;
+            
             // Extract positionCount from ViewModel
-            int positionCount = change.ViewModel?.Settings?.ActiveProfile?.PositionCount ?? 0;
+            int positionCount = change.ViewModel.Settings?.ActiveProfile?.PositionCount ?? 0;
             
             // Determine direction
             bool isForward = IsForwardTransition(change.OldPosition, change.NewPosition, positionCount);

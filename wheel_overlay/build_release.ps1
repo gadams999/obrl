@@ -12,7 +12,7 @@ if (Test-Path $publishDir) {
 }
 
 # Publish single file executable
-dotnet publish $projectPath -c Release -r win-x64 -p:PublishSingleFile=true --self-contained false -o $publishDir
+dotnet publish $projectPath -c Release -r win-x64 -p:PublishSingleFile=true -p:TreatWarningsAsErrors=true --self-contained false -o $publishDir
 
 if ($LASTEXITCODE -eq 0) {
     Write-Host "Build Successful!" -ForegroundColor Green
