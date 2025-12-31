@@ -442,6 +442,38 @@ namespace WheelOverlay.ViewModels
             PopulatedPositionItems = items;
         }
 
+        /// <summary>
+        /// Gets the text for a specific position number.
+        /// Returns the text label if populated, otherwise returns the position number.
+        /// Returns empty string for out-of-range positions.
+        /// </summary>
+        /// <param name="position">The position number (0-based)</param>
+        /// <returns>The text to display for this position</returns>
+        public string GetTextForPosition(int position)
+        {
+            if (Settings?.ActiveProfile == null)
+                return "";
+
+            var profile = Settings.ActiveProfile;
+
+            // Validate position is within range
+            if (position < 0 || position >= profile.PositionCount)
+                return "";
+
+            // Get text label for this position
+            if (position < profile.TextLabels.Count)
+            {
+                string label = profile.TextLabels[position];
+
+                // Return label if populated, otherwise return position number
+                if (!string.IsNullOrWhiteSpace(label))
+                    return label;
+            }
+
+            // Return position number as fallback (1-based for display)
+            return (position + 1).ToString();
+        }
+
         public event PropertyChangedEventHandler? PropertyChanged;
 
         protected void OnPropertyChanged([CallerMemberName] string? propertyName = null)

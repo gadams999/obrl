@@ -17,7 +17,6 @@ namespace WheelOverlay
 
         private double _originalLeft;
         private double _originalTop;
-        private int _previousPosition = -1;
 
         public bool ConfigMode
         {
@@ -224,6 +223,9 @@ namespace WheelOverlay
         {
             _inputService.Stop();
             _inputService.Dispose();
+            
+            // Shutdown the application when the main window is closed
+            System.Windows.Application.Current.Shutdown();
         }
 
         private void OnRotaryPositionChanged(object? sender, int position)
@@ -239,12 +241,10 @@ namespace WheelOverlay
                     var singleTextLayout = FindVisualChild<SingleTextLayout>(this);
                     if (singleTextLayout != null)
                     {
-                        int positionCount = _viewModel.Settings.ActiveProfile.PositionCount;
-                        singleTextLayout.OnPositionChanged(position, _previousPosition, positionCount);
+                        singleTextLayout.OnPositionChanged(position, _viewModel);
                     }
                 }
                 
-                _previousPosition = position;
                 _viewModel.CurrentPosition = position;
             });
         }

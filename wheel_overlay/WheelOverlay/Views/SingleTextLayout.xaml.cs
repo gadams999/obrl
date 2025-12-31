@@ -18,7 +18,7 @@ namespace WheelOverlay.Views
         
         private int _currentPosition = -1;
         private bool _isAnimating = false;
-        private bool _isInitialized = false;
+        private DateTime _lastPositionChangeTime = DateTime.MinValue;
         
         // Animation queue management
         private Queue<PositionChange> _animationQueue = new Queue<PositionChange>();
@@ -29,28 +29,75 @@ namespace WheelOverlay.Views
         {
             public int NewPosition { get; set; }
             public int OldPosition { get; set; }
-            public int PositionCount { get; set; }
+            public OverlayViewModel ViewModel { get; set; }
             public DateTime Timestamp { get; set; }
         }
         
         public SingleTextLayout()
         {
             InitializeComponent();
-            Loaded += (s, e) => _isInitialized = true;
+            Loaded += OnLoaded;
         }
         
-        public void OnPositionChanged(int newPosition, int oldPosition, int positionCount)
+        private void OnLoaded(object sender, RoutedEventArgs e)
         {
-            // Don't animate on first load or if not initialized
-            if (!_isInitialized || oldPosition == -1)
+            // Initialize the current position from the DataContext (ViewModel) if available
+            if (DataContext is OverlayViewModel viewModel)
             {
-                _currentPosition = newPosition;
-                _targetPosition = newPosition;
+                _currentPosition = viewModel.CurrentPosition;
+                _targetPosition = viewModel.CurrentPosition;
+                CurrentText.Text = viewModel.GetTextForPosition(viewModel.CurrentPosition);
+            }
+        }
+        
+        public void OnPositionChanged(int newPosition, OverlayViewModel viewModel)
+        {
+            // Validate viewModel and settings
+            if (viewModel?.Settings?.ActiveProfile == null)
+                return;
+            
+            // Use _currentPosition as oldPosition (not external parameter)
+            int oldPosition = _currentPosition;
+            int positionCount = viewModel.Settings.ActiveProfile.PositionCount;
+            
+            // If this is the first call (_currentPosition == -1), initialize from ViewModel
+            // This handles the case where the ViewModel already has a position set before the first change
+            if (oldPosition == -1)
+            {
+                // Check if the ViewModel already has a position set (not the default 0)
+                // If newPosition matches ViewModel's current position, this is just initialization
+                if (newPosition == viewModel.CurrentPosition)
+                {
+                    // This is the initial sync - just set the position without animation
+                    _currentPosition = newPosition;
+                    _targetPosition = newPosition;
+                    CurrentText.Text = viewModel.GetTextForPosition(newPosition);
+                    return;
+                }
+                else
+                {
+                    // This is the first actual position change
+                    // Initialize oldPosition from ViewModel's current position
+                    oldPosition = viewModel.CurrentPosition;
+                    _currentPosition = oldPosition;
+                    // Don't return - continue to animate from oldPosition to newPosition
+                }
+            }
+            
+            // Ignore duplicate position changes (already at this position or already targeting it)
+            if (newPosition == _currentPosition || newPosition == _targetPosition)
+            {
+                return;
+            }
+            
+            // If the position hasn't actually changed, ignore this call
+            // This prevents re-processing the same position multiple times
+            if (newPosition == _currentPosition && newPosition == _targetPosition)
+            {
                 return;
             }
             
             // Check if animations are disabled
-            var viewModel = DataContext as OverlayViewModel;
             if (viewModel?.Settings?.EnableAnimations == false)
             {
                 // Skip animation, just update the text immediately
@@ -63,40 +110,45 @@ namespace WheelOverlay.Views
             // Update target position
             _targetPosition = newPosition;
             
-            // Add to queue
+            // Check if we're receiving rapid position changes (rotating the wheel)
+            // If a new position change comes in less than ANIMATION_DURATION_MS after the last one,
+            // it's rapid input and we should skip animation
+            DateTime now = DateTime.Now;
+            double timeSinceLastChange = (now - _lastPositionChangeTime).TotalMilliseconds;
+            _lastPositionChangeTime = now;
+            
+            bool isRapidInput = timeSinceLastChange < ANIMATION_DURATION_MS && timeSinceLastChange > 0;
+            
+            if (isRapidInput)
+            {
+                // During rapid rotation, skip animation and jump directly to the new position
+                // Clear the queue since we're jumping
+                _animationQueue.Clear();
+                
+                // Stop any current animation
+                if (_isAnimating)
+                {
+                    StopCurrentAnimation();
+                }
+                
+                // Jump directly to the new position
+                _currentPosition = newPosition;
+                CurrentText.Text = viewModel.GetTextForPosition(newPosition);
+                return;
+            }
+            
+            // Single position change - queue for animation
             _animationQueue.Enqueue(new PositionChange
             {
                 NewPosition = newPosition,
                 OldPosition = oldPosition,
-                PositionCount = positionCount,
+                ViewModel = viewModel,
                 Timestamp = DateTime.Now
             });
             
             // Start lag timer if not running
             if (!_lagTimer.IsRunning)
             {
-                _lagTimer.Restart();
-            }
-            
-            // Check for lag
-            double lagMs = _lagTimer.Elapsed.TotalMilliseconds;
-            
-            // If we're lagging behind by more than MAX_LAG_MS, skip to the target position
-            if (lagMs > MAX_LAG_MS && _animationQueue.Count > 1)
-            {
-                // Clear the queue except for the last position
-                while (_animationQueue.Count > 1)
-                {
-                    _animationQueue.Dequeue();
-                }
-                
-                // Stop current animation and jump to target
-                if (_isAnimating)
-                {
-                    StopCurrentAnimation();
-                }
-                
-                // Reset lag timer
                 _lagTimer.Restart();
             }
             
@@ -114,11 +166,14 @@ namespace WheelOverlay.Views
             
             var change = _animationQueue.Dequeue();
             
-            // Determine direction
-            bool isForward = IsForwardTransition(change.OldPosition, change.NewPosition, change.PositionCount);
+            // Extract positionCount from ViewModel
+            int positionCount = change.ViewModel?.Settings?.ActiveProfile?.PositionCount ?? 0;
             
-            // Start animation
-            await AnimateTransitionAsync(change.NewPosition, isForward);
+            // Determine direction
+            bool isForward = IsForwardTransition(change.OldPosition, change.NewPosition, positionCount);
+            
+            // Start animation with oldPosition and viewModel
+            await AnimateTransitionAsync(change.NewPosition, change.OldPosition, change.ViewModel, isForward);
             
             // Reset lag timer after animation completes
             _lagTimer.Restart();
@@ -146,20 +201,24 @@ namespace WheelOverlay.Views
             return newPos > oldPos;
         }
         
-        private async Task AnimateTransitionAsync(int newPosition, bool isForward)
+        private async Task AnimateTransitionAsync(int newPosition, int oldPosition, OverlayViewModel viewModel, bool isForward)
         {
             _isAnimating = true;
             
-            // Get the ViewModel to access the text for the new position
-            var viewModel = DataContext as OverlayViewModel;
+            // Validate viewModel
             if (viewModel == null)
             {
                 _isAnimating = false;
                 return;
             }
             
-            // Set up next text
-            NextText.Text = viewModel.DisplayedText;
+            // Fetch text for specific positions (not current ViewModel state)
+            string oldText = viewModel.GetTextForPosition(oldPosition);
+            string newText = viewModel.GetTextForPosition(newPosition);
+            
+            // Set up current and next text correctly
+            CurrentText.Text = oldText;  // OLD position text
+            NextText.Text = newText;     // NEW position text
             
             // Create animations
             var duration = TimeSpan.FromMilliseconds(ANIMATION_DURATION_MS);
@@ -223,8 +282,8 @@ namespace WheelOverlay.Views
             // Wait for animation to complete
             await Task.Delay((int)ANIMATION_DURATION_MS);
             
-            // Swap texts
-            CurrentText.Text = NextText.Text;
+            // Swap texts - use newText (not NextText.Text in case it changed)
+            CurrentText.Text = newText;
             CurrentText.Opacity = 1;
             CurrentRotate.Angle = 0;
             CurrentTranslate.Y = 0;
