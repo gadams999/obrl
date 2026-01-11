@@ -52,6 +52,12 @@ test.*
 !**/*Test*.cs
 !**/*Tests*.cs
 
+# Test results and coverage
+TestResults/
+*.trx
+*.coverage
+*.coveragexml
+
 # Temporary documentation and build files
 BUILD_FIX_SUMMARY.md
 *_SUMMARY.md
