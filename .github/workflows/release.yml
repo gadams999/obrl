@@ -57,8 +57,8 @@ jobs:
       with:
         dotnet-version: 8.0.x
 
-    - name: Install WiX Toolset v4.0.4
-      run: dotnet tool install --global wix --version 4.0.4
+    - name: Install WiX Toolset v4.0.5
+      run: dotnet tool install --global wix --version 4.0.5
 
     - name: Build MSI Installer
       run: |
