@@ -25,8 +25,8 @@ namespace WheelOverlay
                     throw;
                 }
                 
-                LogService.Info("InitializeComponent...");
-                app.InitializeComponent();
+                LogService.Info("Starting app without explicit InitializeComponent...");
+                // InitializeComponent will be called automatically by WPF
                 
                 LogService.Info("Calling app.Run()...");
                 app.Run();
