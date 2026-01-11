@@ -35,3 +35,26 @@ Package/
 *.exe
 *.pdb
 *.cache
+
+# Test files (excluding legitimate test projects)
+*test*.ps1
+*test*.bat
+*test*.cmd
+*test*.sh
+test_*
+*_test.*
+*.test.*
+test.*
+# But keep test project directories and source files
+!WheelOverlay.Tests/
+!**/*.Tests.*
+!**/Tests/**
+!**/*Test*.cs
+!**/*Tests*.cs
+
+# Temporary documentation and build files
+BUILD_FIX_SUMMARY.md
+*_SUMMARY.md
+*.log
+install.log
+uninstall.log

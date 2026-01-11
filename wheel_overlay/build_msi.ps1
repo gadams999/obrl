@@ -21,7 +21,7 @@ if ($LASTEXITCODE -ne 0) {
     exit 1
 }
 
-Write-Host "✓ Application built successfully" -ForegroundColor Green
+Write-Host "Application built successfully" -ForegroundColor Green
 Write-Host ""
 
 # Step 2: Copy files to Package directory
@@ -35,64 +35,60 @@ Copy-Item "$publishDir\*" -Destination $packageDir -Recurse -Force -Exclude "*.p
 # Copy LICENSE.txt from root
 Copy-Item ".\LICENSE.txt" -Destination $packageDir -Force
 
-Write-Host "✓ Files copied to Package directory" -ForegroundColor Green
+# Generate WiX components for all files
+Write-Host "  Generating WiX components..." -ForegroundColor Gray
+$allFiles = Get-ChildItem $packageDir -File
+$files = $allFiles | Where-Object { $_.Extension -notin @('.wxs', '.msi', '.wixpdb') }
+$components = @()
+foreach ($file in $files) {
+    $components += "      <Component>`n        <File Source=`"$($file.Name)`" />`n      </Component>"
+}
+$componentXml = $components -join "`n"
+
+# Update Package.wxs with generated components
+$packageWxs = Get-Content "$packageDir\Package.wxs" -Raw
+$startMarker = "      <!-- APPLICATION_FILES_START -->"
+$endMarker = "      <!-- APPLICATION_FILES_END -->"
+$startIndex = $packageWxs.IndexOf($startMarker)
+$endIndex = $packageWxs.IndexOf($endMarker) + $endMarker.Length
+
+if ($startIndex -ge 0 -and $endIndex -gt $startIndex) {
+    $beforeMarker = $packageWxs.Substring(0, $startIndex)
+    $afterMarker = $packageWxs.Substring($endIndex)
+    $newContent = $beforeMarker + $startMarker + "`n" + $componentXml + "`n      " + $endMarker + $afterMarker
+    Set-Content "$packageDir\Package.wxs" -Value $newContent -NoNewline
+    Write-Host "  Updated Package.wxs with $($files.Count) components" -ForegroundColor Gray
+} else {
+    Write-Host "  WARNING: Could not find component markers in Package.wxs" -ForegroundColor Yellow
+}
+
+Write-Host "Files copied to Package directory" -ForegroundColor Green
 Write-Host ""
 
 # Step 3: Build MSI with WiX v4
 Write-Host "[3/4] Building MSI with WiX v4..." -ForegroundColor Yellow
 Push-Location $packageDir
 
-try {
-    # Check if wix.exe is available (WiX v4)
-    $wixCmd = Get-Command wix -ErrorAction SilentlyContinue
-    if (-not $wixCmd) {
-        Write-Host "ERROR: WiX v4 toolset not found!" -ForegroundColor Red
-        Write-Host "Install with: dotnet tool install -g wix --version 4.0.5" -ForegroundColor Yellow
-        exit 1
-    }
-
-    # Harvest all files from current directory
-    Write-Host "  Harvesting files..." -ForegroundColor Gray
-    
-    # Create a fragment with all files
-    $files = Get-ChildItem -File | Where-Object { $_.Extension -notin @('.wxs','.wixobj','.wixpdb','.msi') -and $_.Name -ne 'app.ico' }
-    Write-Host "  Found $($files.Count) files to package" -ForegroundColor Gray
-    $fileComponents = @()
-    
-    $firstFile = $true
-    foreach ($file in $files) {
-        if ($firstFile) {
-            # First file is the KeyPath
-            $fileComponents += "      <Component>`n        <File Source=`"$($file.Name)`" KeyPath=`"yes`" />`n      </Component>"
-            $firstFile = $false
-        } else {
-            $fileComponents += "      <Component>`n        <File Source=`"$($file.Name)`" />`n      </Component>"
-        }
-    }
-    
-    # Create temporary file list
-    $componentXml = $fileComponents -join "`n"
-    
-    # Update Package.wxs with file list
-    $wxsContent = Get-Content "Package.wxs" -Raw
-    $wxsContent = $wxsContent -replace '(?s)<!-- APPLICATION_FILES_START -->.*?<!-- APPLICATION_FILES_END -->', "<!-- APPLICATION_FILES_START -->`n$componentXml`n      <!-- APPLICATION_FILES_END -->"
-    Set-Content "Package_temp.wxs" $wxsContent
-    
-    # Build the MSI with custom UI
-    wix build Package_temp.wxs CustomUI.wxs -o WheelOverlay.msi
-    
-    # Clean up
-    Remove-Item "Package_temp.wxs" -ErrorAction SilentlyContinue
-
-    if ($LASTEXITCODE -ne 0) {
-        Write-Host "MSI build failed!" -ForegroundColor Red
-        exit 1
-    }
-
-    Write-Host "✓ MSI built successfully" -ForegroundColor Green
-} finally {
+# Check if wix.exe is available (WiX v4)
+$wixCmd = Get-Command wix -ErrorAction SilentlyContinue
+if (-not $wixCmd) {
+    Write-Host "ERROR: WiX v4 toolset not found!" -ForegroundColor Red
+    Write-Host "Install with: dotnet tool install -g wix --version 4.0.5" -ForegroundColor Yellow
     Pop-Location
+    exit 1
 }
+
+# Build the MSI with custom UI
+wix build Package.wxs CustomUI.wxs -o WheelOverlay.msi
+
+if ($LASTEXITCODE -ne 0) {
+    Write-Host "MSI build failed!" -ForegroundColor Red
+    Pop-Location
+    exit 1
+}
+
+Write-Host "MSI built successfully" -ForegroundColor Green
+Pop-Location
 
 Write-Host ""
 
@@ -105,7 +101,4 @@ Write-Host "  Application:   .\Publish\WheelOverlay.exe" -ForegroundColor White
 Write-Host ""
 Write-Host "To install, run:" -ForegroundColor Yellow
 Write-Host "  msiexec /i Package\WheelOverlay.msi" -ForegroundColor White
-Write-Host ""
-Write-Host "To install with logging:" -ForegroundColor Yellow
-Write-Host "  msiexec /i Package\WheelOverlay.msi /l*v install.log" -ForegroundColor White
 Write-Host ""
