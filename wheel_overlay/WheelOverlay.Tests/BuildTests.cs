@@ -1,4 +1,4 @@
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using System.IO;
 using FsCheck;
 using FsCheck.Xunit;
@@ -187,7 +187,11 @@ namespace WheelOverlay.Tests
         /// Validates: Requirements 12.1, 12.2, 12.3, 12.7
         /// Tests that multiple builds produce consistent, valid output.
         /// </summary>
+        #if FAST_TESTS
+        [Property(MaxTest = 10)]
+        #else
         [Property(MaxTest = 100)]
+        #endif
         [Trait("Feature", "dotnet10-upgrade-and-testing")]
         [Trait("Property", "Property 15: Build Output Integrity")]
         public FsCheck.Property Property_BuildOutputIntegrity()

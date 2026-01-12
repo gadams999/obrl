@@ -13,6 +13,7 @@ namespace WheelOverlay.Tests
     /// Verifies that the application handles failures gracefully and provides diagnostic information.
     /// Requirements: 11.1, 11.2, 11.3, 11.4, 11.5, 11.6, 11.7
     /// </summary>
+    [Collection("SettingsFile")]
     public class ErrorHandlingTests : UITestBase
     {
         /// <summary>

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Linq;
 using FsCheck;
 using FsCheck.Xunit;
@@ -11,7 +11,11 @@ namespace WheelOverlay.Tests
     {
         // Feature: v0.5.0-enhancements, Property 6: Grid Dimension Validation
         // Validates: Requirements 2.4, 6.1
+        #if FAST_TESTS
+        [Property(MaxTest = 10)]
+        #else
         [Property(MaxTest = 100)]
+        #endif
         public Property Property_GridDimensionValidation()
         {
             return Prop.ForAll(
@@ -36,13 +40,17 @@ namespace WheelOverlay.Tests
                     bool expectedValid = capacity >= positionCount;
 
                     return (result.IsValid == expectedValid)
-                        .Label($"Grid {rows}×{columns} (capacity {capacity}) with {positionCount} positions should be {(expectedValid ? "valid" : "invalid")}, but got {result.IsValid}");
+                        .Label($"Grid {rows}Ã—{columns} (capacity {capacity}) with {positionCount} positions should be {(expectedValid ? "valid" : "invalid")}, but got {result.IsValid}");
                 });
         }
 
         // Feature: v0.5.0-enhancements, Property 20: Grid Suggestion Validity
         // Validates: Requirements 6.5
+        #if FAST_TESTS
+        [Property(MaxTest = 10)]
+        #else
         [Property(MaxTest = 100)]
+        #endif
         public Property Property_GridSuggestionValidity()
         {
             return Prop.ForAll(
@@ -59,7 +67,7 @@ namespace WheelOverlay.Tests
                     {
                         var invalidSuggestions = suggestions
                             .Where(d => d.Rows * d.Columns < positionCount)
-                            .Select(d => $"{d.Rows}×{d.Columns} (capacity {d.Rows * d.Columns})")
+                            .Select(d => $"{d.Rows}Ã—{d.Columns} (capacity {d.Rows * d.Columns})")
                             .ToList();
 
                         return false

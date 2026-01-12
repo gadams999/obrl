@@ -16,6 +16,7 @@ namespace WheelOverlay.Tests
     /// 
     /// Requirements: 4.1, 4.2, 4.3, 4.5, 4.6, 4.7
     /// </summary>
+    [Collection("SettingsFile")]
     public class MouseInteractionTests : UITestBase
     {
         /// <summary>
@@ -148,9 +149,12 @@ namespace WheelOverlay.Tests
                     try
                     {
                         System.Threading.Thread.Sleep(100);
-                        settings.WindowLeft = originalLeft;
-                        settings.WindowTop = originalTop;
-                        settings.Save();
+                        // Reload settings to get fresh instance
+                        var cleanupSettings = AppSettings.Load();
+                        cleanupSettings.WindowLeft = originalLeft;
+                        cleanupSettings.WindowTop = originalTop;
+                        cleanupSettings.Save();
+                        System.Threading.Thread.Sleep(100);
                         break;
                     }
                     catch (System.IO.IOException) when (i < 2)
@@ -196,20 +200,49 @@ namespace WheelOverlay.Tests
         {
             // Arrange
             var settings = AppSettings.Load();
+            var originalLeft = settings.WindowLeft;
+            var originalTop = settings.WindowTop;
             var testLeft = 300.0;
             var testTop = 200.0;
 
-            // Act - Save position
-            settings.WindowLeft = testLeft;
-            settings.WindowTop = testTop;
-            settings.Save();
+            try
+            {
+                // Act - Save position
+                settings.WindowLeft = testLeft;
+                settings.WindowTop = testTop;
+                settings.Save();
 
-            // Load settings again
-            var loadedSettings = AppSettings.Load();
+                // Wait to ensure file is written
+                System.Threading.Thread.Sleep(100);
 
-            // Assert
-            Assert.Equal(testLeft, loadedSettings.WindowLeft);
-            Assert.Equal(testTop, loadedSettings.WindowTop);
+                // Load settings again
+                var loadedSettings = AppSettings.Load();
+
+                // Assert
+                Assert.Equal(testLeft, loadedSettings.WindowLeft);
+                Assert.Equal(testTop, loadedSettings.WindowTop);
+            }
+            finally
+            {
+                // Cleanup - restore original values
+                for (int i = 0; i < 3; i++)
+                {
+                    try
+                    {
+                        System.Threading.Thread.Sleep(100);
+                        var cleanupSettings = AppSettings.Load();
+                        cleanupSettings.WindowLeft = originalLeft;
+                        cleanupSettings.WindowTop = originalTop;
+                        cleanupSettings.Save();
+                        System.Threading.Thread.Sleep(100);
+                        break;
+                    }
+                    catch (System.IO.IOException) when (i < 2)
+                    {
+                        System.Threading.Thread.Sleep(100);
+                    }
+                }
+            }
         }
 
         /// <summary>

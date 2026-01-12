@@ -198,14 +198,36 @@ dotnet build
 
 The project includes comprehensive automated tests covering all user interactions, layout modes, and error handling scenarios.
 
+#### Standard Test Run (100 iterations)
+
+For thorough validation with full property-based test coverage:
+
 ```bash
 cd wheel_overlay/WheelOverlay.Tests
 dotnet test
 ```
 
+This runs all tests with 100 iterations per property test, providing comprehensive validation.
+
+#### Fast Test Run (10 iterations)
+
+For quick feedback during development:
+
+```bash
+cd wheel_overlay/WheelOverlay.Tests
+dotnet test --configuration FastTests
+```
+
+This runs all tests with 10 iterations per property test, completing in a fraction of the time while still catching most issues.
+
+#### When to Use Each Configuration
+
+- **Debug/Release (100 iterations)**: Use for final validation before committing, pre-merge checks, and when investigating test failures
+- **FastTests (10 iterations)**: Use during active development for rapid feedback, when making frequent changes, or when running tests repeatedly
+
 Test coverage includes:
 - Unit tests for core functionality
-- Property-based tests using FsCheck (100+ iterations per test)
+- Property-based tests using FsCheck (configurable 10 or 100 iterations per test)
 - Integration tests for end-to-end workflows
 - UI automation tests for system tray and mouse interactions
 

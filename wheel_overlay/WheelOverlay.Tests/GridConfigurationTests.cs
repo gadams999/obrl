@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using WheelOverlay.Models;
 using WheelOverlay.Tests.Infrastructure;
@@ -182,14 +182,18 @@ namespace WheelOverlay.Tests
 
         /// <summary>
         /// Property test: Grid Dimension Validity
-        /// For any grid configuration with rows R and columns C where 1 ≤ R ≤ 4 and 1 ≤ C ≤ 4,
-        /// the grid layout should render correctly with R×C cells.
+        /// For any grid configuration with rows R and columns C where 1 â‰¤ R â‰¤ 4 and 1 â‰¤ C â‰¤ 4,
+        /// the grid layout should render correctly with RÃ—C cells.
         /// Note: Tests with all positions populated to verify full configured dimensions.
         /// 
         /// Property 13: Grid Dimension Validity
         /// Validates: Requirements 10.1, 10.2, 10.3, 10.5
         /// </summary>
+        #if FAST_TESTS
+        [Property(MaxTest = 10)]
+        #else
         [Property(MaxTest = 100)]
+        #endif
         [Trait("Feature", "dotnet10-upgrade-and-testing")]
         [Trait("Property", "Property 13: Grid Dimension Validity")]
         public Property Property_GridDimensionValidity()
@@ -246,13 +250,13 @@ namespace WheelOverlay.Tests
                     }
 
                     return noException
-                        .Label($"Grid {config.Rows}×{config.Columns}: {errorMessage}");
+                        .Label($"Grid {config.Rows}Ã—{config.Columns}: {errorMessage}");
                 });
         }
 
         /// <summary>
         /// Generator for valid grid dimension configurations.
-        /// Generates all valid row/column combinations (1-4 × 1-4).
+        /// Generates all valid row/column combinations (1-4 Ã— 1-4).
         /// Position count is calculated to fill the grid completely.
         /// </summary>
         private static Arbitrary<GridDimensionConfiguration> GenerateGridDimensionConfiguration()
@@ -294,7 +298,11 @@ namespace WheelOverlay.Tests
         /// 
         /// Validates: Requirements 10.6
         /// </summary>
+        #if FAST_TESTS
+        [Property(MaxTest = 10)]
+        #else
         [Property(MaxTest = 100)]
+        #endif
         [Trait("Feature", "dotnet10-upgrade-and-testing")]
         [Trait("Property", "Grid Position Count Handling")]
         public Property Property_GridHandlesDifferentPositionCounts()
@@ -358,7 +366,7 @@ namespace WheelOverlay.Tests
                     }
 
                     return noException
-                        .Label($"Grid {config.Rows}×{config.Columns} with {config.PositionCount} positions: {errorMessage}");
+                        .Label($"Grid {config.Rows}Ã—{config.Columns} with {config.PositionCount} positions: {errorMessage}");
                 });
         }
 

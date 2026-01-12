@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using WheelOverlay.Models;
@@ -17,6 +17,7 @@ namespace WheelOverlay.Tests
     /// 
     /// Requirements: 7.1, 7.2, 7.6
     /// </summary>
+    [Collection("SettingsFile")]
     public class FreshInstallTests : UITestBase
     {
         private readonly string _settingsPath;
@@ -152,7 +153,11 @@ namespace WheelOverlay.Tests
         /// Property 10: Vertical Layout Fresh Install
         /// Validates: Requirements 7.1, 7.2, 7.6
         /// </summary>
+        #if FAST_TESTS
+        [Property(MaxTest = 10)]
+        #else
         [Property(MaxTest = 100)]
+        #endif
         [Trait("Feature", "dotnet10-upgrade-and-testing")]
         [Trait("Property", "Property 10: Vertical Layout Fresh Install")]
         public Property Property_VerticalLayoutFreshInstall()

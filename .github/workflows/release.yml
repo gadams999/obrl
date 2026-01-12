@@ -35,14 +35,51 @@ jobs:
       with:
         dotnet-version: 8.0.x
 
+    - name: Validate Property Tests
+      run: |
+        Write-Host "Validating property test directives..."
+        $result = .\Scripts\Validate-PropertyTests.ps1
+        if ($LASTEXITCODE -ne 0) {
+          Write-Error "Property test validation failed. Some tests are missing conditional compilation directives."
+          Write-Host "Run '.\Scripts\Add-PropertyTestDirectives.ps1' to fix the issues."
+          exit 1
+        }
+        Write-Host "All property tests have correct directives."
+      shell: pwsh
+
+    - name: Determine Build Configuration
+      id: config
+      run: |
+        if ("${{ github.event_name }}" -eq "pull_request") {
+          $config = "FastTests"
+          Write-Host "Using FastTests configuration for PR build (10 iterations)"
+        } else {
+          $config = "Release"
+          Write-Host "Using Release configuration for merge build (100 iterations)"
+        }
+        echo "BUILD_CONFIG=$config" >> $env:GITHUB_ENV
+        echo "configuration=$config" >> $env:GITHUB_OUTPUT
+      shell: pwsh
+
     - name: Restore dependencies
       run: dotnet restore
 
     - name: Build
-      run: dotnet build --no-restore --configuration Release /p:TreatWarningsAsErrors=true
+      run: |
+        Write-Host "Building with ${{ env.BUILD_CONFIG }} configuration..."
+        dotnet build --no-restore --configuration ${{ env.BUILD_CONFIG }} /p:TreatWarningsAsErrors=true
 
     - name: Test
-      run: dotnet test --no-build --verbosity normal --configuration Release
+      run: |
+        Write-Host "Running tests with ${{ env.BUILD_CONFIG }} configuration..."
+        $startTime = Get-Date
+        dotnet test --no-build --verbosity normal --configuration ${{ env.BUILD_CONFIG }}
+        $endTime = Get-Date
+        $duration = ($endTime - $startTime).TotalSeconds
+        Write-Host "Tests completed in $duration seconds"
+        if ("${{ github.event_name }}" -eq "pull_request" -and $duration -gt 120) {
+          Write-Warning "PR tests took longer than 120 seconds ($duration seconds)"
+        }
 
   package-and-release:
     needs: build-and-test

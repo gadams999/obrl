@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using WheelOverlay.Models;
 using WheelOverlay.Services;
@@ -178,7 +178,11 @@ namespace WheelOverlay.Tests
         /// Property 6: Test Mode Position Updates
         /// Validates: Requirements 5.2, 5.3, 5.7, 5.8
         /// </summary>
+        #if FAST_TESTS
+        [Property(MaxTest = 10)]
+        #else
         [Property(MaxTest = 100)]
+        #endif
         [Trait("Feature", "dotnet10-upgrade-and-testing")]
         [Trait("Property", "Property 6: Test Mode Position Updates")]
         public Property Property_TestModePositionUpdates()
@@ -247,7 +251,11 @@ namespace WheelOverlay.Tests
         /// Property 7: Position Wrapping
         /// Validates: Requirements 5.4, 5.5
         /// </summary>
+        #if FAST_TESTS
+        [Property(MaxTest = 10)]
+        #else
         [Property(MaxTest = 100)]
+        #endif
         [Trait("Feature", "dotnet10-upgrade-and-testing")]
         [Trait("Property", "Property 7: Position Wrapping")]
         public Property Property_PositionWrapping()
@@ -295,8 +303,8 @@ namespace WheelOverlay.Tests
 
                     return (forwardWrapCorrect && backwardWrapCorrect)
                         .Label($"For {positionCount} positions: " +
-                               $"forward wrap {maxPosition}→0 = {forwardWrapCorrect}, " +
-                               $"backward wrap 0→{maxPosition} = {backwardWrapCorrect}");
+                               $"forward wrap {maxPosition}â†’0 = {forwardWrapCorrect}, " +
+                               $"backward wrap 0â†’{maxPosition} = {backwardWrapCorrect}");
                 });
         }
 

@@ -12,6 +12,7 @@ namespace WheelOverlay.Tests
     /// Simulates the exact user workflow: clear settings, run in test mode, change to vertical layout.
     /// Requirements: 7.1, 7.2, 7.6
     /// </summary>
+    [Collection("SettingsFile")]
     public class VerticalLayoutIntegrationTest
     {
         private readonly string _testSettingsPath;

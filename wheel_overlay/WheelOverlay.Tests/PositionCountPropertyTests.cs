@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using FsCheck;
@@ -12,7 +12,11 @@ namespace WheelOverlay.Tests
     {
         // Feature: v0.5.0-enhancements, Property 11: Position Count Range Support
         // Validates: Requirements 4.2
+        #if FAST_TESTS
+        [Property(MaxTest = 10)]
+        #else
         [Property(MaxTest = 100)]
+        #endif
         public Property Property_PositionCountRangeSupport()
         {
             return Prop.ForAll(
@@ -43,13 +47,17 @@ namespace WheelOverlay.Tests
                     return (positionCountSet && textLabelsMatch && gridIsValid)
                         .Label($"Position count {positionCount} should be accepted and configured correctly. " +
                                $"PositionCount: {profile.PositionCount}, TextLabels.Count: {profile.TextLabels.Count}, " +
-                               $"GridValid: {gridIsValid} (Grid: {profile.GridRows}×{profile.GridColumns})");
+                               $"GridValid: {gridIsValid} (Grid: {profile.GridRows}Ã—{profile.GridColumns})");
                 });
         }
 
         // Feature: v0.5.0-enhancements, Property 12: Position Count Increase Preservation
         // Validates: Requirements 4.5
+        #if FAST_TESTS
+        [Property(MaxTest = 10)]
+        #else
         [Property(MaxTest = 100)]
+        #endif
         public Property Property_PositionCountIncreasePreservation()
         {
             return Prop.ForAll(
@@ -120,7 +128,11 @@ namespace WheelOverlay.Tests
 
         // Feature: v0.5.0-enhancements, Property 13: Position Count Decrease Removal
         // Validates: Requirements 4.7
+        #if FAST_TESTS
+        [Property(MaxTest = 10)]
+        #else
         [Property(MaxTest = 100)]
+        #endif
         public Property Property_PositionCountDecreaseRemoval()
         {
             return Prop.ForAll(
@@ -182,7 +194,11 @@ namespace WheelOverlay.Tests
 
         // Feature: v0.5.0-enhancements, Property 19: Grid Auto-Adjustment
         // Validates: Requirements 6.3
+        #if FAST_TESTS
+        [Property(MaxTest = 10)]
+        #else
         [Property(MaxTest = 100)]
+        #endif
         public Property Property_GridAutoAdjustment()
         {
             return Prop.ForAll(
@@ -211,7 +227,7 @@ namespace WheelOverlay.Tests
                     // Assert - After adjustment, grid should be valid
                     bool nowValid = profile.IsValidGridConfiguration();
                     
-                    // Check that adjustment follows the 2×N pattern
+                    // Check that adjustment follows the 2Ã—N pattern
                     bool followsDefaultPattern = true;
                     if (!initiallyValid)
                     {
@@ -222,9 +238,9 @@ namespace WheelOverlay.Tests
                     }
                     
                     return (nowValid && followsDefaultPattern)
-                        .Label($"Position count {positionCount} with initial grid {initialRows}×{initialColumns} (capacity: {initialRows * initialColumns}, valid: {initiallyValid}). " +
-                               $"After adjustment: {profile.GridRows}×{profile.GridColumns} (capacity: {profile.GridRows * profile.GridColumns}, valid: {nowValid}). " +
-                               $"Follows 2×N pattern: {followsDefaultPattern}");
+                        .Label($"Position count {positionCount} with initial grid {initialRows}Ã—{initialColumns} (capacity: {initialRows * initialColumns}, valid: {initiallyValid}). " +
+                               $"After adjustment: {profile.GridRows}Ã—{profile.GridColumns} (capacity: {profile.GridRows * profile.GridColumns}, valid: {nowValid}). " +
+                               $"Follows 2Ã—N pattern: {followsDefaultPattern}");
                 });
         }
     }

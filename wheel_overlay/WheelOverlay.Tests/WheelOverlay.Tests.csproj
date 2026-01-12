@@ -8,6 +8,14 @@
     <IsPackable>false</IsPackable>
   </PropertyGroup>
 
+  <!-- FastTests configuration for quick PR checks with reduced PBT iterations -->
+  <PropertyGroup Condition="'$(Configuration)' == 'FastTests'">
+    <DefineConstants>FAST_TESTS</DefineConstants>
+    <Optimize>false</Optimize>
+    <DebugType>portable</DebugType>
+    <DebugSymbols>true</DebugSymbols>
+  </PropertyGroup>
+
   <ItemGroup>
     <PackageReference Include="coverlet.collector" Version="6.0.4" />
     <PackageReference Include="FsCheck" Version="2.16.6" />

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using WheelOverlay.Models;
 using WheelOverlay.Tests.Infrastructure;
@@ -208,7 +208,11 @@ namespace WheelOverlay.Tests
         /// Property 8: Layout Rendering Stability
         /// Validates: Requirements 6.1, 6.2, 6.3, 6.4, 6.5, 6.8
         /// </summary>
+        #if FAST_TESTS
+        [Property(MaxTest = 10)]
+        #else
         [Property(MaxTest = 100)]
+        #endif
         [Trait("Feature", "dotnet10-upgrade-and-testing")]
         [Trait("Property", "Property 8: Layout Rendering Stability")]
         public Property Property_LayoutRenderingStability()
@@ -283,7 +287,11 @@ namespace WheelOverlay.Tests
         /// Property 9: Empty Position Handling
         /// Validates: Requirements 6.7, 7.3
         /// </summary>
+        #if FAST_TESTS
+        [Property(MaxTest = 10)]
+        #else
         [Property(MaxTest = 100)]
+        #endif
         [Trait("Feature", "dotnet10-upgrade-and-testing")]
         [Trait("Property", "Property 9: Empty Position Handling")]
         public Property Property_EmptyPositionHandling()

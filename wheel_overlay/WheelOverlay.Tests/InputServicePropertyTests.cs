@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using FsCheck;
@@ -13,7 +13,11 @@ namespace WheelOverlay.Tests
     {
         // Feature: v0.5.0-enhancements, Property 15: Input Button Range
         // Validates: Requirements 5.1, 5.2
+        #if FAST_TESTS
+        [Property(MaxTest = 10)]
+        #else
         [Property(MaxTest = 100)]
+        #endif
         public Property Property_InputButtonRange()
         {
             return Prop.ForAll(
@@ -49,7 +53,11 @@ namespace WheelOverlay.Tests
 
         // Feature: v0.5.0-enhancements, Property 16: Out-of-Range Input Filtering
         // Validates: Requirements 5.3
+        #if FAST_TESTS
+        [Property(MaxTest = 10)]
+        #else
         [Property(MaxTest = 100)]
+        #endif
         public Property Property_OutOfRangeInputFiltering()
         {
             return Prop.ForAll(
@@ -87,7 +95,11 @@ namespace WheelOverlay.Tests
 
         // Feature: v0.5.0-enhancements, Property 17: In-Range Input Handling
         // Validates: Requirements 5.4
+        #if FAST_TESTS
+        [Property(MaxTest = 10)]
+        #else
         [Property(MaxTest = 100)]
+        #endif
         public Property Property_InRangeInputHandling()
         {
             return Prop.ForAll(
@@ -126,7 +138,11 @@ namespace WheelOverlay.Tests
 
         // Feature: v0.5.0-enhancements, Property 18: Position Wrap-Around
         // Validates: Requirements 5.5
+        #if FAST_TESTS
+        [Property(MaxTest = 10)]
+        #else
         [Property(MaxTest = 100)]
+        #endif
         public Property Property_PositionWrapAround()
         {
             return Prop.ForAll(
@@ -181,7 +197,11 @@ namespace WheelOverlay.Tests
 
         // Feature: v0.5.0-enhancements, Property 22: Test Mode Position Range
         // Validates: Requirements 10.1, 10.2, 10.3
+        #if FAST_TESTS
+        [Property(MaxTest = 10)]
+        #else
         [Property(MaxTest = 100)]
+        #endif
         public Property Property_TestModePositionRange()
         {
             return Prop.ForAll(
@@ -236,7 +256,11 @@ namespace WheelOverlay.Tests
 
         // Feature: about-dialog, Property 12: Test Mode Position Increment
         // Validates: Requirements 9.3, 9.6
+        #if FAST_TESTS
+        [Property(MaxTest = 10)]
+        #else
         [Property(MaxTest = 100)]
+        #endif
         public Property Property_TestModePositionIncrement()
         {
             return Prop.ForAll(
@@ -285,7 +309,11 @@ namespace WheelOverlay.Tests
 
         // Feature: about-dialog, Property 13: Test Mode Position Decrement
         // Validates: Requirements 9.4, 9.5
+        #if FAST_TESTS
+        [Property(MaxTest = 10)]
+        #else
         [Property(MaxTest = 100)]
+        #endif
         public Property Property_TestModePositionDecrement()
         {
             return Prop.ForAll(
@@ -334,7 +362,11 @@ namespace WheelOverlay.Tests
 
         // Feature: about-dialog, Property 14: Test Mode Activation
         // Validates: Requirements 9.1, 9.8
+        #if FAST_TESTS
+        [Property(MaxTest = 10)]
+        #else
         [Property(MaxTest = 100)]
+        #endif
         public Property Property_TestModeActivation()
         {
             return Prop.ForAll(

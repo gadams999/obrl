@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using WheelOverlay.Models;
@@ -586,7 +586,11 @@ namespace WheelOverlay.Tests
         /// Property 11: Settings Persistence
         /// Validates: Requirements 8.8
         /// </summary>
+        #if FAST_TESTS
+        [Property(MaxTest = 10)]
+        #else
         [Property(MaxTest = 100)]
+        #endif
         [Trait("Feature", "dotnet10-upgrade-and-testing")]
         [Trait("Property", "Property 11: Settings Persistence")]
         public Property Property_SettingsPersistence()
@@ -774,13 +778,13 @@ namespace WheelOverlay.Tests
 
         /// <summary>
         /// Gets valid grid dimensions for a given position count.
-        /// Ensures rows × columns >= positionCount.
+        /// Ensures rows Ã— columns >= positionCount.
         /// </summary>
         private static List<(int Rows, int Columns)> GetValidGridDimensions(int positionCount)
         {
             var dimensions = new List<(int Rows, int Columns)>();
             
-            // Generate valid combinations where rows × columns >= positionCount
+            // Generate valid combinations where rows Ã— columns >= positionCount
             for (int rows = 1; rows <= 4; rows++)
             {
                 for (int cols = 1; cols <= 4; cols++)

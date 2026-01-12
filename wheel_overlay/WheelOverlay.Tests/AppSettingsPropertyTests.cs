@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Text.Json;
 using FsCheck;
@@ -12,7 +12,11 @@ namespace WheelOverlay.Tests
     {
         // Feature: v0.5.0-enhancements, Property 7: Grid Dimension Persistence
         // Validates: Requirements 2.7
+        #if FAST_TESTS
+        [Property(MaxTest = 10)]
+        #else
         [Property(MaxTest = 100)]
+        #endif
         public Property Property_GridDimensionPersistence()
         {
             return Prop.ForAll(
@@ -53,13 +57,17 @@ namespace WheelOverlay.Tests
                     bool columnsPreserved = loadedProfile.GridColumns == originalColumns;
 
                     return (rowsPreserved && columnsPreserved)
-                        .Label($"Grid dimensions {originalRows}×{originalColumns} should be preserved after save/load, but got {loadedProfile.GridRows}×{loadedProfile.GridColumns}");
+                        .Label($"Grid dimensions {originalRows}Ã—{originalColumns} should be preserved after save/load, but got {loadedProfile.GridRows}Ã—{loadedProfile.GridColumns}");
                 });
         }
 
         // Feature: v0.5.0-enhancements, Property 14: Position Count Persistence
         // Validates: Requirements 4.8
+        #if FAST_TESTS
+        [Property(MaxTest = 10)]
+        #else
         [Property(MaxTest = 100)]
+        #endif
         public Property Property_PositionCountPersistence()
         {
             return Prop.ForAll(

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using WheelOverlay.Models;
@@ -207,7 +207,11 @@ namespace WheelOverlay.Tests
 
         // Feature: dotnet10-upgrade-and-testing, Property 12: Animation State Consistency
         // Validates: Requirements 9.1, 9.4, 9.5
+        #if FAST_TESTS
+        [Property(MaxTest = 10)]
+        #else
         [Property(MaxTest = 100)]
+        #endif
         public Property Property_AnimationStateConsistency()
         {
             return Prop.ForAll(
