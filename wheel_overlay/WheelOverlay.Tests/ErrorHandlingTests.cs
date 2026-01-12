@@ -395,7 +395,15 @@ namespace WheelOverlay.Tests
 
             // Assert - Verify log file exists and contains our message
             Assert.True(File.Exists(logPath), "Log file should exist");
-            var logContent = File.ReadAllText(logPath);
+            
+            // Use FileShare.ReadWrite to allow reading while logging system may have file open
+            string logContent;
+            using (var fileStream = new FileStream(logPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+            using (var reader = new StreamReader(fileStream))
+            {
+                logContent = reader.ReadToEnd();
+            }
+            
             Assert.Contains(testMessage, logContent);
         }
 
