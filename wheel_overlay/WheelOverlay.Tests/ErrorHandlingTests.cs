@@ -401,7 +401,11 @@ namespace WheelOverlay.Tests
         /// Feature: dotnet10-upgrade-and-testing, Property 14: Error Logging Completeness
         /// Validates: Requirements 11.3, 11.4, 11.7
         /// </summary>
+        #if FAST_TESTS
+        [FsCheck.Xunit.Property(MaxTest = 10)]
+        #else
         [FsCheck.Xunit.Property(MaxTest = 100)]
+        #endif
         [Trait("Feature", "dotnet10-upgrade-and-testing")]
         [Trait("Property", "Property 14: Error Logging Completeness")]
         public FsCheck.Property Property_ErrorLoggingCompleteness()
@@ -454,7 +458,13 @@ namespace WheelOverlay.Tests
                         return false;
 
                     // Read log content and verify details are present
-                    var logContent = File.ReadAllText(LogFilePath);
+                    // Use FileShare.ReadWrite to allow reading while logging system may have file open
+                    string logContent;
+                    using (var fileStream = new FileStream(LogFilePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+                    using (var reader = new StreamReader(fileStream))
+                    {
+                        logContent = reader.ReadToEnd();
+                    }
                     
                     // Check that the unique message is in the log
                     if (!logContent.Contains(uniqueMessage))
