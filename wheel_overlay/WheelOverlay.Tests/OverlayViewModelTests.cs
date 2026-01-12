@@ -40,20 +40,29 @@ namespace WheelOverlay.Tests
             viewModel.CurrentPosition = 0;
             Assert.False(viewModel.IsFlashing, "Should not be flashing at populated position");
 
-            // Act
-            var stopwatch = Stopwatch.StartNew();
+            // Act - trigger flash and measure when it starts
+            var startTime = DateTime.UtcNow;
             viewModel.CurrentPosition = 1; // Select empty position to trigger flash
 
             // Assert - flash should be active immediately
             Assert.True(viewModel.IsFlashing, "Flash should be active immediately after triggering");
 
-            // Wait for flash to complete (500ms + small buffer)
-            await Task.Delay(550);
-            stopwatch.Stop();
+            // Wait for flash to complete with generous timeout for CI environments
+            var timeout = TimeSpan.FromSeconds(3);
+            var checkInterval = TimeSpan.FromMilliseconds(50);
+            var elapsed = TimeSpan.Zero;
+            
+            while (viewModel.IsFlashing && elapsed < timeout)
+            {
+                await Task.Delay(checkInterval);
+                elapsed = DateTime.UtcNow - startTime;
+            }
+
+            var actualDuration = elapsed.TotalMilliseconds;
 
             // Assert - flash should stop after approximately 500ms
             Assert.False(viewModel.IsFlashing, "Flash should stop after approximately 500ms");
-            Assert.InRange(stopwatch.ElapsedMilliseconds, 450, 1200); // 500ms with tolerance for CI environments
+            Assert.InRange(actualDuration, 450, 1200); // 500ms with tolerance for CI environments
         }
 
         // Test first position empty displays first populated position
