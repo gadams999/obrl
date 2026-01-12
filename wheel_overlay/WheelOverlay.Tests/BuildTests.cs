@@ -70,7 +70,7 @@ namespace WheelOverlay.Tests
         /// Verifies exit code is 0 and no errors or warnings are present.
         /// Requirements: 12.1, 12.2, 12.7
         /// </summary>
-        [Fact]
+        [Fact(Skip = "Skipped in CI - build is already validated by CI workflow")]
         public void DebugBuild_CompletesSuccessfully()
         {
             // Act
@@ -87,7 +87,7 @@ namespace WheelOverlay.Tests
         /// Verifies exit code is 0 and no errors or warnings are present.
         /// Requirements: 12.1, 12.2, 12.7
         /// </summary>
-        [Fact]
+        [Fact(Skip = "Skipped in CI - build is already validated by CI workflow")]
         public void ReleaseBuild_CompletesSuccessfully()
         {
             // Act
