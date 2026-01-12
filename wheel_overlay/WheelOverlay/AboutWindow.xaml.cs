@@ -1,6 +1,5 @@
 using System;
 using System.Diagnostics;
-using System.Reflection;
 using System.Windows;
 using System.Windows.Navigation;
 
@@ -30,15 +29,7 @@ namespace WheelOverlay
         {
             try
             {
-                var version = Assembly.GetExecutingAssembly().GetName().Version;
-                if (version != null)
-                {
-                    VersionTextBlock.Text = $"Version {version.Major}.{version.Minor}.{version.Build}";
-                }
-                else
-                {
-                    VersionTextBlock.Text = "Version Unknown";
-                }
+                VersionTextBlock.Text = VersionInfo.GetFullVersionString();
             }
             catch (Exception ex)
             {

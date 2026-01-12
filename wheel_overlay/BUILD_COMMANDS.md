@@ -1,7 +1,7 @@
 # WheelOverlay Build Commands
 
 ## Prerequisites
-- .NET 8.0 SDK
+- .NET 10.0 SDK
 - WiX Toolset v4.0.5: `dotnet tool install --global wix --version 4.0.5`
 
 ## Essential Build Commands
@@ -11,17 +11,32 @@
 dotnet build WheelOverlay/WheelOverlay.csproj -c Release
 ```
 
-### 2. Publish Self-Contained Application
+### 2. Run Tests
+```powershell
+dotnet test WheelOverlay.Tests/WheelOverlay.Tests.csproj
+```
+
+Run tests with detailed output:
+```powershell
+dotnet test WheelOverlay.Tests/WheelOverlay.Tests.csproj --logger "console;verbosity=detailed"
+```
+
+Run tests and generate coverage report:
+```powershell
+dotnet test WheelOverlay.Tests/WheelOverlay.Tests.csproj --collect:"XPlat Code Coverage"
+```
+
+### 3. Publish Self-Contained Application
 ```powershell
 dotnet publish WheelOverlay/WheelOverlay.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=false -p:TreatWarningsAsErrors=true -o Publish
 ```
 
-### 3. Build MSI Installer (Complete Process)
+### 4. Build MSI Installer (Complete Process)
 ```powershell
 .\build_msi.ps1
 ```
 
-### 4. Build Single File Executable + ZIP
+### 5. Build Single File Executable + ZIP
 ```powershell
 .\build_release.ps1
 ```

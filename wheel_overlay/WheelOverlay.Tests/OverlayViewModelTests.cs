@@ -185,9 +185,9 @@ namespace WheelOverlay.Tests
         }
 
         // Test GetTextForPosition handles null profile gracefully
-        // Requirements: 2.4, 2.5
+        // Requirements: 2.4, 2.5, 7.1, 7.7
         [Fact]
-        public void GetTextForPosition_NullProfile_ReturnsEmptyString()
+        public void GetTextForPosition_NullProfile_CreatesDefaultProfile()
         {
             // Arrange - create settings with no active profile
             var settings = new AppSettings
@@ -197,9 +197,16 @@ namespace WheelOverlay.Tests
 
             var viewModel = new OverlayViewModel(settings);
 
-            // Act & Assert
-            Assert.Equal("", viewModel.GetTextForPosition(0));
-            Assert.Equal("", viewModel.GetTextForPosition(1));
+            // Act & Assert - With the vertical layout fix, a default profile is now created
+            // So GetTextForPosition should return the default profile's text labels
+            Assert.NotNull(viewModel.Settings.ActiveProfile);
+            Assert.NotEmpty(viewModel.Settings.ActiveProfile.TextLabels);
+            
+            // Should return the first label from the default profile
+            Assert.Equal("POS1", viewModel.GetTextForPosition(0));
+            Assert.Equal("POS2", viewModel.GetTextForPosition(1));
+            
+            // Out of range should still return empty string
             Assert.Equal("", viewModel.GetTextForPosition(-1));
         }
     }

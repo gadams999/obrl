@@ -5,6 +5,54 @@ All notable changes to Wheel Overlay will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.2](https://github.com/gadams999/obrl/compare/v0.5.0...v0.5.2) (2026-01-12)
+
+> Major upgrade release migrating to .NET 10, implementing comprehensive automated testing, and fixing critical vertical layout bug.
+
+### Upgrade Steps
+* No action required - all changes are backward compatible
+* Existing profiles and settings will continue to work
+* .NET 10 runtime will be installed automatically by the MSI installer
+
+### Breaking Changes
+* None
+
+### New Features
+* **Comprehensive Test Suite**: 100+ automated tests covering all functionality
+  - Unit tests for core components
+  - Property-based tests using FsCheck (100+ iterations per test)
+  - Integration tests for end-to-end workflows
+  - UI automation tests for system tray and mouse interactions
+  - Test coverage for all layout modes, settings, and error handling
+* **Enhanced Error Handling**: Improved logging and error recovery
+  - Detailed error messages with stack traces
+  - Better handling of missing or corrupted configuration files
+  - Graceful degradation when DirectInput device is not found
+
+### Bug Fixes
+* **Vertical Layout Crash**: Fixed crash when selecting vertical layout on fresh install
+  - Added null-safety checks to OverlayViewModel
+  - Added FallbackValue to XAML bindings
+  - Implemented LayoutValidator for pre-render validation
+  - Ensured default profile creation on first run
+  - Added comprehensive logging for layout errors
+* **Settings Initialization**: Fixed issues with missing or null settings on first run
+  - Application now creates valid default settings automatically
+  - All layout modes work correctly on fresh installations
+
+### Performance Improvements
+* None
+
+### Other Changes
+* **Framework Upgrade**: Migrated from .NET 8 to .NET 10
+  - Updated all project files to target net10.0-windows
+  - Updated NuGet packages to .NET 10 compatible versions
+  - Verified all existing functionality works on .NET 10
+* **MSI Installer**: Updated to bundle .NET 10 runtime dependencies
+* **Documentation**: Updated README and build documentation for .NET 10
+* **Test Infrastructure**: Added UITestBase class for UI automation tests
+* **Code Quality**: Enhanced null-safety and error handling throughout codebase
+
 ## [0.5.0](https://github.com/gadams999/obrl/compare/v0.4.0...v0.5.0) (2024-12-31)
 
 > Enhancement release adding animated transitions, configurable grid layouts, and variable position support for different wheel configurations.

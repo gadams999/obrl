@@ -4,8 +4,12 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="clr-namespace:WheelOverlay.ViewModels"
+             xmlns:cv="clr-namespace:WheelOverlay.Converters"
              mc:Ignorable="d" 
              d:DataContext="{d:DesignInstance Type=vm:OverlayViewModel}">
+    <UserControl.Resources>
+        <cv:IsSelectedConverter x:Key="IsSelectedConverter" />
+    </UserControl.Resources>
     <Grid>
         <!-- Show "Not Found" message when device is not connected -->
         <TextBlock Text="🚨 Not Found! 🚨"
