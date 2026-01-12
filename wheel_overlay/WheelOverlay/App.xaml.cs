@@ -33,6 +33,9 @@ namespace WheelOverlay
 
             Services.LogService.Info("Application identifying startup sequence...");
 
+            // Handle session ending (logout, shutdown, etc.)
+            SessionEnding += App_SessionEnding;
+
             // Global Exception Handling
             AppDomain.CurrentDomain.UnhandledException += (s, args) =>
             {
@@ -184,8 +187,37 @@ namespace WheelOverlay
 
         protected override void OnExit(ExitEventArgs e)
         {
-            _notifyIcon?.Dispose();
+            CleanupNotifyIcon();
             base.OnExit(e);
+        }
+
+        private void App_SessionEnding(object sender, SessionEndingCancelEventArgs e)
+        {
+            Services.LogService.Info($"Session ending: {e.ReasonSessionEnding}");
+            CleanupNotifyIcon();
+        }
+
+        private void CleanupNotifyIcon()
+        {
+            if (_notifyIcon != null)
+            {
+                try
+                {
+                    // Hide icon first to ensure it's removed from system tray
+                    _notifyIcon.Visible = false;
+                    
+                    // Dispose of context menu to prevent orphaned menu items
+                    _notifyIcon.ContextMenuStrip?.Dispose();
+                    
+                    // Dispose of the icon itself
+                    _notifyIcon.Dispose();
+                    _notifyIcon = null;
+                }
+                catch (Exception ex)
+                {
+                    Services.LogService.Error("Error cleaning up NotifyIcon", ex);
+                }
+            }
         }
     }
 }

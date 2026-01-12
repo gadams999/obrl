@@ -7,7 +7,7 @@
   "targets": {
     ".NETCoreApp,Version=v10.0": {},
     ".NETCoreApp,Version=v10.0/win-x64": {
-      "WheelOverlay/5.1.0": {
+      "WheelOverlay/0.5.2": {
         "dependencies": {
           "Vortice.DirectInput": "3.8.2",
           "runtimepack.Microsoft.NETCore.App.Runtime.win-x64": "10.0.1",
@@ -1052,7 +1052,7 @@
     }
   },
   "libraries": {
-    "WheelOverlay/5.1.0": {
+    "WheelOverlay/0.5.2": {
       "type": "project",
       "serviceable": false,
       "sha512": ""
