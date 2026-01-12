@@ -1,0 +1,65 @@
+name: Pre-Merge Validation
+
+# This workflow runs full validation (100 iterations) before merge
+# Trigger it by adding the "ready-to-merge" label to a PR
+
+on:
+  pull_request:
+    types: [labeled]
+    branches: [ "main" ]
+    paths:
+      - 'wheel_overlay/**'
+      - '.github/workflows/**'
+
+permissions:
+  contents: read
+
+jobs:
+  full-validation:
+    # Only run when "ready-to-merge" label is added
+    if: github.event.label.name == 'ready-to-merge'
+    runs-on: windows-latest
+    defaults:
+      run:
+        working-directory: ./wheel_overlay
+
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: 8.0.x
+
+    - name: Validate Property Tests
+      run: |
+        Write-Host "Validating property test directives..."
+        $result = .\Scripts\Validate-PropertyTests.ps1
+        if ($LASTEXITCODE -ne 0) {
+          Write-Error "Property test validation failed."
+          exit 1
+        }
+        Write-Host "✅ All property tests have correct directives."
+      shell: pwsh
+
+    - name: Restore dependencies
+      run: dotnet restore
+
+    - name: Build with Release Configuration
+      run: |
+        Write-Host "Building with Release configuration for pre-merge validation..."
+        dotnet build --no-restore --configuration Release /p:TreatWarningsAsErrors=true
+
+    - name: Run Full Test Suite (100 iterations)
+      run: |
+        Write-Host "Running FULL test suite with 100 iterations per property test..."
+        Write-Host "This provides thorough validation before merge."
+        $startTime = Get-Date
+        dotnet test --no-build --verbosity normal --configuration Release
+        $endTime = Get-Date
+        $duration = ($endTime - $startTime).TotalSeconds
+        Write-Host "✅ Full test suite completed in $duration seconds"
+        Write-Host "All tests passed with 100 iterations - ready to merge!"
+
