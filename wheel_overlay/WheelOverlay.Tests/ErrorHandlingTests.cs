@@ -58,8 +58,15 @@ namespace WheelOverlay.Tests
             // Act - Start the service with a device name that doesn't exist
             inputService.Start("NonExistentDevice_TestOnly_12345");
             
-            // Wait for the service to attempt device discovery
-            System.Threading.Thread.Sleep(1500); // Give it time to scan and emit event
+            // Wait for the service to attempt device discovery with timeout for CI
+            var timeout = TimeSpan.FromSeconds(5);
+            var checkInterval = TimeSpan.FromMilliseconds(100);
+            var startTime = DateTime.UtcNow;
+            
+            while (!deviceNotFoundEventRaised && (DateTime.UtcNow - startTime) < timeout)
+            {
+                System.Threading.Thread.Sleep(checkInterval);
+            }
 
             // Assert
             Assert.True(deviceNotFoundEventRaised, "DeviceNotFound event should be raised when device is not found");
