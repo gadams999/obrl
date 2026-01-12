@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using FsCheck;
@@ -27,7 +27,11 @@ namespace WheelOverlay.Tests
 
         // Feature: v0.5.0-enhancements, Property 1: Forward Animation Direction
         // Validates: Requirements 1.1, 1.2
+        #if FAST_TESTS
+        [Property(MaxTest = 10)]
+        #else
         [Property(MaxTest = 100)]
+        #endif
         public Property Property_ForwardAnimationDirection()
         {
             return Prop.ForAll(
@@ -64,13 +68,17 @@ namespace WheelOverlay.Tests
                     }
                     
                     return (isForward == expectedForward)
-                        .Label($"Position {oldPos} → {newPos} (count={positionCount}): expected {expectedForward}, got {isForward}");
+                        .Label($"Position {oldPos} â†’ {newPos} (count={positionCount}): expected {expectedForward}, got {isForward}");
                 });
         }
 
         // Feature: v0.5.0-enhancements, Property 2: Backward Animation Direction
         // Validates: Requirements 1.3, 1.4
+        #if FAST_TESTS
+        [Property(MaxTest = 10)]
+        #else
         [Property(MaxTest = 100)]
+        #endif
         public Property Property_BackwardAnimationDirection()
         {
             return Prop.ForAll(
@@ -107,13 +115,17 @@ namespace WheelOverlay.Tests
                     }
                     
                     return ((!isForward) == expectedBackward)
-                        .Label($"Position {oldPos} → {newPos} (count={positionCount}): expected backward={expectedBackward}, got forward={isForward}");
+                        .Label($"Position {oldPos} â†’ {newPos} (count={positionCount}): expected backward={expectedBackward}, got forward={isForward}");
                 });
         }
 
         // Feature: v0.5.0-enhancements, Property 3: Animation Duration Bounds
         // Validates: Requirements 1.5
+        #if FAST_TESTS
+        [Property(MaxTest = 10)]
+        #else
         [Property(MaxTest = 100)]
+        #endif
         public Property Property_AnimationDurationBounds()
         {
             return Prop.ForAll(
@@ -130,7 +142,11 @@ namespace WheelOverlay.Tests
 
         // Feature: v0.5.0-enhancements, Property 4: Animation Interruption
         // Validates: Requirements 1.6
+        #if FAST_TESTS
+        [Property(MaxTest = 10)]
+        #else
         [Property(MaxTest = 100)]
+        #endif
         public Property Property_AnimationInterruption()
         {
             return Prop.ForAll(
@@ -149,7 +165,11 @@ namespace WheelOverlay.Tests
 
         // Feature: v0.5.0-enhancements, Property 5: Empty Position Animation
         // Validates: Requirements 1.7
+        #if FAST_TESTS
+        [Property(MaxTest = 10)]
+        #else
         [Property(MaxTest = 100)]
+        #endif
         public Property Property_EmptyPositionAnimation()
         {
             return Prop.ForAll(
@@ -173,13 +193,17 @@ namespace WheelOverlay.Tests
                     bool directionDetermined = isForward == true || isForward == false;
                     
                     return directionDetermined
-                        .Label($"Animation direction should be determined for empty position transition {oldPos} → {newPos}");
+                        .Label($"Animation direction should be determined for empty position transition {oldPos} â†’ {newPos}");
                 });
         }
 
         // Feature: v0.5.0-enhancements, Property 21: Animation Lag Prevention
         // Validates: Requirements 9.4
+        #if FAST_TESTS
+        [Property(MaxTest = 10)]
+        #else
         [Property(MaxTest = 100)]
+        #endif
         public Property Property_AnimationLagPrevention()
         {
             return Prop.ForAll(
@@ -216,7 +240,11 @@ namespace WheelOverlay.Tests
 
         // Feature: single-text-animation-fix, Property 1: First Animation Uses Correct Starting Position
         // Validates: Requirements 1.1, 1.2, 1.5
+        #if FAST_TESTS
+        [Property(MaxTest = 10)]
+        #else
         [Property(MaxTest = 100)]
+        #endif
         public Property Property_FirstAnimationUsesCorrectStartingPosition()
         {
             return Prop.ForAll(
@@ -288,7 +316,7 @@ namespace WheelOverlay.Tests
                     bool directionIsCorrect = isForward == expectedForward;
                     
                     return (directionIsCorrect && textsAreDifferent)
-                        .Label($"First animation from position {initialPosition} → {firstChangePosition} (count={positionCount}): " +
+                        .Label($"First animation from position {initialPosition} â†’ {firstChangePosition} (count={positionCount}): " +
                                $"expected forward={expectedForward}, got forward={isForward}, " +
                                $"initialText='{initialText}', firstChangeText='{firstChangeText}'");
                 });
@@ -296,7 +324,11 @@ namespace WheelOverlay.Tests
 
         // Feature: single-text-animation-fix, Property 2: Animation Text Consistency
         // Validates: Requirements 2.1, 2.2, 2.4
+        #if FAST_TESTS
+        [Property(MaxTest = 10)]
+        #else
         [Property(MaxTest = 100)]
+        #endif
         public Property Property_AnimationTextConsistency()
         {
             return Prop.ForAll(
@@ -362,7 +394,7 @@ namespace WheelOverlay.Tests
                                        && oldTextMatches && newTextMatches;
                     
                     return propertyHolds
-                        .Label($"Animation from position {oldPosition} → {newPosition} (count={positionCount}): " +
+                        .Label($"Animation from position {oldPosition} â†’ {newPosition} (count={positionCount}): " +
                                $"oldText='{oldText}' (expected '{expectedOldText}'), " +
                                $"newText='{newText}' (expected '{expectedNewText}'), " +
                                $"textsAreDifferent={textsAreDifferent}");
@@ -371,7 +403,11 @@ namespace WheelOverlay.Tests
 
         // Feature: single-text-animation-fix, Property 3: Position State Synchronization
         // Validates: Requirements 4.2, 4.4
+        #if FAST_TESTS
+        [Property(MaxTest = 10)]
+        #else
         [Property(MaxTest = 100)]
+        #endif
         public Property Property_PositionStateSynchronization()
         {
             return Prop.ForAll(
@@ -454,7 +490,7 @@ namespace WheelOverlay.Tests
                         if (isForward != expectedForward)
                         {
                             allTransitionsCorrect = false;
-                            failureMessage = $"Transition {i}: {currentPosition} → {newPosition} expected forward={expectedForward}, got {isForward}";
+                            failureMessage = $"Transition {i}: {currentPosition} â†’ {newPosition} expected forward={expectedForward}, got {isForward}";
                             break;
                         }
                         
@@ -467,14 +503,18 @@ namespace WheelOverlay.Tests
                     // This proves that _currentPosition is being synchronized after each animation
                     return allTransitionsCorrect
                         .Label($"Position state synchronization for sequence starting at {startPosition}: " +
-                               $"[{string.Join(" → ", validSequence)}] (count={positionCount}). " +
+                               $"[{string.Join(" â†’ ", validSequence)}] (count={positionCount}). " +
                                $"{(allTransitionsCorrect ? "All transitions correct" : failureMessage)}");
                 });
         }
 
         // Feature: single-text-animation-fix, Property 4: Sequential Position Tracking
         // Validates: Requirements 1.4, 4.1, 4.4
+        #if FAST_TESTS
+        [Property(MaxTest = 10)]
+        #else
         [Property(MaxTest = 100)]
+        #endif
         public Property Property_SequentialPositionTracking()
         {
             // Create a generator for the test data
@@ -521,23 +561,23 @@ namespace WheelOverlay.Tests
                     var viewModel = new WheelOverlay.ViewModels.OverlayViewModel(settings);
                     var tester = new AnimationLogicTester();
                     
-                    // Act - Simulate the sequence P1 → P2 → P3
+                    // Act - Simulate the sequence P1 â†’ P2 â†’ P3
                     // The key property: each animation should use the previous target as its starting position
                     
-                    // First animation: P1 → P2
+                    // First animation: P1 â†’ P2
                     // Should use P1 as old position
                     string textAtP1 = viewModel.GetTextForPosition(p1);
                     string textAtP2 = viewModel.GetTextForPosition(p2);
                     bool firstAnimationUsesP1 = textAtP1 != textAtP2; // Verify P1 and P2 have different text
                     
-                    // Second animation: P2 → P3
+                    // Second animation: P2 â†’ P3
                     // Should use P2 as old position (the target of the first animation)
                     // NOT P1 (the starting position of the first animation)
                     string textAtP3 = viewModel.GetTextForPosition(p3);
                     bool secondAnimationUsesP2 = textAtP2 != textAtP3; // Verify P2 and P3 have different text
                     
                     // Verify the animation directions are calculated correctly
-                    // First transition: P1 → P2
+                    // First transition: P1 â†’ P2
                     bool firstIsForward = tester.IsForwardTransition(p1, p2, positionCount);
                     bool expectedFirstForward;
                     if (p1 == positionCount - 1 && p2 == 0)
@@ -549,7 +589,7 @@ namespace WheelOverlay.Tests
                     
                     bool firstDirectionCorrect = firstIsForward == expectedFirstForward;
                     
-                    // Second transition: P2 → P3 (uses P2 as old, not P1)
+                    // Second transition: P2 â†’ P3 (uses P2 as old, not P1)
                     bool secondIsForward = tester.IsForwardTransition(p2, p3, positionCount);
                     bool expectedSecondForward;
                     if (p2 == positionCount - 1 && p3 == 0)
@@ -562,7 +602,7 @@ namespace WheelOverlay.Tests
                     bool secondDirectionCorrect = secondIsForward == expectedSecondForward;
                     
                     // The critical test: verify that the second animation uses P2 (not P1) as old position
-                    // We do this by checking that the direction calculation is based on P2→P3, not P1→P3
+                    // We do this by checking that the direction calculation is based on P2â†’P3, not P1â†’P3
                     bool usesCorrectOldPosition = secondDirectionCorrect;
                     
                     // Assert - All conditions must be true
@@ -571,9 +611,9 @@ namespace WheelOverlay.Tests
                                        && usesCorrectOldPosition;
                     
                     return propertyHolds
-                        .Label($"Sequential tracking for {p1} → {p2} → {p3} (count={positionCount}): " +
-                               $"First animation P1→P2: direction={firstIsForward} (expected {expectedFirstForward}), " +
-                               $"Second animation P2→P3: direction={secondIsForward} (expected {expectedSecondForward}), " +
+                        .Label($"Sequential tracking for {p1} â†’ {p2} â†’ {p3} (count={positionCount}): " +
+                               $"First animation P1â†’P2: direction={firstIsForward} (expected {expectedFirstForward}), " +
+                               $"Second animation P2â†’P3: direction={secondIsForward} (expected {expectedSecondForward}), " +
                                $"textAtP1='{textAtP1}', textAtP2='{textAtP2}', textAtP3='{textAtP3}', " +
                                $"usesCorrectOldPosition={usesCorrectOldPosition}");
                 });

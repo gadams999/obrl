@@ -186,7 +186,7 @@ If you encounter issues:
 ### Building from Source
 
 Requirements:
-- .NET 8.0 SDK
+- .NET 10.0 SDK
 - Visual Studio 2022 or later (recommended)
 
 ```bash
@@ -196,10 +196,40 @@ dotnet build
 
 ### Running Tests
 
+The project includes comprehensive automated tests covering all user interactions, layout modes, and error handling scenarios.
+
+#### Standard Test Run (100 iterations)
+
+For thorough validation with full property-based test coverage:
+
 ```bash
 cd wheel_overlay/WheelOverlay.Tests
 dotnet test
 ```
+
+This runs all tests with 100 iterations per property test, providing comprehensive validation.
+
+#### Fast Test Run (10 iterations)
+
+For quick feedback during development:
+
+```bash
+cd wheel_overlay/WheelOverlay.Tests
+dotnet test --configuration FastTests
+```
+
+This runs all tests with 10 iterations per property test, completing in a fraction of the time while still catching most issues.
+
+#### When to Use Each Configuration
+
+- **Debug/Release (100 iterations)**: Use for final validation before committing, pre-merge checks, and when investigating test failures
+- **FastTests (10 iterations)**: Use during active development for rapid feedback, when making frequent changes, or when running tests repeatedly
+
+Test coverage includes:
+- Unit tests for core functionality
+- Property-based tests using FsCheck (configurable 10 or 100 iterations per test)
+- Integration tests for end-to-end workflows
+- UI automation tests for system tray and mouse interactions
 
 ### Test Mode for Development
 
@@ -229,7 +259,15 @@ Contributions are welcome! Please:
 
 ## Version History
 
-### v0.5.0 (Current)
+### v0.5.2 (Current)
+- Upgraded to .NET 10 framework
+- Comprehensive automated testing suite with 100+ tests
+- Fixed vertical layout crash on fresh installs
+- Property-based testing using FsCheck
+- UI automation tests for all user interactions
+- Enhanced error handling and logging
+
+### v0.5.0
 - Animated transitions with configurable duration
 - Configurable grid layout dimensions (1-4 rows/columns)
 - Variable position support for different wheel configurations

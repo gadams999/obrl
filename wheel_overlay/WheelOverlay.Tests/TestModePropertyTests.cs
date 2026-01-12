@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using FsCheck;
@@ -13,7 +13,11 @@ namespace WheelOverlay.Tests
     {
         // Feature: v0.5.0-enhancements, Property 23: Test Mode Grid Support
         // Validates: Requirements 10.5
+        #if FAST_TESTS
+        [Property(MaxTest = 10)]
+        #else
         [Property(MaxTest = 100)]
+        #endif
         public Property Property_TestModeGridSupport()
         {
             return Prop.ForAll(
@@ -68,8 +72,8 @@ namespace WheelOverlay.Tests
                     bool gridWithinConfigured = effectiveRows <= config.Rows && effectiveColumns <= config.Columns;
 
                     return (gridDimensionsValid && gridCapacityValid && gridWithinConfigured && allPositionsWork)
-                        .Label($"For grid {config.Rows}×{config.Columns} with {config.PositionCount} positions: " +
-                               $"effective grid {effectiveRows}×{effectiveColumns} (capacity {gridCapacity}), " +
+                        .Label($"For grid {config.Rows}Ã—{config.Columns} with {config.PositionCount} positions: " +
+                               $"effective grid {effectiveRows}Ã—{effectiveColumns} (capacity {gridCapacity}), " +
                                $"populated positions: {viewModel.PopulatedPositions.Count}, " +
                                $"all positions work: {allPositionsWork}");
                 });

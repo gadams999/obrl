@@ -23,12 +23,29 @@ namespace WheelOverlay.ViewModels
 
         public OverlayViewModel(AppSettings settings)
         {
-            _settings = settings;
+            // Ensure settings is never null - load defaults if needed
+            _settings = settings ?? AppSettings.Load();
             _populatedPositions = new List<int>();
             _populatedPositionItems = new ObservableCollection<GridPositionItem>();
             _isFlashing = false;
             _lastPopulatedPosition = 0;
             _isTestMode = false; // Explicitly initialize to false
+            
+            // Ensure settings has a valid active profile
+            if (_settings.ActiveProfile == null && _settings.Profiles.Count == 0)
+            {
+                var defaultProfile = new Profile
+                {
+                    Name = "Default",
+                    DeviceName = "BavarianSimTec Alpha",
+                    Layout = DisplayLayout.Vertical,
+                    PositionCount = 8,
+                    TextLabels = new List<string> { "POS1", "POS2", "POS3", "POS4", "POS5", "POS6", "POS7", "POS8" }
+                };
+                _settings.Profiles.Add(defaultProfile);
+                _settings.SelectedProfileId = defaultProfile.Id;
+            }
+            
             UpdatePopulatedPositions();
             InitializeLastPopulatedPosition();
             UpdatePopulatedPositionItems();
@@ -48,7 +65,8 @@ namespace WheelOverlay.ViewModels
             get => _settings;
             set
             {
-                _settings = value;
+                // Ensure settings is never null - use existing or load defaults
+                _settings = value ?? _settings ?? AppSettings.Load();
                 UpdatePopulatedPositions();
                 OnPropertyChanged();
                 OnPropertyChanged(nameof(DisplayItems));
@@ -126,7 +144,8 @@ namespace WheelOverlay.ViewModels
         {
             get
             {
-                var profile = _settings.ActiveProfile;
+                // Add null-safety checks
+                var profile = _settings?.ActiveProfile;
                 if (profile == null || profile.TextLabels == null)
                     return new List<string>();
 
@@ -141,7 +160,8 @@ namespace WheelOverlay.ViewModels
 
         public void UpdatePopulatedPositions()
         {
-            var profile = _settings.ActiveProfile;
+            // Add null-safety checks
+            var profile = _settings?.ActiveProfile;
             if (profile == null || profile.TextLabels == null)
             {
                 PopulatedPositions = new List<int>();

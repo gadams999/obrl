@@ -33,7 +33,8 @@ namespace WheelOverlay.Tests
                     // Find the VersionTextBlock
                     var versionTextBlock = FindChild<TextBlock>(aboutWindow, "VersionTextBlock");
                     Assert.NotNull(versionTextBlock);
-                    Assert.Contains("Version", versionTextBlock.Text);
+                    Assert.Contains("Wheel Overlay", versionTextBlock.Text);
+                    Assert.Contains("0.5.2", versionTextBlock.Text);
                     
                     // Find the CloseButton
                     var closeButton = FindChild<Button>(aboutWindow, "CloseButton");
@@ -74,16 +75,13 @@ namespace WheelOverlay.Tests
                     aboutWindow.Show();
                     aboutWindow.Hide();
                     System.Windows.Threading.Dispatcher.CurrentDispatcher.Invoke(() => { }, System.Windows.Threading.DispatcherPriority.Loaded);
-                    
-                    var expectedVersion = Assembly.GetAssembly(typeof(AboutWindow))?.GetName().Version;
 
                     // Act
                     var versionTextBlock = FindChild<TextBlock>(aboutWindow, "VersionTextBlock");
 
                     // Assert
                     Assert.NotNull(versionTextBlock);
-                    Assert.NotNull(expectedVersion);
-                    var expectedVersionString = $"Version {expectedVersion.Major}.{expectedVersion.Minor}.{expectedVersion.Build}";
+                    var expectedVersionString = VersionInfo.GetFullVersionString();
                     Assert.Equal(expectedVersionString, versionTextBlock.Text);
                 }
                 catch (Exception ex)

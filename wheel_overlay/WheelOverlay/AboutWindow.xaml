@@ -76,7 +76,9 @@
                    FontSize="12"
                    Foreground="#888888"
                    Margin="0,0,0,15">
-            <Run Text="Copyright © 2025 Gavin Adams"/>
+            <Run Text="Copyright © 2025-2026 Gavin Adams &amp; Contributors"/>
+            <LineBreak/>
+            <Run Text="Licensed under MIT License"/>
         </TextBlock>
 
         <!-- Close Button -->

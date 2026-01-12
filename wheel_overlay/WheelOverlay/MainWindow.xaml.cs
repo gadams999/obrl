@@ -221,8 +221,16 @@ namespace WheelOverlay
 
         private void MainWindow_Closed(object? sender, EventArgs e)
         {
-            _inputService.Stop();
-            _inputService.Dispose();
+            try
+            {
+                // Stop and dispose input service first
+                _inputService.Stop();
+                _inputService.Dispose();
+            }
+            catch (Exception ex)
+            {
+                Services.LogService.Error("Error disposing InputService", ex);
+            }
             
             // Shutdown the application when the main window is closed
             System.Windows.Application.Current.Shutdown();

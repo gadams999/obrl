@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using FsCheck;
@@ -13,7 +13,11 @@ namespace WheelOverlay.Tests
     {
         // Feature: about-dialog, Property 2: Populated Position Filtering
         // Validates: Requirements 6.1, 6.3
+        #if FAST_TESTS
+        [Property(MaxTest = 10)]
+        #else
         [Property(MaxTest = 100)]
+        #endif
         public Property Property_PopulatedPositionFiltering()
         {
             return Prop.ForAll(
@@ -40,7 +44,11 @@ namespace WheelOverlay.Tests
 
         // Feature: about-dialog, Property 3: Position Number Preservation
         // Validates: Requirements 6.4
+        #if FAST_TESTS
+        [Property(MaxTest = 10)]
+        #else
         [Property(MaxTest = 100)]
+        #endif
         public Property Property_PositionNumberPreservation()
         {
             return Prop.ForAll(
@@ -81,7 +89,11 @@ namespace WheelOverlay.Tests
 
         // Feature: about-dialog, Property 4: Configuration Change Reactivity
         // Validates: Requirements 6.5
+        #if FAST_TESTS
+        [Property(MaxTest = 10)]
+        #else
         [Property(MaxTest = 100)]
+        #endif
         public Property Property_ConfigurationChangeReactivity()
         {
             return Prop.ForAll(
@@ -147,7 +159,11 @@ namespace WheelOverlay.Tests
 
         // Feature: about-dialog, Property 5: Empty Position Flash Trigger
         // Validates: Requirements 7.1, 8.3
+        #if FAST_TESTS
+        [Property(MaxTest = 10)]
+        #else
         [Property(MaxTest = 100)]
+        #endif
         public Property Property_EmptyPositionFlashTrigger()
         {
             return Prop.ForAll(
@@ -204,7 +220,11 @@ namespace WheelOverlay.Tests
 
         // Feature: about-dialog, Property 7: Flash Termination on Populated Selection
         // Validates: Requirements 7.4
+        #if FAST_TESTS
+        [Property(MaxTest = 10)]
+        #else
         [Property(MaxTest = 100)]
+        #endif
         public Property Property_FlashTerminationOnPopulatedSelection()
         {
             return Prop.ForAll(
@@ -254,7 +274,11 @@ namespace WheelOverlay.Tests
 
         // Feature: about-dialog, Property 8: Flash Restart on Empty Selection
         // Validates: Requirements 7.5
+        #if FAST_TESTS
+        [Property(MaxTest = 10)]
+        #else
         [Property(MaxTest = 100)]
+        #endif
         public Property Property_FlashRestartOnEmptySelection()
         {
             return Prop.ForAll(
@@ -299,7 +323,11 @@ namespace WheelOverlay.Tests
 
         // Feature: about-dialog, Property 9: Single Layout Last Position Display
         // Validates: Requirements 8.1
+        #if FAST_TESTS
+        [Property(MaxTest = 10)]
+        #else
         [Property(MaxTest = 100)]
+        #endif
         public Property Property_SingleLayoutLastPositionDisplay()
         {
             return Prop.ForAll(
@@ -351,7 +379,11 @@ namespace WheelOverlay.Tests
 
         // Feature: about-dialog, Property 10: Single Layout Empty Position Color
         // Validates: Requirements 8.2
+        #if FAST_TESTS
+        [Property(MaxTest = 10)]
+        #else
         [Property(MaxTest = 100)]
+        #endif
         public Property Property_SingleLayoutEmptyPositionColor()
         {
             return Prop.ForAll(
@@ -399,7 +431,11 @@ namespace WheelOverlay.Tests
 
         // Feature: about-dialog, Property 11: Populated Selection No Flash
         // Validates: Requirements 8.5
+        #if FAST_TESTS
+        [Property(MaxTest = 10)]
+        #else
         [Property(MaxTest = 100)]
+        #endif
         public Property Property_PopulatedSelectionNoFlash()
         {
             return Prop.ForAll(
@@ -449,7 +485,11 @@ namespace WheelOverlay.Tests
 
         // Feature: v0.5.0-enhancements, Property 8: Empty Position Filtering
         // Validates: Requirements 3.1
+        #if FAST_TESTS
+        [Property(MaxTest = 10)]
+        #else
         [Property(MaxTest = 100)]
+        #endif
         public Property Property_EmptyPositionFiltering()
         {
             return Prop.ForAll(
@@ -477,7 +517,11 @@ namespace WheelOverlay.Tests
 
         // Feature: v0.5.0-enhancements, Property 9: Position Number Preservation
         // Validates: Requirements 3.4
+        #if FAST_TESTS
+        [Property(MaxTest = 10)]
+        #else
         [Property(MaxTest = 100)]
+        #endif
         public Property Property_PositionNumberPreservationInGrid()
         {
             return Prop.ForAll(
@@ -517,7 +561,11 @@ namespace WheelOverlay.Tests
 
         // Feature: v0.5.0-enhancements, Property 10: Grid Aspect Ratio Preservation
         // Validates: Requirements 3.3
+        #if FAST_TESTS
+        [Property(MaxTest = 10)]
+        #else
         [Property(MaxTest = 100)]
+        #endif
         public Property Property_GridAspectRatioPreservation()
         {
             return Prop.ForAll(
@@ -552,8 +600,8 @@ namespace WheelOverlay.Tests
                     {
                         // Should use exact configured dimensions
                         return (effectiveRows == profile.GridRows && effectiveColumns == profile.GridColumns)
-                            .Label($"When all positions populated, should use configured dimensions {profile.GridRows}×{profile.GridColumns}, " +
-                                   $"but got {effectiveRows}×{effectiveColumns}");
+                            .Label($"When all positions populated, should use configured dimensions {profile.GridRows}Ã—{profile.GridColumns}, " +
+                                   $"but got {effectiveRows}Ã—{effectiveColumns}");
                     }
                     else if (populatedCount == 0)
                     {
@@ -566,7 +614,7 @@ namespace WheelOverlay.Tests
                         // Just verify we have a valid grid that fits the items
                         bool hasCapacity = effectiveRows * effectiveColumns >= populatedCount;
                         return hasCapacity
-                            .Label($"For {populatedCount} items, grid {effectiveRows}×{effectiveColumns} should have sufficient capacity");
+                            .Label($"For {populatedCount} items, grid {effectiveRows}Ã—{effectiveColumns} should have sufficient capacity");
                     }
                     else if (populatedCount <= 6)
                     {
@@ -575,9 +623,9 @@ namespace WheelOverlay.Tests
                         double tolerance = 6.0;
                         
                         return (aspectRatioDifference <= tolerance)
-                            .Label($"Configured aspect ratio {configuredAspectRatio:F2} ({profile.GridRows}×{profile.GridColumns}), " +
-                                   $"effective aspect ratio {effectiveAspectRatio:F2} ({effectiveRows}×{effectiveColumns}), " +
-                                   $"difference {aspectRatioDifference:F2} should be ≤ {tolerance} for {populatedCount} items");
+                            .Label($"Configured aspect ratio {configuredAspectRatio:F2} ({profile.GridRows}Ã—{profile.GridColumns}), " +
+                                   $"effective aspect ratio {effectiveAspectRatio:F2} ({effectiveRows}Ã—{effectiveColumns}), " +
+                                   $"difference {aspectRatioDifference:F2} should be â‰¤ {tolerance} for {populatedCount} items");
                     }
                     else
                     {
@@ -601,9 +649,9 @@ namespace WheelOverlay.Tests
                         }
                         
                         return (aspectRatioDifference <= tolerance)
-                            .Label($"Configured aspect ratio {configuredAspectRatio:F2} ({profile.GridRows}×{profile.GridColumns}), " +
-                                   $"effective aspect ratio {effectiveAspectRatio:F2} ({effectiveRows}×{effectiveColumns}), " +
-                                   $"difference {aspectRatioDifference:F2} should be ≤ {tolerance} for {populatedCount} items");
+                            .Label($"Configured aspect ratio {configuredAspectRatio:F2} ({profile.GridRows}Ã—{profile.GridColumns}), " +
+                                   $"effective aspect ratio {effectiveAspectRatio:F2} ({effectiveRows}Ã—{effectiveColumns}), " +
+                                   $"difference {aspectRatioDifference:F2} should be â‰¤ {tolerance} for {populatedCount} items");
                     }
                 });
         }
