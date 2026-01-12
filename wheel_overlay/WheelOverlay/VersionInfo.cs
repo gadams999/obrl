@@ -20,7 +20,7 @@ namespace WheelOverlay
         /// <summary>
         /// Copyright information for the application.
         /// </summary>
-        public const string Copyright = "Copyright © 2024-2026";
+        public const string Copyright = "Copyright © 2025-2026 Gavin Adams & Contributors. Licensed under MIT License.";
 
         /// <summary>
         /// Gets the full version string in the format "ProductName vVersion".
