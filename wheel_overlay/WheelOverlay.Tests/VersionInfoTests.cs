@@ -10,7 +10,7 @@ namespace WheelOverlay.Tests
     public class VersionInfoTests
     {
         /// <summary>
-        /// Tests that the Version constant follows semantic versioning format (MAJOR.MINOR.PATCH).
+        /// Tests that the Version is read from assembly and follows semantic versioning format (MAJOR.MINOR.PATCH).
         /// Requirements: 2.1, 2.2
         /// </summary>
         [Fact]
@@ -27,17 +27,17 @@ namespace WheelOverlay.Tests
         }
 
         /// <summary>
-        /// Tests that the Version constant is exactly "0.5.2" as specified in requirements.
+        /// Tests that the Version matches the current assembly version (0.5.3).
         /// Requirements: 2.1, 2.2
         /// </summary>
         [Fact]
-        public void Version_IsCorrectValue()
+        public void Version_MatchesAssemblyVersion()
         {
             // Act
             var version = VersionInfo.Version;
 
-            // Assert
-            Assert.Equal("0.5.2", version);
+            // Assert - Version should be 0.5.3 based on current AssemblyVersion
+            Assert.Equal("0.5.3", version);
         }
 
         /// <summary>
@@ -51,7 +51,7 @@ namespace WheelOverlay.Tests
             var fullVersionString = VersionInfo.GetFullVersionString();
 
             // Assert
-            Assert.Equal("Wheel Overlay v0.5.2", fullVersionString);
+            Assert.Equal("Wheel Overlay v0.5.3", fullVersionString);
         }
 
         /// <summary>

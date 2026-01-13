@@ -18,6 +18,8 @@ namespace WheelOverlay
     {
         private NotifyIcon? _notifyIcon;
         private MainWindow? _mainWindow;
+        private AboutWindow? _aboutWindow;
+        private SettingsWindow? _settingsWindow;
         private ToolStripMenuItem? _configModeMenuItem;
         private ToolStripMenuItem? _minimizeMenuItem;
 
@@ -95,6 +97,10 @@ namespace WheelOverlay
 
                 // Show overlay by default
                 ShowOverlay();
+                
+                // Hook into window closing event to hide instead of close
+                _mainWindow.Closing += MainWindow_Closing;
+                
                 Services.LogService.Info("Startup sequence completed successfully.");
             }
             catch (Exception ex)
@@ -125,8 +131,16 @@ namespace WheelOverlay
         private void OpenSettings()
         {
             var settings = AppSettings.Load();
-            var settingsWindow = new SettingsWindow(settings);
-            settingsWindow.SettingsChanged += (s, e) =>
+            
+            // Reuse existing settings window if open
+            if (_settingsWindow != null)
+            {
+                _settingsWindow.Activate();
+                return;
+            }
+            
+            _settingsWindow = new SettingsWindow(settings);
+            _settingsWindow.SettingsChanged += (s, e) =>
             {
                 // Settings were applied, reload main window
                 if (_mainWindow != null)
@@ -134,7 +148,8 @@ namespace WheelOverlay
                     _mainWindow.ApplySettings(settings);
                 }
             };
-            settingsWindow.Show();
+            _settingsWindow.Closed += (s, e) => _settingsWindow = null;
+            _settingsWindow.Show();
         }
 
         private void ShowAboutDialog()
@@ -143,6 +158,11 @@ namespace WheelOverlay
             {
                 Owner = _mainWindow
             };
+            
+            // Store reference to close it if needed during shutdown
+            _aboutWindow = aboutWindow;
+            aboutWindow.Closed += (s, e) => _aboutWindow = null;
+            
             aboutWindow.ShowDialog();
         }
 
@@ -185,9 +205,9 @@ namespace WheelOverlay
             }
         }
 
-        private void ExitApplication()
+        public void ExitApplication()
         {
-            Services.LogService.Info("Exit requested from system tray");
+            Services.LogService.Info("Exit requested");
             
             // Close context menu immediately to prevent it from blocking
             if (_notifyIcon?.ContextMenuStrip != null)
@@ -229,12 +249,36 @@ namespace WheelOverlay
         {
             Services.LogService.Info("Cleaning up resources");
             
-            // Close main window first
+            // Close any open child windows first
+            try
+            {
+                if (_settingsWindow != null)
+                {
+                    Services.LogService.Info("Closing Settings window");
+                    _settingsWindow.Close();
+                    _settingsWindow = null;
+                }
+                
+                if (_aboutWindow != null)
+                {
+                    Services.LogService.Info("Closing About window");
+                    _aboutWindow.Close();
+                    _aboutWindow = null;
+                }
+            }
+            catch (Exception ex)
+            {
+                Services.LogService.Error("Error closing child windows", ex);
+            }
+            
+            // Close main window
             try
             {
                 if (_mainWindow != null)
                 {
                     Services.LogService.Info("Closing main window");
+                    // Remove the Closing event handler to prevent it from canceling the close
+                    _mainWindow.Closing -= MainWindow_Closing;
                     _mainWindow.Close();
                     _mainWindow = null;
                 }
@@ -246,6 +290,40 @@ namespace WheelOverlay
             
             // Then cleanup notify icon
             CleanupNotifyIcon();
+        }
+
+        private void MainWindow_Closing(object? sender, System.ComponentModel.CancelEventArgs e)
+        {
+            // When user closes window from taskbar, exit the application
+            Services.LogService.Info("MainWindow closing requested - initiating app shutdown");
+            
+            // Close any open child windows first
+            try
+            {
+                if (_settingsWindow != null)
+                {
+                    Services.LogService.Info("Closing Settings window before shutdown");
+                    _settingsWindow.Close();
+                    _settingsWindow = null;
+                }
+                
+                if (_aboutWindow != null)
+                {
+                    Services.LogService.Info("Closing About window before shutdown");
+                    _aboutWindow.Close();
+                    _aboutWindow = null;
+                }
+            }
+            catch (Exception ex)
+            {
+                Services.LogService.Error("Error closing child windows", ex);
+            }
+            
+            // Cancel the close to prevent immediate window destruction
+            e.Cancel = true;
+            
+            // Trigger app shutdown through the App class
+            ((App)System.Windows.Application.Current).ExitApplication();
         }
 
         private void CleanupNotifyIcon()

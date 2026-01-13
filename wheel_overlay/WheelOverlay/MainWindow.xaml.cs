@@ -65,6 +65,7 @@ namespace WheelOverlay
             _inputService.DeviceConnected += OnDeviceConnected;
             
             Loaded += MainWindow_Loaded;
+            Closing += MainWindow_Closing;
             Closed += MainWindow_Closed;
             KeyDown += MainWindow_KeyDown;
             StateChanged += MainWindow_StateChanged;
@@ -219,12 +220,21 @@ namespace WheelOverlay
         private static extern int SetWindowLong(IntPtr hwnd, int index, int newStyle);
 
 
+        private void MainWindow_Closing(object? sender, System.ComponentModel.CancelEventArgs e)
+        {
+            // When user closes window from taskbar, hide it instead of closing
+            // This prevents the window from being destroyed while app is still running
+            Services.LogService.Info("MainWindow closing requested - hiding window");
+            e.Cancel = true;
+            Hide();
+        }
+
         private void MainWindow_Closed(object? sender, EventArgs e)
         {
             try
             {
-                Services.LogService.Info("MainWindow closing");
-                // Stop and dispose input service first
+                Services.LogService.Info("MainWindow closed");
+                // Stop and dispose input service
                 _inputService.Stop();
                 _inputService.Dispose();
             }
@@ -232,9 +242,6 @@ namespace WheelOverlay
             {
                 Services.LogService.Error("Error disposing InputService", ex);
             }
-            
-            // Don't call Shutdown() here - let the app control its own lifecycle
-            // The app will call Close() on this window when it's ready to exit
         }
 
         private void OnRotaryPositionChanged(object? sender, int position)
