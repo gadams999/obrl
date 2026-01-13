@@ -1,0 +1,49 @@
+name: Branch Build Check
+
+# Fast build validation for feature/fix branches
+# Runs on push to any branch except main/develop
+# Uses fast tests (10 iterations) for quick feedback
+
+on:
+  push:
+    branches-ignore:
+      - main
+      - develop
+    paths:
+      - 'wheel_overlay/**'
+      - '.github/workflows/**'
+
+permissions:
+  contents: read
+
+jobs:
+  fast-build-check:
+    runs-on: windows-latest
+    defaults:
+      run:
+        working-directory: ./wheel_overlay
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: 8.0.x
+
+    - name: Restore dependencies
+      run: dotnet restore
+
+    - name: Build
+      run: |
+        Write-Host "Building project..."
+        dotnet build --no-restore --configuration Debug
+      shell: pwsh
+
+    - name: Run Fast Tests (10 iterations)
+      run: |
+        Write-Host "Running fast test suite with 10 iterations per property test..."
+        $env:FAST_TESTS = "true"
+        dotnet test --no-build --verbosity normal --configuration Debug
+        Write-Host "✅ Fast tests passed - branch is buildable"
+      shell: pwsh
