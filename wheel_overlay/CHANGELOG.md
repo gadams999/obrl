@@ -5,6 +5,62 @@ All notable changes to Wheel Overlay will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.3](https://github.com/gadams999/obrl/compare/v0.5.2...v0.5.3) (2026-01-13)
+
+> Critical bug fix release resolving application exit issues and implementing single-instance enforcement.
+
+### Upgrade Steps
+* No action required - all changes are backward compatible
+* Existing settings and profiles will continue to work
+* MSI installer will automatically upgrade from 0.5.2
+
+### Breaking Changes
+* None
+
+### New Features
+* **Single Instance Enforcement**: Application now prevents multiple instances from running
+  - Uses Mutex-based detection to ensure only one instance runs at a time
+  - Second/subsequent launch attempts exit silently without UI or logging
+  - Prevents duplicate system tray icons and resource conflicts
+* **Automatic Version Management**: Version number now read from assembly
+  - Single source of truth in WheelOverlay.csproj
+  - About dialog automatically displays correct version after rebuild
+  - Eliminates manual version synchronization across files
+
+### Bug Fixes
+* **System Tray Exit Freeze**: Fixed application freeze when clicking Exit from system tray menu
+  - Implemented deferred shutdown using BeginInvoke to prevent context menu blocking
+  - Context menu now closes immediately before shutdown begins
+  - Proper cleanup order: child windows → main window → tray icon
+* **Taskbar Close Not Exiting**: Fixed issue where closing from taskbar left app running in tray
+  - MainWindow_Closing event now triggers proper application shutdown
+  - Both taskbar close and tray menu exit use same cleanup path
+* **Modal Dialog Blocking Exit**: Fixed hang when exiting with About or Settings window open
+  - Application now tracks and closes all child windows before shutdown
+  - AboutWindow and SettingsWindow properly closed during exit sequence
+  - Prevents orphaned modal dialogs blocking shutdown
+* **Resource Cleanup**: Improved disposal order to prevent race conditions
+  - Event handlers removed before disposal to prevent callbacks
+  - Context menu disposed separately from NotifyIcon
+  - All cleanup operations wrapped in try-catch with logging
+
+### Performance Improvements
+* None
+
+### Other Changes
+* **Test Suite**: Updated tests to validate assembly version reading
+  - AboutWindowTests now uses dynamic version checking
+  - VersionInfoTests validates assembly version format
+  - Build tests refactored to parameterized Theory pattern
+  - All 287 tests passing
+* **Documentation**: Enhanced version management steering documentation
+  - Added workflow guidance for version updates on new branches
+  - Documented all files requiring version updates
+  - Included best practices for version synchronization
+* **Code Quality**: Added ShutdownMode="OnExplicitShutdown" to App.xaml
+  - Prevents premature shutdown when windows close
+  - Gives application full control over lifecycle
+
 ## [0.5.2](https://github.com/gadams999/obrl/compare/v0.5.0...v0.5.2) (2026-01-12)
 
 > Major upgrade release migrating to .NET 10, implementing comprehensive automated testing, and fixing critical vertical layout bug.
