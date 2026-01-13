@@ -223,6 +223,7 @@ namespace WheelOverlay
         {
             try
             {
+                Services.LogService.Info("MainWindow closing");
                 // Stop and dispose input service first
                 _inputService.Stop();
                 _inputService.Dispose();
@@ -232,8 +233,8 @@ namespace WheelOverlay
                 Services.LogService.Error("Error disposing InputService", ex);
             }
             
-            // Shutdown the application when the main window is closed
-            System.Windows.Application.Current.Shutdown();
+            // Don't call Shutdown() here - let the app control its own lifecycle
+            // The app will call Close() on this window when it's ready to exit
         }
 
         private void OnRotaryPositionChanged(object? sender, int position)

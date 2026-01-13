@@ -67,32 +67,17 @@ namespace WheelOverlay.Tests
         }
 
         /// <summary>
-        /// Tests that the application builds successfully in Debug configuration.
+        /// Tests that the application builds successfully in the specified configuration.
         /// Verifies exit code is 0 and no errors or warnings are present.
         /// Requirements: 12.1, 12.2, 12.7
         /// </summary>
-        [Fact(Skip = "Skipped in CI - build is already validated by CI workflow")]
-        public void DebugBuild_CompletesSuccessfully()
+        [Theory(Skip = "Skipped in CI - build is already validated by CI workflow")]
+        [InlineData("Debug")]
+        [InlineData("Release")]
+        public void Build_CompletesSuccessfully(string configuration)
         {
             // Act
-            var (exitCode, output, error) = ExecuteBuild("Debug");
-
-            // Assert
-            Assert.Equal(0, exitCode);
-            Assert.False(HasErrorsOrWarnings(output), 
-                $"Build output contains errors or warnings:\n{output}\n{error}");
-        }
-
-        /// <summary>
-        /// Tests that the application builds successfully in Release configuration.
-        /// Verifies exit code is 0 and no errors or warnings are present.
-        /// Requirements: 12.1, 12.2, 12.7
-        /// </summary>
-        [Fact(Skip = "Skipped in CI - build is already validated by CI workflow")]
-        public void ReleaseBuild_CompletesSuccessfully()
-        {
-            // Act
-            var (exitCode, output, error) = ExecuteBuild("Release");
+            var (exitCode, output, error) = ExecuteBuild(configuration);
 
             // Assert
             Assert.Equal(0, exitCode);

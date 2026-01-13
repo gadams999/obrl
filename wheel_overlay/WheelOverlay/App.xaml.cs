@@ -88,7 +88,7 @@ namespace WheelOverlay
                 contextMenu.Items.Add("-");
                 contextMenu.Items.Add("About Wheel Overlay", null, (s, args) => ShowAboutDialog());
                 contextMenu.Items.Add("-");
-                contextMenu.Items.Add("Exit", null, (s, args) => Shutdown());
+                contextMenu.Items.Add("Exit", null, (s, args) => ExitApplication());
 
                 _notifyIcon.ContextMenuStrip = contextMenu;
                 _notifyIcon.DoubleClick += (s, args) => ToggleOverlay();
@@ -185,15 +185,66 @@ namespace WheelOverlay
             }
         }
 
+        private void ExitApplication()
+        {
+            Services.LogService.Info("Exit requested from system tray");
+            
+            // Close context menu immediately to prevent it from blocking
+            if (_notifyIcon?.ContextMenuStrip != null)
+            {
+                _notifyIcon.ContextMenuStrip.Close();
+            }
+            
+            // Use BeginInvoke to defer shutdown until after the menu click event completes
+            Dispatcher.BeginInvoke(new Action(() =>
+            {
+                try
+                {
+                    Services.LogService.Info("Beginning application shutdown");
+                    Shutdown();
+                }
+                catch (Exception ex)
+                {
+                    Services.LogService.Error("Error during shutdown", ex);
+                    // Force exit if normal shutdown fails
+                    Environment.Exit(0);
+                }
+            }), System.Windows.Threading.DispatcherPriority.Normal);
+        }
+
         protected override void OnExit(ExitEventArgs e)
         {
-            CleanupNotifyIcon();
+            Services.LogService.Info("OnExit called");
+            CleanupResources();
             base.OnExit(e);
         }
 
         private void App_SessionEnding(object sender, SessionEndingCancelEventArgs e)
         {
             Services.LogService.Info($"Session ending: {e.ReasonSessionEnding}");
+            CleanupResources();
+        }
+
+        private void CleanupResources()
+        {
+            Services.LogService.Info("Cleaning up resources");
+            
+            // Close main window first
+            try
+            {
+                if (_mainWindow != null)
+                {
+                    Services.LogService.Info("Closing main window");
+                    _mainWindow.Close();
+                    _mainWindow = null;
+                }
+            }
+            catch (Exception ex)
+            {
+                Services.LogService.Error("Error closing main window", ex);
+            }
+            
+            // Then cleanup notify icon
             CleanupNotifyIcon();
         }
 
@@ -203,15 +254,26 @@ namespace WheelOverlay
             {
                 try
                 {
+                    Services.LogService.Info("Cleaning up NotifyIcon");
+                    
+                    // Remove event handlers to prevent callbacks during disposal
+                    _notifyIcon.DoubleClick -= (s, args) => ToggleOverlay();
+                    
                     // Hide icon first to ensure it's removed from system tray
                     _notifyIcon.Visible = false;
                     
-                    // Dispose of context menu to prevent orphaned menu items
-                    _notifyIcon.ContextMenuStrip?.Dispose();
+                    // Dispose of context menu separately with a small delay
+                    var contextMenu = _notifyIcon.ContextMenuStrip;
+                    _notifyIcon.ContextMenuStrip = null;
                     
                     // Dispose of the icon itself
                     _notifyIcon.Dispose();
                     _notifyIcon = null;
+                    
+                    // Dispose context menu after icon is disposed
+                    contextMenu?.Dispose();
+                    
+                    Services.LogService.Info("NotifyIcon cleanup complete");
                 }
                 catch (Exception ex)
                 {
