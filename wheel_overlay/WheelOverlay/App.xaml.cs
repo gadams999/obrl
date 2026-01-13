@@ -18,6 +18,8 @@ namespace WheelOverlay
     {
         private NotifyIcon? _notifyIcon;
         private MainWindow? _mainWindow;
+        private AboutWindow? _aboutWindow;
+        private SettingsWindow? _settingsWindow;
         private ToolStripMenuItem? _configModeMenuItem;
         private ToolStripMenuItem? _minimizeMenuItem;
 
@@ -88,13 +90,17 @@ namespace WheelOverlay
                 contextMenu.Items.Add("-");
                 contextMenu.Items.Add("About Wheel Overlay", null, (s, args) => ShowAboutDialog());
                 contextMenu.Items.Add("-");
-                contextMenu.Items.Add("Exit", null, (s, args) => Shutdown());
+                contextMenu.Items.Add("Exit", null, (s, args) => ExitApplication());
 
                 _notifyIcon.ContextMenuStrip = contextMenu;
                 _notifyIcon.DoubleClick += (s, args) => ToggleOverlay();
 
                 // Show overlay by default
                 ShowOverlay();
+                
+                // Hook into window closing event to hide instead of close
+                _mainWindow.Closing += MainWindow_Closing;
+                
                 Services.LogService.Info("Startup sequence completed successfully.");
             }
             catch (Exception ex)
@@ -125,8 +131,16 @@ namespace WheelOverlay
         private void OpenSettings()
         {
             var settings = AppSettings.Load();
-            var settingsWindow = new SettingsWindow(settings);
-            settingsWindow.SettingsChanged += (s, e) =>
+            
+            // Reuse existing settings window if open
+            if (_settingsWindow != null)
+            {
+                _settingsWindow.Activate();
+                return;
+            }
+            
+            _settingsWindow = new SettingsWindow(settings);
+            _settingsWindow.SettingsChanged += (s, e) =>
             {
                 // Settings were applied, reload main window
                 if (_mainWindow != null)
@@ -134,7 +148,8 @@ namespace WheelOverlay
                     _mainWindow.ApplySettings(settings);
                 }
             };
-            settingsWindow.Show();
+            _settingsWindow.Closed += (s, e) => _settingsWindow = null;
+            _settingsWindow.Show();
         }
 
         private void ShowAboutDialog()
@@ -143,6 +158,11 @@ namespace WheelOverlay
             {
                 Owner = _mainWindow
             };
+            
+            // Store reference to close it if needed during shutdown
+            _aboutWindow = aboutWindow;
+            aboutWindow.Closed += (s, e) => _aboutWindow = null;
+            
             aboutWindow.ShowDialog();
         }
 
@@ -185,16 +205,125 @@ namespace WheelOverlay
             }
         }
 
+        public void ExitApplication()
+        {
+            Services.LogService.Info("Exit requested");
+            
+            // Close context menu immediately to prevent it from blocking
+            if (_notifyIcon?.ContextMenuStrip != null)
+            {
+                _notifyIcon.ContextMenuStrip.Close();
+            }
+            
+            // Use BeginInvoke to defer shutdown until after the menu click event completes
+            Dispatcher.BeginInvoke(new Action(() =>
+            {
+                try
+                {
+                    Services.LogService.Info("Beginning application shutdown");
+                    Shutdown();
+                }
+                catch (Exception ex)
+                {
+                    Services.LogService.Error("Error during shutdown", ex);
+                    // Force exit if normal shutdown fails
+                    Environment.Exit(0);
+                }
+            }), System.Windows.Threading.DispatcherPriority.Normal);
+        }
+
         protected override void OnExit(ExitEventArgs e)
         {
-            CleanupNotifyIcon();
+            Services.LogService.Info("OnExit called");
+            CleanupResources();
             base.OnExit(e);
         }
 
         private void App_SessionEnding(object sender, SessionEndingCancelEventArgs e)
         {
             Services.LogService.Info($"Session ending: {e.ReasonSessionEnding}");
+            CleanupResources();
+        }
+
+        private void CleanupResources()
+        {
+            Services.LogService.Info("Cleaning up resources");
+            
+            // Close any open child windows first
+            try
+            {
+                if (_settingsWindow != null)
+                {
+                    Services.LogService.Info("Closing Settings window");
+                    _settingsWindow.Close();
+                    _settingsWindow = null;
+                }
+                
+                if (_aboutWindow != null)
+                {
+                    Services.LogService.Info("Closing About window");
+                    _aboutWindow.Close();
+                    _aboutWindow = null;
+                }
+            }
+            catch (Exception ex)
+            {
+                Services.LogService.Error("Error closing child windows", ex);
+            }
+            
+            // Close main window
+            try
+            {
+                if (_mainWindow != null)
+                {
+                    Services.LogService.Info("Closing main window");
+                    // Remove the Closing event handler to prevent it from canceling the close
+                    _mainWindow.Closing -= MainWindow_Closing;
+                    _mainWindow.Close();
+                    _mainWindow = null;
+                }
+            }
+            catch (Exception ex)
+            {
+                Services.LogService.Error("Error closing main window", ex);
+            }
+            
+            // Then cleanup notify icon
             CleanupNotifyIcon();
+        }
+
+        private void MainWindow_Closing(object? sender, System.ComponentModel.CancelEventArgs e)
+        {
+            // When user closes window from taskbar, exit the application
+            Services.LogService.Info("MainWindow closing requested - initiating app shutdown");
+            
+            // Close any open child windows first
+            try
+            {
+                if (_settingsWindow != null)
+                {
+                    Services.LogService.Info("Closing Settings window before shutdown");
+                    _settingsWindow.Close();
+                    _settingsWindow = null;
+                }
+                
+                if (_aboutWindow != null)
+                {
+                    Services.LogService.Info("Closing About window before shutdown");
+                    _aboutWindow.Close();
+                    _aboutWindow = null;
+                }
+            }
+            catch (Exception ex)
+            {
+                Services.LogService.Error("Error closing child windows", ex);
+            }
+            
+            // Cancel the close to prevent immediate window destruction
+            e.Cancel = true;
+            
+            // Trigger app shutdown through the App class
+            ((App)System.Windows.Application.Current).ExitApplication();
         }
 
         private void CleanupNotifyIcon()
@@ -203,15 +332,26 @@ namespace WheelOverlay
             {
                 try
                 {
+                    Services.LogService.Info("Cleaning up NotifyIcon");
+                    
+                    // Remove event handlers to prevent callbacks during disposal
+                    _notifyIcon.DoubleClick -= (s, args) => ToggleOverlay();
+                    
                     // Hide icon first to ensure it's removed from system tray
                     _notifyIcon.Visible = false;
                     
-                    // Dispose of context menu to prevent orphaned menu items
-                    _notifyIcon.ContextMenuStrip?.Dispose();
+                    // Dispose of context menu separately with a small delay
+                    var contextMenu = _notifyIcon.ContextMenuStrip;
+                    _notifyIcon.ContextMenuStrip = null;
                     
                     // Dispose of the icon itself
                     _notifyIcon.Dispose();
                     _notifyIcon = null;
+                    
+                    // Dispose context menu after icon is disposed
+                    contextMenu?.Dispose();
+                    
+                    Services.LogService.Info("NotifyIcon cleanup complete");
                 }
                 catch (Exception ex)
                 {

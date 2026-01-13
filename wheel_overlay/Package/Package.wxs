@@ -2,7 +2,7 @@
 <Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
   <Package Name="Wheel Overlay" 
            Manufacturer="OBRL" 
-           Version="0.5.2" 
+           Version="0.5.3" 
            UpgradeCode="19d19028-090f-4888-912b-650058e100f7"
            Compressed="yes"
            InstallerVersion="200"

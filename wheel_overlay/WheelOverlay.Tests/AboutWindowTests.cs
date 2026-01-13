@@ -34,7 +34,10 @@ namespace WheelOverlay.Tests
                     var versionTextBlock = FindChild<TextBlock>(aboutWindow, "VersionTextBlock");
                     Assert.NotNull(versionTextBlock);
                     Assert.Contains("Wheel Overlay", versionTextBlock.Text);
-                    Assert.Contains("0.5.2", versionTextBlock.Text);
+                    
+                    // Verify version matches what VersionInfo returns (reads from assembly)
+                    var expectedVersion = VersionInfo.GetFullVersionString();
+                    Assert.Equal(expectedVersion, versionTextBlock.Text);
                     
                     // Find the CloseButton
                     var closeButton = FindChild<Button>(aboutWindow, "CloseButton");
