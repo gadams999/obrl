@@ -157,6 +157,11 @@ Examples:
     if db_path == "simracer.db" and config.get("league"):  # "simracer.db" is the default
         db_path = config["league"].get("database", "simracer.db")
 
+    # Get user agent from config (optional)
+    user_agent = None
+    if config.get("scraping"):
+        user_agent = config["scraping"].get("user_agent")
+
     # Execute command
     if args.command == "scrape":
         try:
@@ -168,6 +173,7 @@ Examples:
                     database=db,
                     validator=validator,
                     rate_limit_range=(2.0, 4.0),
+                    user_agent=user_agent,
                 ) as orchestrator:
                     # Set cache behavior
                     cache_max_age = None if args.force else 7

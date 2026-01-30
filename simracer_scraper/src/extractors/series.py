@@ -35,6 +35,7 @@ class SeriesExtractor(BaseExtractor):
         backoff_factor: int = 2,
         render_js: bool = False,
         browser_manager: "BrowserManager | None" = None,
+        user_agent: str | None = None,
     ):
         """Initialize the series extractor.
 
@@ -50,6 +51,7 @@ class SeriesExtractor(BaseExtractor):
             backoff_factor: Exponential backoff multiplier (default: 2)
             render_js: Use JavaScript rendering (default: False)
             browser_manager: Shared browser manager for coordinated rate limiting
+            user_agent: Custom User-Agent string for HTTP requests
         """
         super().__init__(
             rate_limit_seconds,
@@ -59,6 +61,7 @@ class SeriesExtractor(BaseExtractor):
             backoff_factor,
             render_js,
             browser_manager,
+            user_agent,
         )
         self.validator = SchemaValidator()
 

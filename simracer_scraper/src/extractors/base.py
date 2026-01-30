@@ -45,6 +45,7 @@ class BaseExtractor:
         backoff_factor: int = 2,
         render_js: bool = False,
         browser_manager: "BrowserManager | None" = None,
+        user_agent: str | None = None,
     ):
         """Initialize the base extractor.
 
@@ -63,6 +64,8 @@ class BaseExtractor:
             browser_manager: Shared browser manager for coordinated rate limiting
                 and browser reuse. When provided, rate limiting is coordinated
                 across ALL extractors to ensure respectful crawling behavior.
+            user_agent: Custom User-Agent string for HTTP requests
+                If None, uses default: "SimRacerScraper/1.0 (Educational purposes)"
         """
         self.rate_limit_seconds = rate_limit_seconds
         self.rate_limit_range = rate_limit_range
@@ -71,6 +74,7 @@ class BaseExtractor:
         self.backoff_factor = backoff_factor
         self.render_js = render_js
         self._browser_manager = browser_manager
+        self.user_agent = user_agent or "SimRacerScraper/1.0 (Educational purposes; +https://github.com/yourusername/simracer_scraper)"
         self._last_request_time = 0  # Fallback for standalone use
         self._playwright = None
         self._browser = None
@@ -112,7 +116,7 @@ class BaseExtractor:
         self._rate_limit()
 
         headers = {
-            "User-Agent": "SimRacerScraper/1.0 (Educational purposes; +https://github.com/yourusername/simracer_scraper)"
+            "User-Agent": self.user_agent
         }
 
         attempt = 0

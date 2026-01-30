@@ -481,12 +481,22 @@ logging:
   level: INFO           # DEBUG, INFO, WARNING, ERROR
 ```
 
-### Environment Variables
+### Configuration via YAML
 
-Create `.env` (optional):
-```bash
-SIMRACER_DB_PATH=./obrl.db
-SIMRACER_LOG_LEVEL=INFO
+All configuration is done through `config.yaml`. See the Configuration section in README.md for details.
+
+Example `config.yaml`:
+```yaml
+league:
+  id: 1558
+  depth: race
+  database: obrl.db
+
+scraping:
+  user_agent: "SimRacerScraper/1.0 (Educational/Personal Use)"
+
+logging:
+  level: INFO
 ```
 
 ## Common Tasks

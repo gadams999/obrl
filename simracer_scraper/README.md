@@ -52,9 +52,9 @@ pip install -r requirements.txt
 # 5. Install Playwright browsers
 playwright install chromium
 
-# 6. Copy configuration template
+# 6. Copy and edit configuration file
 cp config.yaml.example config.yaml
-# Edit config.yaml with your league ID
+# Edit config.yaml with your league ID and preferences
 
 # 7. Run the scraper
 python scraper.py
@@ -71,8 +71,9 @@ uv sync --all-extras
 # Install Playwright browsers
 uv run playwright install chromium
 
-# Copy and configure environment file (optional)
-cp .env.example .env
+# Copy and configure settings
+cp config.yaml.example config.yaml
+# Edit config.yaml with your preferences
 ```
 
 **Python Version**: 3.10+ required. If using mise:
@@ -82,7 +83,13 @@ mise install  # Installs Python from .python-version
 
 ## Configuration
 
-Edit `config.yaml`:
+The scraper uses `config.yaml` for all configuration. Copy the example file and customize:
+
+```bash
+cp config.yaml.example config.yaml
+```
+
+### Configuration File Structure
 
 ```yaml
 league:
@@ -92,12 +99,31 @@ league:
 
 scraping:
   request_delay: 2.0    # Seconds between requests (minimum)
-  max_retries: 3
-  timeout: 10
+  max_retries: 3        # Retry attempts for failed requests
+  timeout: 10           # Request timeout in seconds
+  user_agent: "SimRacerScraper/1.0 (Educational/Personal Use)"
 
 logging:
   level: INFO           # DEBUG, INFO, WARNING, ERROR
+  file: ./scraper.log   # Log file path
 ```
+
+### Configuration Options
+
+**League Settings:**
+- `id`: League ID from SimRacerHub URL (e.g., `league_series.php?league_id=1558`)
+- `depth`: Scraping depth - `league`, `series`, `season`, or `race` (default: `race`)
+- `database`: SQLite database file path (default: `simracer.db`)
+
+**Scraping Behavior:**
+- `request_delay`: Minimum delay between requests in seconds (default: 2.0)
+- `max_retries`: Maximum retry attempts for failed requests (default: 3)
+- `timeout`: Request timeout in seconds (default: 10)
+- `user_agent`: Custom User-Agent string for identification
+
+**Logging:**
+- `level`: Log verbosity - `DEBUG`, `INFO`, `WARNING`, or `ERROR`
+- `file`: Path to log file
 
 **Configuration Priority**: Command-line arguments override config.yaml settings.
 

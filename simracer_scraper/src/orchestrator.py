@@ -40,6 +40,7 @@ class Orchestrator:
         rate_limit_range: tuple[float, float] | None = (2.0, 4.0),
         max_retries: int = 3,
         timeout: int = 30,
+        user_agent: str | None = None,
     ):
         """Initialize orchestrator with dependencies.
 
@@ -53,6 +54,7 @@ class Orchestrator:
                 Set to None to use fixed rate_limit_seconds
             max_retries: Maximum retry attempts for failed requests (default: 3)
             timeout: Request timeout in seconds (default: 30)
+            user_agent: Custom User-Agent string for HTTP requests (default: None)
         """
         self.db = database
         self.validator = validator
@@ -60,6 +62,7 @@ class Orchestrator:
         self.rate_limit_range = rate_limit_range
         self.max_retries = max_retries
         self.timeout = timeout
+        self.user_agent = user_agent
 
         # CRITICAL: Create ONE shared browser manager for ALL extractors
         # This ensures:
@@ -78,6 +81,7 @@ class Orchestrator:
             "max_retries": max_retries,
             "timeout": timeout,
             "browser_manager": self._browser_manager,  # CRITICAL: Share browser manager
+            "user_agent": user_agent,
         }
 
         # Use randomized or fixed rate limiting (ignored when browser_manager is provided)

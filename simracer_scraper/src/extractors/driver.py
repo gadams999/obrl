@@ -29,6 +29,7 @@ class DriverExtractor(BaseExtractor):
         backoff_factor: int = 2,
         render_js: bool = False,
         browser_manager: "BrowserManager | None" = None,
+        user_agent: str | None = None,
     ):
         """Initialize the driver extractor.
 
@@ -45,6 +46,7 @@ class DriverExtractor(BaseExtractor):
             render_js: Use JavaScript rendering (default: False)
                 Note: Driver stats are in static HTML, so JS rendering not needed
             browser_manager: Shared browser manager for coordinated rate limiting
+            user_agent: Custom User-Agent string for HTTP requests
         """
         super().__init__(
             rate_limit_seconds,
@@ -54,6 +56,7 @@ class DriverExtractor(BaseExtractor):
             backoff_factor,
             render_js,
             browser_manager,
+            user_agent,
         )
 
     def extract(self, url: str) -> dict[str, Any]:
