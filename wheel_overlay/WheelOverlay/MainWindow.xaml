@@ -36,7 +36,7 @@
         </ResourceDictionary>
     </Window.Resources>
 
-    <Grid>
+    <Grid Margin="1">
         <!-- Test Mode Border Wrapper -->
         <Border x:Name="TestModeBorder"
                 BorderBrush="#FFFF00"

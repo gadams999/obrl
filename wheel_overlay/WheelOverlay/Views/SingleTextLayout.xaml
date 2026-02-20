@@ -43,7 +43,7 @@
             </Style.Triggers>
         </Style>
     </UserControl.Resources>
-    <Grid x:Name="AnimationContainer">
+    <Grid x:Name="AnimationContainer" ClipToBounds="True">
         <!-- Current Text (animating out) -->
         <TextBlock x:Name="CurrentText"
                    Text="{Binding DisplayedText}"

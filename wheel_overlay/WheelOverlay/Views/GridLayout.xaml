@@ -6,7 +6,7 @@
              xmlns:vm="clr-namespace:WheelOverlay.ViewModels"
              mc:Ignorable="d" 
              d:DataContext="{d:DesignInstance Type=vm:OverlayViewModel}">
-    <Grid>
+    <Grid ClipToBounds="True">
         <!-- Show "Not Found" message when device is not connected -->
         <TextBlock Text="🚨 Not Found! 🚨"
                    FontSize="{Binding Settings.FontSize}"

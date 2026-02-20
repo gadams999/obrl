@@ -10,7 +10,7 @@
     <UserControl.Resources>
         <cv:IsSelectedConverter x:Key="IsSelectedConverter" />
     </UserControl.Resources>
-    <Grid>
+    <Grid ClipToBounds="True">
         <!-- Show "Not Found" message when device is not connected -->
         <TextBlock Text="🚨 Not Found! 🚨"
                    FontSize="{Binding Settings.FontSize}"
