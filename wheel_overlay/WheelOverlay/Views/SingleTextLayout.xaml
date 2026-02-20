@@ -43,13 +43,14 @@
             </Style.Triggers>
         </Style>
     </UserControl.Resources>
-    <Grid x:Name="AnimationContainer">
+    <Grid x:Name="AnimationContainer" ClipToBounds="True">
         <!-- Current Text (animating out) -->
         <TextBlock x:Name="CurrentText"
                    Text="{Binding DisplayedText}"
                    FontSize="{Binding Settings.FontSize}"
                    FontFamily="{Binding Settings.FontFamily}"
                    FontWeight="Bold"
+                   TextOptions.TextRenderingMode="Aliased"
                    HorizontalAlignment="Center"
                    VerticalAlignment="Center"
                    Style="{StaticResource FlashingTextStyle}"
@@ -71,6 +72,7 @@
                    FontSize="{Binding Settings.FontSize}"
                    FontFamily="{Binding Settings.FontFamily}"
                    FontWeight="Bold"
+                   TextOptions.TextRenderingMode="Aliased"
                    HorizontalAlignment="Center"
                    VerticalAlignment="Center"
                    Style="{StaticResource FlashingTextStyle}"

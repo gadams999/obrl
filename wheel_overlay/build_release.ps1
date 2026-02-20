@@ -19,7 +19,7 @@ if ($LASTEXITCODE -eq 0) {
     Write-Host "Executable is located at: $publishDir\WheelOverlay.exe" -ForegroundColor Green
     
     # Create a zip file for distribution
-    $zipPath = ".\WheelOverlay_v0.5.3.zip"
+    $zipPath = ".\WheelOverlay_v0.5.4.zip"
     if (Test-Path $zipPath) { Remove-Item $zipPath }
     Compress-Archive -Path "$publishDir\*" -DestinationPath $zipPath
     Write-Host "Created distribution zip: $zipPath" -ForegroundColor Green

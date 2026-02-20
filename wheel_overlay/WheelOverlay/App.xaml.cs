@@ -22,6 +22,7 @@ namespace WheelOverlay
         private SettingsWindow? _settingsWindow;
         private ToolStripMenuItem? _configModeMenuItem;
         private ToolStripMenuItem? _minimizeMenuItem;
+        private ToolStripMenuItem? _minimizeActionMenuItem;
 
         public App()
         {
@@ -75,6 +76,13 @@ namespace WheelOverlay
                 contextMenu.Items.Add("Show Overlay", null, (s, args) => ShowOverlay());
                 contextMenu.Items.Add("Hide Overlay", null, (s, args) => HideOverlay());
                 contextMenu.Items.Add("-");
+                
+                // Add "Minimize" menu item (visible only when MinimizeToTaskbar setting is enabled)
+                var settings = AppSettings.Load();
+                _minimizeActionMenuItem = new ToolStripMenuItem("Minimize");
+                _minimizeActionMenuItem.Click += (s, args) => MinimizeToTaskbar();
+                _minimizeActionMenuItem.Visible = settings.MinimizeToTaskbar;
+                contextMenu.Items.Add(_minimizeActionMenuItem);
                 
                 _minimizeMenuItem = new ToolStripMenuItem("Minimize to Taskbar");
                 _minimizeMenuItem.CheckOnClick = true;
@@ -147,9 +155,24 @@ namespace WheelOverlay
                 {
                     _mainWindow.ApplySettings(settings);
                 }
+                
+                // Update minimize menu item visibility based on MinimizeToTaskbar setting
+                UpdateMinimizeMenuItemVisibility();
             };
             _settingsWindow.Closed += (s, e) => _settingsWindow = null;
             _settingsWindow.Show();
+        }
+
+        /// <summary>
+        /// Updates the visibility of the "Minimize" menu item based on the MinimizeToTaskbar setting.
+        /// </summary>
+        private void UpdateMinimizeMenuItemVisibility()
+        {
+            if (_minimizeActionMenuItem != null)
+            {
+                var settings = AppSettings.Load();
+                _minimizeActionMenuItem.Visible = settings.MinimizeToTaskbar;
+            }
         }
 
         private void ShowAboutDialog()
@@ -164,6 +187,14 @@ namespace WheelOverlay
             aboutWindow.Closed += (s, e) => _aboutWindow = null;
             
             aboutWindow.ShowDialog();
+        }
+
+        private void MinimizeToTaskbar()
+        {
+            if (_mainWindow != null)
+            {
+                _mainWindow.WindowState = WindowState.Minimized;
+            }
         }
 
         private void ToggleMinimize(bool enabled)

@@ -1,0 +1,386 @@
+[08:00:33.655] === Application Started: 1/23/2026 8:00:33 AM ===
+[08:00:33.657] [INFO] Program.Main started.
+[08:00:33.658] [INFO] Creating App instance...
+[08:00:33.737] [INFO] App constructor called.
+[08:00:33.737] [INFO] Starting app without explicit InitializeComponent...
+[08:00:33.738] [INFO] Calling app.Run()...
+[08:00:33.759] [INFO] Application identifying startup sequence...
+[08:00:33.760] [INFO] Initializing MainWindow...
+[08:00:34.010] [INFO] MainWindow initialized.
+[08:00:34.193] [INFO] ProcessMonitor.Start: No target configured, always visible
+[08:00:34.386] [INFO] Startup sequence completed successfully.
+[08:01:20.066] [INFO] ProcessMonitor.UpdateTarget: Updating target from '' to 'C:\Windows\notepad.exe'
+[08:01:20.068] [INFO] IsExecutableRunning: Checking for C:\Windows\notepad.exe
+[08:01:20.073] [INFO] IsExecutableRunning: Found 180 total processes
+[08:01:20.155] [INFO] IsExecutableRunning: No match found. Checked 77 processes, skipped 103
+[08:01:20.156] [INFO] ProcessMonitor.Start: Initial check, isRunning=False, path=C:\Windows\notepad.exe
+[08:01:20.162] [INFO] ProcessMonitor.Start: Creating Timer with interval 1000ms
+[08:01:20.163] [INFO] ProcessMonitor.Start: Timer created successfully
+[08:01:21.166] [INFO] ProcessMonitor.OnTimerTick: Timer fired at 08:01:21.166
+[08:01:21.167] [INFO] IsExecutableRunning: Checking for C:\Windows\notepad.exe
+[08:01:21.171] [INFO] IsExecutableRunning: Found 184 total processes
+[08:01:21.270] [INFO] IsExecutableRunning: No match found. Checked 81 processes, skipped 103
+[08:01:21.271] [INFO] CheckTargetApplication: isRunning=False, _targetIsRunning=False
+[08:01:22.178] [INFO] ProcessMonitor.OnTimerTick: Timer fired at 08:01:22.178
+[08:01:22.179] [INFO] IsExecutableRunning: Checking for C:\Windows\notepad.exe
+[08:01:22.183] [INFO] IsExecutableRunning: Found 180 total processes
+[08:01:22.271] [INFO] IsExecutableRunning: No match found. Checked 77 processes, skipped 103
+[08:01:22.271] [INFO] CheckTargetApplication: isRunning=False, _targetIsRunning=False
+[08:01:23.163] [INFO] ProcessMonitor.OnTimerTick: Timer fired at 08:01:23.163
+[08:01:23.164] [INFO] IsExecutableRunning: Checking for C:\Windows\notepad.exe
+[08:01:23.167] [INFO] IsExecutableRunning: Found 184 total processes
+[08:01:23.262] [INFO] IsExecutableRunning: No match found. Checked 77 processes, skipped 107
+[08:01:23.263] [INFO] CheckTargetApplication: isRunning=False, _targetIsRunning=False
+[08:01:24.164] [INFO] ProcessMonitor.OnTimerTick: Timer fired at 08:01:24.164
+[08:01:24.165] [INFO] IsExecutableRunning: Checking for C:\Windows\notepad.exe
+[08:01:24.168] [INFO] IsExecutableRunning: Found 180 total processes
+[08:01:24.256] [INFO] IsExecutableRunning: No match found. Checked 77 processes, skipped 103
+[08:01:24.256] [INFO] CheckTargetApplication: isRunning=False, _targetIsRunning=False
+[08:01:25.178] [INFO] ProcessMonitor.OnTimerTick: Timer fired at 08:01:25.178
+[08:01:25.179] [INFO] IsExecutableRunning: Checking for C:\Windows\notepad.exe
+[08:01:25.182] [INFO] IsExecutableRunning: Found 180 total processes
+[08:01:25.271] [INFO] IsExecutableRunning: No match found. Checked 77 processes, skipped 103
+[08:01:25.272] [INFO] CheckTargetApplication: isRunning=False, _targetIsRunning=False
+[08:01:26.173] [INFO] ProcessMonitor.OnTimerTick: Timer fired at 08:01:26.173
+[08:01:26.173] [INFO] IsExecutableRunning: Checking for C:\Windows\notepad.exe
+[08:01:26.177] [INFO] IsExecutableRunning: Found 180 total processes
+[08:01:26.257] [INFO] IsExecutableRunning: No match found. Checked 77 processes, skipped 103
+[08:01:26.258] [INFO] CheckTargetApplication: isRunning=False, _targetIsRunning=False
+[08:01:27.164] [INFO] ProcessMonitor.OnTimerTick: Timer fired at 08:01:27.163
+[08:01:27.164] [INFO] IsExecutableRunning: Checking for C:\Windows\notepad.exe
+[08:01:27.168] [INFO] IsExecutableRunning: Found 180 total processes
+[08:01:27.258] [INFO] IsExecutableRunning: No match found. Checked 77 processes, skipped 103
+[08:01:27.258] [INFO] CheckTargetApplication: isRunning=False, _targetIsRunning=False
+[08:01:28.178] [INFO] ProcessMonitor.OnTimerTick: Timer fired at 08:01:28.178
+[08:01:28.179] [INFO] IsExecutableRunning: Checking for C:\Windows\notepad.exe
+[08:01:28.182] [INFO] IsExecutableRunning: Found 180 total processes
+[08:01:28.272] [INFO] IsExecutableRunning: No match found. Checked 77 processes, skipped 103
+[08:01:28.272] [INFO] CheckTargetApplication: isRunning=False, _targetIsRunning=False
+[08:01:29.167] [INFO] ProcessMonitor.OnTimerTick: Timer fired at 08:01:29.167
+[08:01:29.168] [INFO] IsExecutableRunning: Checking for C:\Windows\notepad.exe
+[08:01:29.175] [INFO] IsExecutableRunning: Found 180 total processes
+[08:01:29.271] [INFO] IsExecutableRunning: No match found. Checked 77 processes, skipped 103
+[08:01:29.272] [INFO] CheckTargetApplication: isRunning=False, _targetIsRunning=False
+[08:01:30.163] [INFO] ProcessMonitor.OnTimerTick: Timer fired at 08:01:30.163
+[08:01:30.164] [INFO] IsExecutableRunning: Checking for C:\Windows\notepad.exe
+[08:01:30.168] [INFO] IsExecutableRunning: Found 180 total processes
+[08:01:30.262] [INFO] IsExecutableRunning: No match found. Checked 77 processes, skipped 103
+[08:01:30.262] [INFO] CheckTargetApplication: isRunning=False, _targetIsRunning=False
+[08:01:31.163] [INFO] ProcessMonitor.OnTimerTick: Timer fired at 08:01:31.163
+[08:01:31.163] [INFO] IsExecutableRunning: Checking for C:\Windows\notepad.exe
+[08:01:31.167] [INFO] IsExecutableRunning: Found 180 total processes
+[08:01:31.257] [INFO] IsExecutableRunning: No match found. Checked 77 processes, skipped 103
+[08:01:31.257] [INFO] CheckTargetApplication: isRunning=False, _targetIsRunning=False
+[08:01:32.164] [INFO] ProcessMonitor.OnTimerTick: Timer fired at 08:01:32.164
+[08:01:32.165] [INFO] IsExecutableRunning: Checking for C:\Windows\notepad.exe
+[08:01:32.172] [INFO] IsExecutableRunning: Found 181 total processes
+[08:01:32.276] [INFO] IsExecutableRunning: No match found. Checked 78 processes, skipped 103
+[08:01:32.276] [INFO] CheckTargetApplication: isRunning=False, _targetIsRunning=False
+[08:01:33.164] [INFO] ProcessMonitor.OnTimerTick: Timer fired at 08:01:33.164
+[08:01:33.165] [INFO] IsExecutableRunning: Checking for C:\Windows\notepad.exe
+[08:01:33.169] [INFO] IsExecutableRunning: Found 181 total processes
+[08:01:33.259] [INFO] IsExecutableRunning: No match found. Checked 78 processes, skipped 103
+[08:01:33.260] [INFO] CheckTargetApplication: isRunning=False, _targetIsRunning=False
+[08:01:34.169] [INFO] ProcessMonitor.OnTimerTick: Timer fired at 08:01:34.169
+[08:01:34.170] [INFO] IsExecutableRunning: Checking for C:\Windows\notepad.exe
+[08:01:34.173] [INFO] IsExecutableRunning: Found 181 total processes
+[08:01:34.258] [INFO] IsExecutableRunning: No match found. Checked 78 processes, skipped 103
+[08:01:34.259] [INFO] CheckTargetApplication: isRunning=False, _targetIsRunning=False
+[08:01:35.164] [INFO] ProcessMonitor.OnTimerTick: Timer fired at 08:01:35.164
+[08:01:35.165] [INFO] IsExecutableRunning: Checking for C:\Windows\notepad.exe
+[08:01:35.168] [INFO] IsExecutableRunning: Found 181 total processes
+[08:01:35.259] [INFO] IsExecutableRunning: No match found. Checked 78 processes, skipped 103
+[08:01:35.260] [INFO] CheckTargetApplication: isRunning=False, _targetIsRunning=False
+[08:01:36.171] [INFO] ProcessMonitor.OnTimerTick: Timer fired at 08:01:36.171
+[08:01:36.172] [INFO] IsExecutableRunning: Checking for C:\Windows\notepad.exe
+[08:01:36.175] [INFO] IsExecutableRunning: Found 181 total processes
+[08:01:36.265] [INFO] IsExecutableRunning: No match found. Checked 78 processes, skipped 103
+[08:01:36.266] [INFO] CheckTargetApplication: isRunning=False, _targetIsRunning=False
+[08:01:37.177] [INFO] ProcessMonitor.OnTimerTick: Timer fired at 08:01:37.177
+[08:01:37.178] [INFO] IsExecutableRunning: Checking for C:\Windows\notepad.exe
+[08:01:37.181] [INFO] IsExecutableRunning: Found 181 total processes
+[08:01:37.266] [INFO] IsExecutableRunning: No match found. Checked 78 processes, skipped 103
+[08:01:37.266] [INFO] CheckTargetApplication: isRunning=False, _targetIsRunning=False
+[08:01:38.176] [INFO] ProcessMonitor.OnTimerTick: Timer fired at 08:01:38.176
+[08:01:38.176] [INFO] IsExecutableRunning: Checking for C:\Windows\notepad.exe
+[08:01:38.180] [INFO] IsExecutableRunning: Found 181 total processes
+[08:01:38.261] [INFO] IsExecutableRunning: No match found. Checked 78 processes, skipped 103
+[08:01:38.261] [INFO] CheckTargetApplication: isRunning=False, _targetIsRunning=False
+[08:01:39.178] [INFO] ProcessMonitor.OnTimerTick: Timer fired at 08:01:39.177
+[08:01:39.178] [INFO] IsExecutableRunning: Checking for C:\Windows\notepad.exe
+[08:01:39.181] [INFO] IsExecutableRunning: Found 181 total processes
+[08:01:39.264] [INFO] IsExecutableRunning: No match found. Checked 78 processes, skipped 103
+[08:01:39.265] [INFO] CheckTargetApplication: isRunning=False, _targetIsRunning=False
+[08:01:40.163] [INFO] ProcessMonitor.OnTimerTick: Timer fired at 08:01:40.163
+[08:01:40.163] [INFO] IsExecutableRunning: Checking for C:\Windows\notepad.exe
+[08:01:40.167] [INFO] IsExecutableRunning: Found 181 total processes
+[08:01:40.258] [INFO] IsExecutableRunning: No match found. Checked 78 processes, skipped 103
+[08:01:40.259] [INFO] CheckTargetApplication: isRunning=False, _targetIsRunning=False
+[08:01:41.163] [INFO] ProcessMonitor.OnTimerTick: Timer fired at 08:01:41.163
+[08:01:41.164] [INFO] IsExecutableRunning: Checking for C:\Windows\notepad.exe
+[08:01:41.167] [INFO] IsExecutableRunning: Found 182 total processes
+[08:01:41.254] [INFO] IsExecutableRunning: No match found. Checked 79 processes, skipped 103
+[08:01:41.255] [INFO] CheckTargetApplication: isRunning=False, _targetIsRunning=False
+[08:01:42.177] [INFO] ProcessMonitor.OnTimerTick: Timer fired at 08:01:42.177
+[08:01:42.178] [INFO] IsExecutableRunning: Checking for C:\Windows\notepad.exe
+[08:01:42.181] [INFO] IsExecutableRunning: Found 182 total processes
+[08:01:42.270] [INFO] IsExecutableRunning: No match found. Checked 79 processes, skipped 103
+[08:01:42.271] [INFO] CheckTargetApplication: isRunning=False, _targetIsRunning=False
+[08:01:43.165] [INFO] ProcessMonitor.OnTimerTick: Timer fired at 08:01:43.164
+[08:01:43.165] [INFO] IsExecutableRunning: Checking for C:\Windows\notepad.exe
+[08:01:43.169] [INFO] IsExecutableRunning: Found 181 total processes
+[08:01:43.260] [INFO] IsExecutableRunning: No match found. Checked 78 processes, skipped 103
+[08:01:43.261] [INFO] CheckTargetApplication: isRunning=False, _targetIsRunning=False
+[08:01:44.163] [INFO] ProcessMonitor.OnTimerTick: Timer fired at 08:01:44.163
+[08:01:44.164] [INFO] IsExecutableRunning: Checking for C:\Windows\notepad.exe
+[08:01:44.167] [INFO] IsExecutableRunning: Found 181 total processes
+[08:01:44.266] [INFO] IsExecutableRunning: No match found. Checked 78 processes, skipped 103
+[08:01:44.267] [INFO] CheckTargetApplication: isRunning=False, _targetIsRunning=False
+[08:01:45.163] [INFO] ProcessMonitor.OnTimerTick: Timer fired at 08:01:45.163
+[08:01:45.163] [INFO] IsExecutableRunning: Checking for C:\Windows\notepad.exe
+[08:01:45.166] [INFO] IsExecutableRunning: Found 181 total processes
+[08:01:45.254] [INFO] IsExecutableRunning: No match found. Checked 78 processes, skipped 103
+[08:01:45.255] [INFO] CheckTargetApplication: isRunning=False, _targetIsRunning=False
+[08:01:46.178] [INFO] ProcessMonitor.OnTimerTick: Timer fired at 08:01:46.177
+[08:01:46.178] [INFO] IsExecutableRunning: Checking for C:\Windows\notepad.exe
+[08:01:46.182] [INFO] IsExecutableRunning: Found 181 total processes
+[08:01:46.269] [INFO] IsExecutableRunning: No match found. Checked 78 processes, skipped 103
+[08:01:46.270] [INFO] CheckTargetApplication: isRunning=False, _targetIsRunning=False
+[08:01:47.164] [INFO] ProcessMonitor.OnTimerTick: Timer fired at 08:01:47.163
+[08:01:47.164] [INFO] IsExecutableRunning: Checking for C:\Windows\notepad.exe
+[08:01:47.168] [INFO] IsExecutableRunning: Found 181 total processes
+[08:01:47.255] [INFO] IsExecutableRunning: No match found. Checked 78 processes, skipped 103
+[08:01:47.256] [INFO] CheckTargetApplication: isRunning=False, _targetIsRunning=False
+[08:01:48.163] [INFO] ProcessMonitor.OnTimerTick: Timer fired at 08:01:48.162
+[08:01:48.163] [INFO] IsExecutableRunning: Checking for C:\Windows\notepad.exe
+[08:01:48.167] [INFO] IsExecutableRunning: Found 181 total processes
+[08:01:48.254] [INFO] IsExecutableRunning: No match found. Checked 78 processes, skipped 103
+[08:01:48.255] [INFO] CheckTargetApplication: isRunning=False, _targetIsRunning=False
+[08:01:48.765] [INFO] ProcessMonitor.UpdateTarget: Updating target from 'C:\Windows\notepad.exe' to ''
+[08:01:48.765] [INFO] ProcessMonitor.UpdateTarget: No target, always visible
+[08:01:50.975] [INFO] ProcessMonitor.UpdateTarget: Updating target from '' to ''
+[08:01:50.976] [INFO] ProcessMonitor.UpdateTarget: No target, always visible
+[08:05:07.161] [INFO] Exit requested
+[08:05:07.164] [INFO] Beginning application shutdown
+[08:05:07.168] [INFO] MainWindow closing requested - hiding window
+[08:05:07.176] [INFO] MainWindow closing requested - initiating app shutdown
+[08:05:07.176] [INFO] Exit requested
+[08:05:07.179] [INFO] MainWindow closed
+[08:05:07.218] [INFO] OnExit called
+[08:05:07.219] [INFO] Cleaning up resources
+[08:05:07.219] [INFO] Closing main window
+[08:05:07.220] [INFO] Cleaning up NotifyIcon
+[08:05:07.240] [INFO] NotifyIcon cleanup complete
+[08:06:01.455] === Application Started: 1/23/2026 8:06:01 AM ===
+[08:06:01.460] [INFO] Program.Main started.
+[08:06:01.461] [INFO] Creating App instance...
+[08:06:01.543] [INFO] App constructor called.
+[08:06:01.544] [INFO] Starting app without explicit InitializeComponent...
+[08:06:01.545] [INFO] Calling app.Run()...
+[08:06:01.565] [INFO] Application identifying startup sequence...
+[08:06:01.566] [INFO] Initializing MainWindow...
+[08:06:01.825] [INFO] MainWindow initialized.
+[08:06:02.001] [INFO] ProcessMonitor.Start: No target configured, always visible
+[08:06:02.207] [INFO] Startup sequence completed successfully.
+[08:06:23.342] [INFO] ProcessMonitor.UpdateTarget: Updating target from '' to 'C:\Windows\notepad.exe'
+[08:06:23.343] [INFO] IsExecutableRunning: Checking for C:\Windows\notepad.exe
+[08:06:23.349] [INFO] IsExecutableRunning: Found 177 total processes
+[08:06:23.437] [INFO] IsExecutableRunning: No match found. Checked 77 processes, skipped 100
+[08:06:23.438] [INFO] ProcessMonitor.Start: Initial check, isRunning=False, path=C:\Windows\notepad.exe
+[08:06:23.443] [INFO] ProcessMonitor.Start: Creating Timer with interval 1000ms
+[08:06:23.444] [INFO] ProcessMonitor.Start: Timer created successfully
+[08:06:24.446] [INFO] ProcessMonitor.OnTimerTick: Timer fired at 08:06:24.446
+[08:06:24.447] [INFO] IsExecutableRunning: Checking for C:\Windows\notepad.exe
+[08:06:24.451] [INFO] IsExecutableRunning: Found 177 total processes
+[08:06:24.543] [INFO] IsExecutableRunning: No match found. Checked 77 processes, skipped 100
+[08:06:24.543] [INFO] CheckTargetApplication: isRunning=False, _targetIsRunning=False
+[08:06:25.445] [INFO] ProcessMonitor.OnTimerTick: Timer fired at 08:06:25.445
+[08:06:25.445] [INFO] IsExecutableRunning: Checking for C:\Windows\notepad.exe
+[08:06:25.449] [INFO] IsExecutableRunning: Found 177 total processes
+[08:06:25.543] [INFO] IsExecutableRunning: No match found. Checked 77 processes, skipped 100
+[08:06:25.543] [INFO] CheckTargetApplication: isRunning=False, _targetIsRunning=False
+[08:06:26.446] [INFO] ProcessMonitor.OnTimerTick: Timer fired at 08:06:26.445
+[08:06:26.446] [INFO] IsExecutableRunning: Checking for C:\Windows\notepad.exe
+[08:06:26.450] [INFO] IsExecutableRunning: Found 177 total processes
+[08:06:26.554] [INFO] IsExecutableRunning: No match found. Checked 77 processes, skipped 100
+[08:06:26.554] [INFO] CheckTargetApplication: isRunning=False, _targetIsRunning=False
+[08:06:27.446] [INFO] ProcessMonitor.OnTimerTick: Timer fired at 08:06:27.446
+[08:06:27.447] [INFO] IsExecutableRunning: Checking for C:\Windows\notepad.exe
+[08:06:27.449] [INFO] IsExecutableRunning: Found 177 total processes
+[08:06:27.537] [INFO] IsExecutableRunning: No match found. Checked 77 processes, skipped 100
+[08:06:27.538] [INFO] CheckTargetApplication: isRunning=False, _targetIsRunning=False
+[08:06:28.459] [INFO] ProcessMonitor.OnTimerTick: Timer fired at 08:06:28.459
+[08:06:28.460] [INFO] IsExecutableRunning: Checking for C:\Windows\notepad.exe
+[08:06:28.463] [INFO] IsExecutableRunning: Found 177 total processes
+[08:06:28.547] [INFO] IsExecutableRunning: No match found. Checked 77 processes, skipped 100
+[08:06:28.548] [INFO] CheckTargetApplication: isRunning=False, _targetIsRunning=False
+[08:06:29.457] [INFO] ProcessMonitor.OnTimerTick: Timer fired at 08:06:29.457
+[08:06:29.458] [INFO] IsExecutableRunning: Checking for C:\Windows\notepad.exe
+[08:06:29.461] [INFO] IsExecutableRunning: Found 177 total processes
+[08:06:29.552] [INFO] IsExecutableRunning: No match found. Checked 77 processes, skipped 100
+[08:06:29.553] [INFO] CheckTargetApplication: isRunning=False, _targetIsRunning=False
+[08:06:30.445] [INFO] ProcessMonitor.OnTimerTick: Timer fired at 08:06:30.444
+[08:06:30.445] [INFO] IsExecutableRunning: Checking for C:\Windows\notepad.exe
+[08:06:30.449] [INFO] IsExecutableRunning: Found 177 total processes
+[08:06:30.540] [INFO] IsExecutableRunning: No match found. Checked 77 processes, skipped 100
+[08:06:30.541] [INFO] CheckTargetApplication: isRunning=False, _targetIsRunning=False
+[08:06:31.444] [INFO] ProcessMonitor.OnTimerTick: Timer fired at 08:06:31.444
+[08:06:31.445] [INFO] IsExecutableRunning: Checking for C:\Windows\notepad.exe
+[08:06:31.448] [INFO] IsExecutableRunning: Found 177 total processes
+[08:06:31.541] [INFO] IsExecutableRunning: No match found. Checked 77 processes, skipped 100
+[08:06:31.541] [INFO] CheckTargetApplication: isRunning=False, _targetIsRunning=False
+[08:06:32.459] [INFO] ProcessMonitor.OnTimerTick: Timer fired at 08:06:32.458
+[08:06:32.459] [INFO] IsExecutableRunning: Checking for C:\Windows\notepad.exe
+[08:06:32.462] [INFO] IsExecutableRunning: Found 177 total processes
+[08:06:32.555] [INFO] IsExecutableRunning: No match found. Checked 77 processes, skipped 100
+[08:06:32.555] [INFO] CheckTargetApplication: isRunning=False, _targetIsRunning=False
+[08:06:33.445] [INFO] ProcessMonitor.OnTimerTick: Timer fired at 08:06:33.445
+[08:06:33.446] [INFO] IsExecutableRunning: Checking for C:\Windows\notepad.exe
+[08:06:33.449] [INFO] IsExecutableRunning: Found 177 total processes
+[08:06:33.539] [INFO] IsExecutableRunning: No match found. Checked 77 processes, skipped 100
+[08:06:33.539] [INFO] CheckTargetApplication: isRunning=False, _targetIsRunning=False
+[08:06:34.445] [INFO] ProcessMonitor.OnTimerTick: Timer fired at 08:06:34.445
+[08:06:34.446] [INFO] IsExecutableRunning: Checking for C:\Windows\notepad.exe
+[08:06:34.449] [INFO] IsExecutableRunning: Found 177 total processes
+[08:06:34.536] [INFO] IsExecutableRunning: No match found. Checked 77 processes, skipped 100
+[08:06:34.536] [INFO] CheckTargetApplication: isRunning=False, _targetIsRunning=False
+[08:06:35.444] [INFO] ProcessMonitor.OnTimerTick: Timer fired at 08:06:35.444
+[08:06:35.445] [INFO] IsExecutableRunning: Checking for C:\Windows\notepad.exe
+[08:06:35.449] [INFO] IsExecutableRunning: Found 177 total processes
+[08:06:35.538] [INFO] IsExecutableRunning: No match found. Checked 77 processes, skipped 100
+[08:06:35.539] [INFO] CheckTargetApplication: isRunning=False, _targetIsRunning=False
+[08:06:36.444] [INFO] ProcessMonitor.OnTimerTick: Timer fired at 08:06:36.444
+[08:06:36.445] [INFO] IsExecutableRunning: Checking for C:\Windows\notepad.exe
+[08:06:36.449] [INFO] IsExecutableRunning: Found 177 total processes
+[08:06:36.566] [INFO] IsExecutableRunning: No match found. Checked 77 processes, skipped 100
+[08:06:36.567] [INFO] CheckTargetApplication: isRunning=False, _targetIsRunning=False
+[08:06:37.445] [INFO] ProcessMonitor.OnTimerTick: Timer fired at 08:06:37.445
+[08:06:37.446] [INFO] IsExecutableRunning: Checking for C:\Windows\notepad.exe
+[08:06:37.450] [INFO] IsExecutableRunning: Found 179 total processes
+[08:06:37.549] [INFO] IsExecutableRunning: No match found. Checked 78 processes, skipped 101
+[08:06:37.550] [INFO] CheckTargetApplication: isRunning=False, _targetIsRunning=False
+[08:06:38.444] [INFO] ProcessMonitor.OnTimerTick: Timer fired at 08:06:38.444
+[08:06:38.445] [INFO] IsExecutableRunning: Checking for C:\Windows\notepad.exe
+[08:06:38.450] [INFO] IsExecutableRunning: Found 179 total processes
+[08:06:38.545] [INFO] IsExecutableRunning: No match found. Checked 78 processes, skipped 101
+[08:06:38.545] [INFO] CheckTargetApplication: isRunning=False, _targetIsRunning=False
+[08:06:39.459] [INFO] ProcessMonitor.OnTimerTick: Timer fired at 08:06:39.459
+[08:06:39.460] [INFO] IsExecutableRunning: Checking for C:\Windows\notepad.exe
+[08:06:39.463] [INFO] IsExecutableRunning: Found 179 total processes
+[08:06:39.557] [INFO] IsExecutableRunning: No match found. Checked 78 processes, skipped 101
+[08:06:39.558] [INFO] CheckTargetApplication: isRunning=False, _targetIsRunning=False
+[08:06:40.449] [INFO] ProcessMonitor.OnTimerTick: Timer fired at 08:06:40.449
+[08:06:40.450] [INFO] IsExecutableRunning: Checking for C:\Windows\notepad.exe
+[08:06:40.468] [INFO] IsExecutableRunning: Found 179 total processes
+[08:06:40.564] [INFO] IsExecutableRunning: No match found. Checked 78 processes, skipped 101
+[08:06:40.564] [INFO] CheckTargetApplication: isRunning=False, _targetIsRunning=False
+[08:06:41.444] [INFO] ProcessMonitor.OnTimerTick: Timer fired at 08:06:41.444
+[08:06:41.445] [INFO] IsExecutableRunning: Checking for C:\Windows\notepad.exe
+[08:06:41.449] [INFO] IsExecutableRunning: Found 179 total processes
+[08:06:41.538] [INFO] IsExecutableRunning: No match found. Checked 78 processes, skipped 101
+[08:06:41.539] [INFO] CheckTargetApplication: isRunning=False, _targetIsRunning=False
+[08:06:42.445] [INFO] ProcessMonitor.OnTimerTick: Timer fired at 08:06:42.445
+[08:06:42.446] [INFO] IsExecutableRunning: Checking for C:\Windows\notepad.exe
+[08:06:42.450] [INFO] IsExecutableRunning: Found 179 total processes
+[08:06:42.546] [INFO] IsExecutableRunning: No match found. Checked 78 processes, skipped 101
+[08:06:42.546] [INFO] CheckTargetApplication: isRunning=False, _targetIsRunning=False
+[08:06:43.459] [INFO] ProcessMonitor.OnTimerTick: Timer fired at 08:06:43.459
+[08:06:43.460] [INFO] IsExecutableRunning: Checking for C:\Windows\notepad.exe
+[08:06:43.463] [INFO] IsExecutableRunning: Found 179 total processes
+[08:06:43.548] [INFO] IsExecutableRunning: No match found. Checked 78 processes, skipped 101
+[08:06:43.549] [INFO] CheckTargetApplication: isRunning=False, _targetIsRunning=False
+[08:06:44.458] [INFO] ProcessMonitor.OnTimerTick: Timer fired at 08:06:44.458
+[08:06:44.459] [INFO] IsExecutableRunning: Checking for C:\Windows\notepad.exe
+[08:06:44.462] [INFO] IsExecutableRunning: Found 179 total processes
+[08:06:44.553] [INFO] IsExecutableRunning: No match found. Checked 78 processes, skipped 101
+[08:06:44.553] [INFO] CheckTargetApplication: isRunning=False, _targetIsRunning=False
+[08:06:45.444] [INFO] ProcessMonitor.OnTimerTick: Timer fired at 08:06:45.444
+[08:06:45.445] [INFO] IsExecutableRunning: Checking for C:\Windows\notepad.exe
+[08:06:45.448] [INFO] IsExecutableRunning: Found 179 total processes
+[08:06:45.538] [INFO] IsExecutableRunning: No match found. Checked 78 processes, skipped 101
+[08:06:45.538] [INFO] CheckTargetApplication: isRunning=False, _targetIsRunning=False
+[08:06:46.444] [INFO] ProcessMonitor.OnTimerTick: Timer fired at 08:06:46.444
+[08:06:46.445] [INFO] IsExecutableRunning: Checking for C:\Windows\notepad.exe
+[08:06:46.448] [INFO] IsExecutableRunning: Found 178 total processes
+[08:06:46.536] [INFO] IsExecutableRunning: No match found. Checked 77 processes, skipped 101
+[08:06:46.537] [INFO] CheckTargetApplication: isRunning=False, _targetIsRunning=False
+[08:06:47.445] [INFO] ProcessMonitor.OnTimerTick: Timer fired at 08:06:47.445
+[08:06:47.446] [INFO] IsExecutableRunning: Checking for C:\Windows\notepad.exe
+[08:06:47.449] [INFO] IsExecutableRunning: Found 179 total processes
+[08:06:47.542] [INFO] IsExecutableRunning: Found notepad process! Path: C:\Program Files\WindowsApps\Microsoft.WindowsNotepad_11.2510.14.0_x64__8wekyb3d8bbwe\Notepad\Notepad.exe
+[08:06:47.543] [INFO] IsExecutableRunning: No match found. Checked 78 processes, skipped 101
+[08:06:47.543] [INFO] CheckTargetApplication: isRunning=False, _targetIsRunning=False
+[08:06:48.445] [INFO] ProcessMonitor.OnTimerTick: Timer fired at 08:06:48.445
+[08:06:48.445] [INFO] IsExecutableRunning: Checking for C:\Windows\notepad.exe
+[08:06:48.451] [INFO] IsExecutableRunning: Found 179 total processes
+[08:06:48.548] [INFO] IsExecutableRunning: Found notepad process! Path: C:\Program Files\WindowsApps\Microsoft.WindowsNotepad_11.2510.14.0_x64__8wekyb3d8bbwe\Notepad\Notepad.exe
+[08:06:48.549] [INFO] IsExecutableRunning: No match found. Checked 78 processes, skipped 101
+[08:06:48.549] [INFO] CheckTargetApplication: isRunning=False, _targetIsRunning=False
+[08:06:49.444] [INFO] ProcessMonitor.OnTimerTick: Timer fired at 08:06:49.444
+[08:06:49.445] [INFO] IsExecutableRunning: Checking for C:\Windows\notepad.exe
+[08:06:49.448] [INFO] IsExecutableRunning: Found 180 total processes
+[08:06:49.541] [INFO] IsExecutableRunning: Found notepad process! Path: C:\Program Files\WindowsApps\Microsoft.WindowsNotepad_11.2510.14.0_x64__8wekyb3d8bbwe\Notepad\Notepad.exe
+[08:06:49.541] [INFO] IsExecutableRunning: No match found. Checked 79 processes, skipped 101
+[08:06:49.542] [INFO] CheckTargetApplication: isRunning=False, _targetIsRunning=False
+[08:06:50.445] [INFO] ProcessMonitor.OnTimerTick: Timer fired at 08:06:50.445
+[08:06:50.446] [INFO] IsExecutableRunning: Checking for C:\Windows\notepad.exe
+[08:06:50.449] [INFO] IsExecutableRunning: Found 180 total processes
+[08:06:50.537] [INFO] IsExecutableRunning: Found notepad process! Path: C:\Program Files\WindowsApps\Microsoft.WindowsNotepad_11.2510.14.0_x64__8wekyb3d8bbwe\Notepad\Notepad.exe
+[08:06:50.537] [INFO] IsExecutableRunning: No match found. Checked 79 processes, skipped 101
+[08:06:50.538] [INFO] CheckTargetApplication: isRunning=False, _targetIsRunning=False
+[08:06:51.445] [INFO] ProcessMonitor.OnTimerTick: Timer fired at 08:06:51.445
+[08:06:51.445] [INFO] IsExecutableRunning: Checking for C:\Windows\notepad.exe
+[08:06:51.449] [INFO] IsExecutableRunning: Found 179 total processes
+[08:06:51.544] [INFO] IsExecutableRunning: Found notepad process! Path: C:\Program Files\WindowsApps\Microsoft.WindowsNotepad_11.2510.14.0_x64__8wekyb3d8bbwe\Notepad\Notepad.exe
+[08:06:51.545] [INFO] IsExecutableRunning: No match found. Checked 78 processes, skipped 101
+[08:06:51.545] [INFO] CheckTargetApplication: isRunning=False, _targetIsRunning=False
+[08:06:52.444] [INFO] ProcessMonitor.OnTimerTick: Timer fired at 08:06:52.444
+[08:06:52.445] [INFO] IsExecutableRunning: Checking for C:\Windows\notepad.exe
+[08:06:52.449] [INFO] IsExecutableRunning: Found 179 total processes
+[08:06:52.535] [INFO] IsExecutableRunning: Found notepad process! Path: C:\Program Files\WindowsApps\Microsoft.WindowsNotepad_11.2510.14.0_x64__8wekyb3d8bbwe\Notepad\Notepad.exe
+[08:06:52.535] [INFO] IsExecutableRunning: No match found. Checked 78 processes, skipped 101
+[08:06:52.536] [INFO] CheckTargetApplication: isRunning=False, _targetIsRunning=False
+[08:06:53.444] [INFO] ProcessMonitor.OnTimerTick: Timer fired at 08:06:53.444
+[08:06:53.445] [INFO] IsExecutableRunning: Checking for C:\Windows\notepad.exe
+[08:06:53.449] [INFO] IsExecutableRunning: Found 179 total processes
+[08:06:53.545] [INFO] IsExecutableRunning: Found notepad process! Path: C:\Program Files\WindowsApps\Microsoft.WindowsNotepad_11.2510.14.0_x64__8wekyb3d8bbwe\Notepad\Notepad.exe
+[08:06:53.545] [INFO] IsExecutableRunning: No match found. Checked 78 processes, skipped 101
+[08:06:53.546] [INFO] CheckTargetApplication: isRunning=False, _targetIsRunning=False
+[08:06:54.460] [INFO] ProcessMonitor.OnTimerTick: Timer fired at 08:06:54.459
+[08:06:54.460] [INFO] IsExecutableRunning: Checking for C:\Windows\notepad.exe
+[08:06:54.464] [INFO] IsExecutableRunning: Found 178 total processes
+[08:06:54.559] [INFO] IsExecutableRunning: Found notepad process! Path: C:\Program Files\WindowsApps\Microsoft.WindowsNotepad_11.2510.14.0_x64__8wekyb3d8bbwe\Notepad\Notepad.exe
+[08:06:54.560] [INFO] IsExecutableRunning: No match found. Checked 77 processes, skipped 101
+[08:06:54.560] [INFO] CheckTargetApplication: isRunning=False, _targetIsRunning=False
+[08:06:55.459] [INFO] ProcessMonitor.OnTimerTick: Timer fired at 08:06:55.459
+[08:06:55.460] [INFO] IsExecutableRunning: Checking for C:\Windows\notepad.exe
+[08:06:55.462] [INFO] IsExecutableRunning: Found 178 total processes
+[08:06:55.548] [INFO] IsExecutableRunning: Found notepad process! Path: C:\Program Files\WindowsApps\Microsoft.WindowsNotepad_11.2510.14.0_x64__8wekyb3d8bbwe\Notepad\Notepad.exe
+[08:06:55.548] [INFO] IsExecutableRunning: No match found. Checked 77 processes, skipped 101
+[08:06:55.549] [INFO] CheckTargetApplication: isRunning=False, _targetIsRunning=False
+[08:06:56.446] [INFO] ProcessMonitor.OnTimerTick: Timer fired at 08:06:56.446
+[08:06:56.447] [INFO] IsExecutableRunning: Checking for C:\Windows\notepad.exe
+[08:06:56.450] [INFO] IsExecutableRunning: Found 177 total processes
+[08:06:56.545] [INFO] IsExecutableRunning: No match found. Checked 76 processes, skipped 101
+[08:06:56.545] [INFO] CheckTargetApplication: isRunning=False, _targetIsRunning=False
+[08:06:57.444] [INFO] ProcessMonitor.OnTimerTick: Timer fired at 08:06:57.444
+[08:06:57.445] [INFO] IsExecutableRunning: Checking for C:\Windows\notepad.exe
+[08:06:57.448] [INFO] IsExecutableRunning: Found 177 total processes
+[08:06:57.536] [INFO] IsExecutableRunning: No match found. Checked 76 processes, skipped 101
+[08:06:57.537] [INFO] CheckTargetApplication: isRunning=False, _targetIsRunning=False
+[08:06:58.445] [INFO] ProcessMonitor.OnTimerTick: Timer fired at 08:06:58.444
+[08:06:58.445] [INFO] IsExecutableRunning: Checking for C:\Windows\notepad.exe
+[08:06:58.448] [INFO] IsExecutableRunning: Found 177 total processes
+[08:06:58.538] [INFO] IsExecutableRunning: No match found. Checked 76 processes, skipped 101
+[08:06:58.539] [INFO] CheckTargetApplication: isRunning=False, _targetIsRunning=False
+[08:06:59.122] [INFO] Exit requested
+[08:06:59.124] [INFO] Beginning application shutdown
+[08:06:59.126] [INFO] MainWindow closing requested - hiding window
+[08:06:59.127] [INFO] MainWindow closing requested - initiating app shutdown
+[08:06:59.127] [INFO] Exit requested
+[08:06:59.131] [INFO] MainWindow closed
+[08:06:59.796] [INFO] OnExit called
+[08:06:59.796] [INFO] Cleaning up resources
+[08:06:59.797] [INFO] Closing main window
+[08:06:59.798] [INFO] Cleaning up NotifyIcon
+[08:06:59.814] [INFO] NotifyIcon cleanup complete

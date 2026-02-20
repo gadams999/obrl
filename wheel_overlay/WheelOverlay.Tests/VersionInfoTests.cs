@@ -27,7 +27,7 @@ namespace WheelOverlay.Tests
         }
 
         /// <summary>
-        /// Tests that the Version matches the current assembly version (0.5.3).
+        /// Tests that the Version matches the current assembly version (0.5.4).
         /// Requirements: 2.1, 2.2
         /// </summary>
         [Fact]
@@ -36,8 +36,8 @@ namespace WheelOverlay.Tests
             // Act
             var version = VersionInfo.Version;
 
-            // Assert - Version should be 0.5.3 based on current AssemblyVersion
-            Assert.Equal("0.5.3", version);
+            // Assert - Version should be 0.5.4 based on current AssemblyVersion
+            Assert.Equal("0.5.4", version);
         }
 
         /// <summary>
@@ -51,7 +51,7 @@ namespace WheelOverlay.Tests
             var fullVersionString = VersionInfo.GetFullVersionString();
 
             // Assert
-            Assert.Equal("Wheel Overlay v0.5.3", fullVersionString);
+            Assert.Equal("Wheel Overlay v0.5.4", fullVersionString);
         }
 
         /// <summary>

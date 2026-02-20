@@ -72,12 +72,18 @@ namespace WheelOverlay.Models
                 if (File.Exists(SettingsPath))
                 {
                     var json = File.ReadAllText(SettingsPath);
-                    return FromJson(json);
+                    var loadedSettings = FromJson(json);
+                    Services.LogService.Info("Settings loaded successfully");
+                    return loadedSettings;
                 }
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Services.LogService.Error("Failed to load settings file, using defaults", ex);
+            }
             
             // First run - no config file exists, use sensible defaults
+            Services.LogService.Info("No settings file found, creating default settings");
             var settings = new AppSettings();
             settings.SetDefaultWindowPosition();
             
@@ -128,40 +134,61 @@ namespace WheelOverlay.Models
 
         public static AppSettings FromJson(string json)
         {
-            var options = new JsonSerializerOptions
+            try
             {
-                PropertyNameCaseInsensitive = true,
-                Converters = { new JsonStringEnumConverter() }
-            };
-            var settings = JsonSerializer.Deserialize<AppSettings>(json, options) ?? new AppSettings();
+                var options = new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true,
+                    Converters = { new JsonStringEnumConverter() }
+                };
+                var settings = JsonSerializer.Deserialize<AppSettings>(json, options) ?? new AppSettings();
 
-            // Migration Logic: If no profiles exist, migrate legacy settings
-            if (settings.Profiles.Count == 0)
+                // Migration Logic: If no profiles exist, migrate legacy settings
+                if (settings.Profiles.Count == 0)
+                {
+                    Services.LogService.Info("Migrating legacy settings to profile-based format");
+                    var defaultProfile = new Profile
+                    {
+                        Name = "Default",
+                        DeviceName = settings.SelectedDeviceName ?? "BavarianSimTec Alpha",
+                        Layout = settings.Layout,
+                        TextLabels = new List<string>(settings.TextLabels ?? new string[8])
+                    };
+                    settings.Profiles.Add(defaultProfile);
+                    settings.SelectedProfileId = defaultProfile.Id;
+                }
+                
+                // Normalize all profiles on load
+                foreach (var profile in settings.Profiles)
+                {
+                    profile.NormalizeTextLabels();
+                    
+                    // Validate and auto-correct grid configurations
+                    if (!profile.IsValidGridConfiguration())
+                    {
+                        Services.LogService.Info($"Invalid grid configuration in profile '{profile.Name}', adjusting to default");
+                        profile.AdjustGridToDefault();
+                    }
+                }
+                
+                return settings;
+            }
+            catch (Exception ex)
             {
+                Services.LogService.Error("Failed to parse settings JSON, using defaults", ex);
+                // Return default settings if parsing fails
+                var defaultSettings = new AppSettings();
                 var defaultProfile = new Profile
                 {
                     Name = "Default",
-                    DeviceName = settings.SelectedDeviceName ?? "BavarianSimTec Alpha",
-                    Layout = settings.Layout,
-                    TextLabels = new List<string>(settings.TextLabels ?? new string[8])
+                    DeviceName = defaultSettings.SelectedDeviceName,
+                    Layout = defaultSettings.Layout,
+                    TextLabels = new List<string>(defaultSettings.TextLabels)
                 };
-                settings.Profiles.Add(defaultProfile);
-                settings.SelectedProfileId = defaultProfile.Id;
+                defaultSettings.Profiles.Add(defaultProfile);
+                defaultSettings.SelectedProfileId = defaultProfile.Id;
+                return defaultSettings;
             }
-            
-            // Normalize all profiles on load
-            foreach (var profile in settings.Profiles)
-            {
-                profile.NormalizeTextLabels();
-                
-                // Validate and auto-correct grid configurations
-                if (!profile.IsValidGridConfiguration())
-                {
-                    profile.AdjustGridToDefault();
-                }
-            }
-            
-            return settings;
         }
 
         public void Save()
@@ -182,8 +209,13 @@ namespace WheelOverlay.Models
 
                 var json = JsonSerializer.Serialize(this, new JsonSerializerOptions { WriteIndented = true });
                 File.WriteAllText(SettingsPath, json);
+                Services.LogService.Info("Settings saved successfully");
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Services.LogService.Error("Failed to save settings", ex);
+                // Don't throw - allow application to continue with in-memory settings
+            }
         }
     }
 }
