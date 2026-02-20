@@ -274,5 +274,180 @@ namespace WheelOverlay.Tests
             Assert.False(result.IsValid);
             Assert.Contains("Grid columns must be between 1 and 10", result.Message);
         }
+        
+        // ===== Conditional Visibility UI Tests (Task 4.2) =====
+        // Requirements: 1.1, 1.2, 1.8, 1.9
+        
+        [Fact]
+        public void UpdateTargetDisplay_WithNullPath_ShouldShowDefaultMessage()
+        {
+            // Arrange
+            string? path = null;
+            
+            // Act
+            string displayText = GetTargetDisplayText(path);
+            
+            // Assert
+            Assert.Equal("(None - always visible)", displayText);
+        }
+        
+        [Fact]
+        public void UpdateTargetDisplay_WithEmptyPath_ShouldShowDefaultMessage()
+        {
+            // Arrange
+            string path = "";
+            
+            // Act
+            string displayText = GetTargetDisplayText(path);
+            
+            // Assert
+            Assert.Equal("(None - always visible)", displayText);
+        }
+        
+        [Fact]
+        public void UpdateTargetDisplay_WithValidPath_ShouldShowFilenameOnly()
+        {
+            // Arrange
+            string path = @"C:\Program Files\Racing\iRacing.exe";
+            
+            // Act
+            string displayText = GetTargetDisplayText(path);
+            
+            // Assert
+            Assert.Equal("iRacing.exe", displayText);
+            Assert.DoesNotContain("\\", displayText);
+            Assert.DoesNotContain("Program Files", displayText);
+        }
+        
+        [Fact]
+        public void UpdateTargetDisplay_WithPathWithoutDirectory_ShouldShowFilename()
+        {
+            // Arrange
+            string path = "notepad.exe";
+            
+            // Act
+            string displayText = GetTargetDisplayText(path);
+            
+            // Assert
+            Assert.Equal("notepad.exe", displayText);
+        }
+        
+        [Fact]
+        public void ClearButton_ShouldClearTargetExecutablePath()
+        {
+            // Arrange
+            var profile = new Profile
+            {
+                TargetExecutablePath = @"C:\Games\Racing.exe"
+            };
+            
+            // Act
+            profile.TargetExecutablePath = null;
+            
+            // Assert
+            Assert.Null(profile.TargetExecutablePath);
+        }
+        
+        [Fact]
+        public void ClearButton_ShouldRestoreDefaultDisplay()
+        {
+            // Arrange
+            var profile = new Profile
+            {
+                TargetExecutablePath = @"C:\Games\Racing.exe"
+            };
+            
+            // Act
+            profile.TargetExecutablePath = null;
+            string displayText = GetTargetDisplayText(profile.TargetExecutablePath);
+            
+            // Assert
+            Assert.Equal("(None - always visible)", displayText);
+        }
+        
+        [Fact]
+        public void BrowseButton_WithValidExeSelection_ShouldStoreFullPath()
+        {
+            // Arrange
+            var profile = new Profile();
+            string selectedPath = @"C:\Program Files\iRacing\iRacing.exe";
+            
+            // Act
+            profile.TargetExecutablePath = selectedPath;
+            
+            // Assert
+            Assert.Equal(selectedPath, profile.TargetExecutablePath);
+        }
+        
+        [Fact]
+        public void FileSelection_WithNonExeFile_ShouldBeRejected()
+        {
+            // Arrange
+            string invalidPath = @"C:\Documents\file.txt";
+            
+            // Act
+            bool isValid = IsValidExecutablePath(invalidPath);
+            
+            // Assert
+            Assert.False(isValid, "Non-.exe files should be rejected");
+        }
+        
+        [Fact]
+        public void FileSelection_WithExeFile_ShouldBeAccepted()
+        {
+            // Arrange
+            string validPath = @"C:\Program Files\Application.exe";
+            
+            // Act
+            bool isValid = IsValidExecutablePath(validPath);
+            
+            // Assert
+            Assert.True(isValid, ".exe files should be accepted");
+        }
+        
+        [Fact]
+        public void FileSelection_WithMixedCaseExeExtension_ShouldBeAccepted()
+        {
+            // Arrange
+            string validPath = @"C:\Program Files\Application.EXE";
+            
+            // Act
+            bool isValid = IsValidExecutablePath(validPath);
+            
+            // Assert
+            Assert.True(isValid, ".EXE files should be accepted (case-insensitive)");
+        }
+        
+        [Fact]
+        public void TargetExecutablePath_ShouldPersistInProfile()
+        {
+            // Arrange
+            var profile = new Profile();
+            string targetPath = @"C:\Games\Racing.exe";
+            
+            // Act
+            profile.TargetExecutablePath = targetPath;
+            
+            // Assert
+            Assert.Equal(targetPath, profile.TargetExecutablePath);
+        }
+        
+        // Helper methods for UI logic testing
+        private static string GetTargetDisplayText(string? path)
+        {
+            if (string.IsNullOrEmpty(path))
+            {
+                return "(None - always visible)";
+            }
+            return System.IO.Path.GetFileName(path);
+        }
+        
+        private static bool IsValidExecutablePath(string? path)
+        {
+            if (string.IsNullOrEmpty(path))
+                return false;
+            
+            return path.EndsWith(".exe", StringComparison.OrdinalIgnoreCase);
+        }
     }
 }

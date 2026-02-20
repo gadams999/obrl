@@ -16,6 +16,7 @@
                    FontSize="{Binding Settings.FontSize}"
                    FontFamily="{Binding Settings.FontFamily}"
                    FontWeight="Bold"
+                   TextOptions.TextRenderingMode="Aliased"
                    Foreground="Red"
                    HorizontalAlignment="Center"
                    VerticalAlignment="Center">
@@ -52,6 +53,7 @@
                                FontSize="{Binding DataContext.Settings.FontSize, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                FontFamily="{Binding DataContext.Settings.FontFamily, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                FontWeight="Bold"
+                               TextOptions.TextRenderingMode="Aliased"
                                HorizontalAlignment="Center">
                         <TextBlock.Margin>
                             <Binding Path="DataContext.Settings.ItemSpacing" RelativeSource="{RelativeSource AncestorType=UserControl}" StringFormat="{}{0},0,0,0"/>

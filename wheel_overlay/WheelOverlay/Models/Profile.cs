@@ -16,6 +16,14 @@ namespace WheelOverlay.Models
         public int GridRows { get; set; } = 2;
         public int GridColumns { get; set; } = 4;
         
+        // Conditional Visibility (overlay-visibility-and-ui-improvements)
+        public string? TargetExecutablePath { get; set; } = null;
+        
+        // Font Settings (overlay-visibility-and-ui-improvements)
+        public int FontSize { get; set; } = 12;
+        public string FontWeight { get; set; } = "Bold";
+        public string TextRenderingMode { get; set; } = "Aliased";
+        
         /// <summary>
         /// Validates that the grid configuration can accommodate the position count.
         /// </summary>

@@ -31,6 +31,11 @@ namespace WheelOverlay
         private ItemsControl? _gridPreviewControl;
         private TextBlock? _gridCapacityText;
         private ItemsControl? _suggestedDimensionsControl;
+        
+        // Conditional visibility controls (overlay-visibility-and-ui-improvements)
+        private TextBlock? _targetExeDisplay;
+        private System.Windows.Controls.Button? _browseButton;
+        private System.Windows.Controls.Button? _clearButton;
 
         private StackPanel? _settingsPanel;
         private SettingsViewModel? _viewModel;
@@ -345,6 +350,52 @@ namespace WheelOverlay
 
             // Set ViewModel's selected profile (currentProfile is guaranteed non-null due to early return above)
             _viewModel!.SelectedProfile = currentProfile!;
+            
+            // --- Conditional Visibility Section (overlay-visibility-and-ui-improvements) ---
+            AddLabel("Conditional Visibility");
+            var visibilityHelp = new TextBlock 
+            { 
+                Text = "Show overlay only when this application is running:", 
+                FontSize = 11, 
+                Foreground = System.Windows.Media.Brushes.Gray, 
+                Margin = new Thickness(0, 0, 0, 5) 
+            };
+            _settingsPanel.Children.Add(visibilityHelp);
+            
+            var filePanel = new StackPanel 
+            { 
+                Orientation = System.Windows.Controls.Orientation.Horizontal,
+                Margin = new Thickness(0, 0, 0, 15)
+            };
+            
+            _targetExeDisplay = new TextBlock 
+            { 
+                VerticalAlignment = VerticalAlignment.Center,
+                Margin = new Thickness(0, 0, 10, 0),
+                MinWidth = 200
+            };
+            UpdateTargetDisplay(currentProfile.TargetExecutablePath);
+            
+            _browseButton = new System.Windows.Controls.Button 
+            { 
+                Content = "Browse...",
+                Width = 80,
+                Margin = new Thickness(0, 0, 5, 0)
+            };
+            _browseButton.Click += OnBrowseClick;
+            
+            _clearButton = new System.Windows.Controls.Button 
+            { 
+                Content = "Clear",
+                Width = 60
+            };
+            _clearButton.Click += OnClearClick;
+            _clearButton.IsEnabled = !string.IsNullOrEmpty(currentProfile.TargetExecutablePath);
+            
+            filePanel.Children.Add(_targetExeDisplay);
+            filePanel.Children.Add(_browseButton);
+            filePanel.Children.Add(_clearButton);
+            _settingsPanel.Children.Add(filePanel);
             
             // --- NEW v0.5.0: Position Count Configuration ---
             AddLabel("Number of Positions");
@@ -767,6 +818,132 @@ namespace WheelOverlay
         private void CloseButton_Click(object sender, RoutedEventArgs e)
         {
             Close();
+        }
+        
+        // --- Conditional Visibility UI Methods (overlay-visibility-and-ui-improvements) ---
+        
+        private void OnBrowseClick(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                var dialog = new Microsoft.Win32.OpenFileDialog
+                {
+                    Title = "Select Target Application",
+                    Filter = "Executable Files (*.exe)|*.exe|All Files (*.*)|*.*",
+                    FilterIndex = 1,
+                    CheckFileExists = true,
+                    CheckPathExists = true
+                };
+                
+                if (dialog.ShowDialog() == true)
+                {
+                    var selectedPath = dialog.FileName;
+                    
+                    // Validate file exists
+                    if (!System.IO.File.Exists(selectedPath))
+                    {
+                        Services.LogService.Info($"Selected file does not exist: {selectedPath}");
+                        System.Windows.MessageBox.Show(
+                            "The selected file does not exist. Please select a valid executable file.",
+                            "File Not Found",
+                            System.Windows.MessageBoxButton.OK,
+                            System.Windows.MessageBoxImage.Warning);
+                        return;
+                    }
+                    
+                    // Validate file extension
+                    var extension = System.IO.Path.GetExtension(selectedPath);
+                    if (!string.Equals(extension, ".exe", StringComparison.OrdinalIgnoreCase))
+                    {
+                        Services.LogService.Info($"Selected file is not an executable: {selectedPath}");
+                        System.Windows.MessageBox.Show(
+                            "Please select an executable file (.exe).",
+                            "Invalid File Type",
+                            System.Windows.MessageBoxButton.OK,
+                            System.Windows.MessageBoxImage.Warning);
+                        return;
+                    }
+                    
+                    if (_viewModel?.SelectedProfile != null)
+                    {
+                        _viewModel.SelectedProfile.TargetExecutablePath = selectedPath;
+                        UpdateTargetDisplay(selectedPath);
+                        Services.LogService.Info($"Target executable set to: {selectedPath}");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Services.LogService.Error("Error selecting target executable", ex);
+                System.Windows.MessageBox.Show(
+                    "An error occurred while selecting the file. Please try again.",
+                    "Error",
+                    System.Windows.MessageBoxButton.OK,
+                    System.Windows.MessageBoxImage.Error);
+            }
+        }
+        
+        private void OnClearClick(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                if (_viewModel?.SelectedProfile != null)
+                {
+                    _viewModel.SelectedProfile.TargetExecutablePath = null;
+                    UpdateTargetDisplay(null);
+                    Services.LogService.Info("Target executable cleared - overlay will be always visible");
+                }
+            }
+            catch (Exception ex)
+            {
+                Services.LogService.Error("Error clearing target executable", ex);
+                System.Windows.MessageBox.Show(
+                    "An error occurred while clearing the selection. Please try again.",
+                    "Error",
+                    System.Windows.MessageBoxButton.OK,
+                    System.Windows.MessageBoxImage.Error);
+            }
+        }
+        
+        private void UpdateTargetDisplay(string? path)
+        {
+            try
+            {
+                if (_targetExeDisplay == null) return;
+                
+                if (string.IsNullOrEmpty(path))
+                {
+                    _targetExeDisplay.Text = "(None - always visible)";
+                    if (_clearButton != null)
+                        _clearButton.IsEnabled = false;
+                }
+                else
+                {
+                    // Safely extract filename, handling invalid path characters
+                    try
+                    {
+                        _targetExeDisplay.Text = System.IO.Path.GetFileName(path);
+                    }
+                    catch (ArgumentException)
+                    {
+                        // Path contains invalid characters, display as-is
+                        _targetExeDisplay.Text = path;
+                        Services.LogService.Info($"Path contains invalid characters: {path}");
+                    }
+                    
+                    if (_clearButton != null)
+                        _clearButton.IsEnabled = true;
+                }
+            }
+            catch (Exception ex)
+            {
+                Services.LogService.Error("Error updating target display", ex);
+                // Fail gracefully - just show the path as-is
+                if (_targetExeDisplay != null && !string.IsNullOrEmpty(path))
+                {
+                    _targetExeDisplay.Text = path;
+                }
+            }
         }
     }
 }

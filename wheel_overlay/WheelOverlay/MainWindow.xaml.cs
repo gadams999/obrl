@@ -14,6 +14,8 @@ namespace WheelOverlay
         private readonly InputService _inputService;
         private bool _configMode = false;
         private OverlayViewModel _viewModel;
+        private ProcessMonitor? _processMonitor;
+        private bool _shouldBeVisible = true;
 
         private double _originalLeft;
         private double _originalTop;
@@ -126,6 +128,9 @@ namespace WheelOverlay
             _viewModel.IsTestMode = _inputService.TestMode;
             
             MakeWindowTransparent();
+            
+            // Initialize process monitoring for conditional visibility
+            InitializeProcessMonitoring();
         }
 
         public void ApplySettings(AppSettings settings)
@@ -146,6 +151,95 @@ namespace WheelOverlay
 
             // Re-attach keyboard handler in case it was lost (for test mode)
             _inputService.ReattachKeyboardHandler();
+            
+            // Update process monitoring when profile changes
+            OnProfileChanged();
+        }
+
+        /// <summary>
+        /// Initializes process monitoring for conditional visibility based on target executable.
+        /// </summary>
+        private void InitializeProcessMonitoring()
+        {
+            try
+            {
+                var targetExe = _viewModel.Settings?.ActiveProfile?.TargetExecutablePath;
+                _processMonitor = new ProcessMonitor(targetExe, TimeSpan.FromSeconds(1));
+                _processMonitor.TargetApplicationStateChanged += OnTargetApplicationStateChanged;
+                _processMonitor.Start();
+                
+                Services.LogService.Info($"Process monitoring initialized with target: {targetExe ?? "(none)"}");
+            }
+            catch (Exception ex)
+            {
+                Services.LogService.Error("Failed to initialize process monitoring", ex);
+                // Fail safe - default to always visible
+                _shouldBeVisible = true;
+                _processMonitor = null;
+            }
+        }
+
+        /// <summary>
+        /// Called when the target application state changes (started or stopped).
+        /// </summary>
+        private void OnTargetApplicationStateChanged(object? sender, bool isRunning)
+        {
+            try
+            {
+                Dispatcher.Invoke(() =>
+                {
+                    _shouldBeVisible = isRunning;
+                    UpdateWindowVisibility();
+                });
+            }
+            catch (Exception ex)
+            {
+                Services.LogService.Error("Error handling target application state change", ex);
+                // Fail safe - keep current visibility state
+            }
+        }
+
+        /// <summary>
+        /// Updates window visibility based on the current visibility state.
+        /// </summary>
+        private void UpdateWindowVisibility()
+        {
+            try
+            {
+                if (_shouldBeVisible)
+                {
+                    Show();
+                    if (WindowState == WindowState.Minimized)
+                        WindowState = WindowState.Normal;
+                }
+                else
+                {
+                    Hide();
+                }
+            }
+            catch (Exception ex)
+            {
+                Services.LogService.Error("Error updating window visibility", ex);
+                // Don't throw - window state errors shouldn't crash the app
+            }
+        }
+
+        /// <summary>
+        /// Called when the active profile changes. Updates process monitoring with new target executable.
+        /// </summary>
+        public void OnProfileChanged()
+        {
+            try
+            {
+                var targetExe = _viewModel.Settings?.ActiveProfile?.TargetExecutablePath;
+                _processMonitor?.UpdateTarget(targetExe);
+                Services.LogService.Info($"Profile changed, target executable updated to: {targetExe ?? "(none)"}");
+            }
+            catch (Exception ex)
+            {
+                Services.LogService.Error("Error updating process monitor target", ex);
+                // Don't throw - continue with current monitoring state
+            }
         }
 
 
@@ -234,13 +328,17 @@ namespace WheelOverlay
             try
             {
                 Services.LogService.Info("MainWindow closed");
+                
+                // Dispose process monitor
+                _processMonitor?.Dispose();
+                
                 // Stop and dispose input service
                 _inputService.Stop();
                 _inputService.Dispose();
             }
             catch (Exception ex)
             {
-                Services.LogService.Error("Error disposing InputService", ex);
+                Services.LogService.Error("Error disposing services", ex);
             }
         }
 
