@@ -20,7 +20,11 @@ namespace WheelOverlay.Tests
         // Due to Windows Forms implementation details, ToolStripMenuItem.Visible requires a parent container
         // to function properly. This test validates the logic by checking that the setting value is correctly
         // applied, which is what the App.xaml.cs implementation does.
+#if FAST_TESTS
         [Property(MaxTest = 10)]
+#else
+        [Property(MaxTest = 100)]
+#endif
         public Property Property_MenuVisibilityMatchesMinimizeSetting()
         {
             return Prop.ForAll<bool>(minimizeToTaskbarSetting =>
