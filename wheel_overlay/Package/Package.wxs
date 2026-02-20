@@ -412,6 +412,9 @@
         <File Source="System.Linq.Queryable.dll" />
       </Component>
       <Component>
+        <File Source="System.Management.dll" />
+      </Component>
+      <Component>
         <File Source="System.Memory.dll" />
       </Component>
       <Component>

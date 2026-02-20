@@ -7,8 +7,9 @@
   "targets": {
     ".NETCoreApp,Version=v10.0": {},
     ".NETCoreApp,Version=v10.0/win-x64": {
-      "WheelOverlay/0.5.3": {
+      "WheelOverlay/0.5.4": {
         "dependencies": {
+          "System.Management": "10.0.0",
           "Vortice.DirectInput": "3.8.2",
           "runtimepack.Microsoft.NETCore.App.Runtime.win-x64": "10.0.1",
           "runtimepack.Microsoft.WindowsDesktop.App.Runtime.win-x64": "10.0.1"
@@ -1016,6 +1017,14 @@
           }
         }
       },
+      "System.Management/10.0.0": {
+        "runtime": {
+          "runtimes/win/lib/net10.0/System.Management.dll": {
+            "assemblyVersion": "10.0.0.0",
+            "fileVersion": "10.0.25.52411"
+          }
+        }
+      },
       "Vortice.DirectInput/3.8.2": {
         "dependencies": {
           "SharpGen.Runtime": "2.4.2-beta",
@@ -1052,7 +1061,7 @@
     }
   },
   "libraries": {
-    "WheelOverlay/0.5.3": {
+    "WheelOverlay/0.5.4": {
       "type": "project",
       "serviceable": false,
       "sha512": ""
@@ -1080,6 +1089,13 @@
       "sha512": "sha512-9lxDFMiepqo3lJQzMSjECCIONeCc2f3Drokgj6HtrTLZcJSftNgcLbD6/iXYj2iphkwgrZb1oLsDOZxoFZkawQ==",
       "path": "sharpgen.runtime.com/2.4.2-beta",
       "hashPath": "sharpgen.runtime.com.2.4.2-beta.nupkg.sha512"
+    },
+    "System.Management/10.0.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-LE3rDZoPzulou78Tsq+3ALhUs4vatQ03v2QWbYVIenVPneUH/+LTUmHyyl098OxIFLQI6sNkZs8YHbUnT/sm3A==",
+      "path": "system.management/10.0.0",
+      "hashPath": "system.management.10.0.0.nupkg.sha512"
     },
     "Vortice.DirectInput/3.8.2": {
       "type": "package",
