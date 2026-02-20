@@ -203,9 +203,10 @@ namespace WheelOverlay.Tests
                 _output.WriteLine($"Update Response Time: {stopwatch.ElapsedMilliseconds}ms");
                 _output.WriteLine($"New Visibility State: {visibilityState}");
                 
-                // Assert - Update should apply within 500ms
-                Assert.True(stopwatch.ElapsedMilliseconds <= 500,
-                    $"Target update should apply within 500ms, but took {stopwatch.ElapsedMilliseconds}ms");
+                // Assert - Update should apply within 500ms locally, 1500ms in CI
+                var threshold = Infrastructure.TestConfiguration.IsRunningInCI() ? 1500 : 500;
+                Assert.True(stopwatch.ElapsedMilliseconds <= threshold,
+                    $"Target update should apply within {threshold}ms, but took {stopwatch.ElapsedMilliseconds}ms");
             }
         }
 

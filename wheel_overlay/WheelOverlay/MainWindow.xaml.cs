@@ -129,6 +129,14 @@ namespace WheelOverlay
             
             MakeWindowTransparent();
             
+            // Skip process monitoring in test mode - overlay should always be visible
+            if (_inputService.TestMode)
+            {
+                _shouldBeVisible = true;
+                Services.LogService.Info("Test mode: skipping process monitoring, overlay always visible");
+                return;
+            }
+            
             // Initialize process monitoring for conditional visibility
             InitializeProcessMonitoring();
         }
